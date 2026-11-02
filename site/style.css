@@ -70,3 +70,19 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes tcIn{from{opacity:0;transform:translateY(12px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
 #loading{background:#16201c url(img/og.jpg) center/cover}#loading::before{content:"";position:absolute;inset:0;background:rgba(10,12,20,.55)}.lg-in{position:relative}
 #title-card[hidden]{display:none}
+
+#actions button.main{width:auto;min-width:150px;padding:.55rem 1rem;font-size:.95rem;font-weight:700;background:rgba(217,65,43,.85);color:#fff;flex-direction:row;justify-content:center}
+#actions button.main.glow{animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,190,110,.0)}50%{box-shadow:0 0 18px 2px rgba(255,190,110,.65)}}
+#place{position:fixed;top:92px;left:50%;transform:translateX(-50%);z-index:6;pointer-events:none;background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:.4rem .9rem;font-size:1rem;letter-spacing:.15em;opacity:0;white-space:nowrap}
+#place b{display:inline-grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:var(--red);font-size:.75rem;letter-spacing:0;margin-right:.3em}
+#place small{display:block;font-size:.66rem;letter-spacing:.05em;color:var(--muted);text-align:center;font-family:system-ui}
+#place.on{animation:placeIn 3.2s ease forwards}
+@keyframes placeIn{0%{opacity:0;transform:translate(-50%,-8px)}12%,75%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+.map-sheet{width:min(960px,100%)}.map-wrap{position:relative;border-radius:12px;overflow:hidden}.map-wrap img{display:block;width:100%}
+.pin{position:absolute;transform:translate(-50%,-50%);border:0;background:none;padding:0;display:flex;align-items:center;gap:.3rem}
+.pin b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;border:2px solid #fbefd8;font-size:.8rem;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.pin span{background:rgba(18,20,24,.82);color:#f4ead8;border-radius:8px;padding:.15rem .45rem;font-size:.72rem;white-space:nowrap;display:none;flex-direction:column}
+.pin span small{font-size:.6rem;color:#b9b0a0;font-family:system-ui}.pin:hover span,.pin:focus span{display:flex}
+@media (min-width:760px){.pin span{display:flex}}
+@media (max-width:520px){#actions button.main{min-width:120px;font-size:.85rem}.pin b{width:22px;height:22px;font-size:.66rem}}

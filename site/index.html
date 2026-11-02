@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#16201c">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=11030831">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -23,7 +23,7 @@
 <body>
 <div id="loading"><div class="lg-in"><div class="lg-torii">⛩</div><h1>えにし神社</h1><p>境内を開いています…</p></div></div>
 <canvas id="c"></canvas>
-<div id="title-card" hidden><div class="tc-in"><p class="tc-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="tc-hall">― 当選の社 ―</p><p class="tc-skip">タップでスキップ</p></div></div>
+<div id="title-card" hidden><div class="tc-in"><p class="tc-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="tc-hall">― みんなで祈るネット神社 ―</p><p class="tc-skip">タップでスキップ</p></div></div>
 
 <header id="hud-top">
   <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人<br><small>今日の祈りの灯り <b id="lights">0</b></small></div>
@@ -33,15 +33,16 @@
   </div>
 </header>
 <div id="me-tag"></div>
-<div id="hint">地面をタップで歩く · ドラッグで見回す · 手水舎・おもかる石・狛狐もタップできます</div>
+<div id="hint">地面をタップで歩く · ドラッグで見回す · 📍地図から行きたい場所へ</div>
+<div id="place"></div>
 <div id="toast"></div>
 <div id="step"></div>
 
 <nav id="actions">
-  <button data-act="omairi"><span>⛩</span>お参り</button>
-  <button data-act="omikuji"><span>🎋</span>おみくじ</button>
-  <button data-act="ema"><span>🪵</span>絵馬</button>
-  <button data-act="report"><span>🎉</span>当選報告</button>
+  <button id="act-map"><span>📍</span>地図</button>
+  <button id="act-main" class="main">⛩ 本殿へ</button>
+  <button id="act-ema"><span>🪵</span>絵馬</button>
+  <button id="act-report"><span>🎉</span>当選報告</button>
 </nav>
 
 <!-- おみくじ -->
@@ -83,6 +84,16 @@
   </div>
 </section>
 
+<!-- 地図 -->
+<section class="modal" id="m-map" hidden>
+  <div class="sheet map-sheet">
+    <button class="x" data-close>✕</button>
+    <h2>えにし神社 境内図</h2>
+    <div class="map-wrap"><img src="img/map.jpg" alt="えにし神社の境内図"><div id="map-pins"></div></div>
+    <p class="sub">番号をタップすると、その場所まで歩いていきます。</p>
+  </div>
+</section>
+
 <!-- 由来 -->
 <section class="modal" id="m-story" hidden>
   <div class="sheet story">
@@ -92,6 +103,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="main.js?v=3"></script>
+<script type="module" src="js/app.js?v=11030831"></script>
 </body>
 </html>
