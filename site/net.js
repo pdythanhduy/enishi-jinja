@@ -19,6 +19,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
     room = forced ? +forced : await pickRoom();
     ws = new WebSocket(`${WS}/room/${hall}/${room}`);
     ws.onopen = () => { retry = 0; ws.send(JSON.stringify({ t: "hi", name, look })); };
+    clearInterval(open._p); open._p = setInterval(() => ws && ws.readyState === 1 && ws.send('{"t":"ping"}'), 25e3);
     ws.onmessage = (e) => {
       let m; try { m = JSON.parse(e.data); } catch { return; }
       if (m.t === "welcome") { onWelcome(m, room); onCount(m.n); }
@@ -30,6 +31,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
     ws.onclose = () => { if (!alive) return; retry++; setTimeout(open, Math.min(15000, 1000 * 2 ** retry)); };
   }
   open();
+  addEventListener("pagehide", () => { alive = false; try { ws && ws.close(); } catch {} });
   let lastSent = 0, last = "";
   return {
     pos(x, z, ry) {

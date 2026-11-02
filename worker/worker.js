@@ -35,6 +35,13 @@ export default {
       }
       return json(req, { max: MAX, rooms: out });
     }
+    if (p[0] === "admin" && req.method === "POST") {
+      let b = {}; try { b = await req.json(); } catch {}
+      if (!env.ADMIN_KEY || b.key !== env.ADMIN_KEY) return json(req, { error: "forbidden" }, 403);
+      const board = env.BOARD.get(env.BOARD.idFromName(hall));
+      const r = await board.fetch(new Request("https://x/hide", { method: "POST", body: JSON.stringify({ id: b.id }) }));
+      return json(req, await r.json(), r.status);
+    }
     if (["ema", "pray", "report"].includes(p[0])) {
       const board = env.BOARD.get(env.BOARD.idFromName(hall));
       const r = await board.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}`,
@@ -57,9 +64,9 @@ export class Room {
     const [client, server] = Object.values(new WebSocketPair());
     const id = crypto.randomUUID().slice(0, 8);
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({ id, name: "", look: 0, x: 0, z: 29, ry: Math.PI, a: "", at: 0 });
+    server.serializeAttachment({ id, name: "", look: 0, x: 0, z: 29, ry: Math.PI, a: "", at: 0, seen: Date.now() });
     // 今いる人を送る
-    const others = this.socks().filter((s) => s !== server).map((s) => s.deserializeAttachment()).filter((o) => o && o.name);
+    const others = this.socks().filter((s) => s !== server && s.readyState === 1).map((s) => s.deserializeAttachment()).filter((o) => o && o.name);
     server.send(JSON.stringify({ t: "welcome", id, n: this.socks().length, max: MAX, others }));
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -68,7 +75,10 @@ export class Room {
     let m; try { m = JSON.parse(raw); } catch { return; }
     const me = ws.deserializeAttachment() || {};
     const now = Date.now();
+    me.seen = now;
+    if (m.t === "ping") { ws.serializeAttachment(me); return; }
     if (m.t === "hi") {
+      this.prune(now);
       me.name = String(m.name || "参拝者").slice(0, 16); me.look = Number(m.look) || 0;
       ws.serializeAttachment(me);
       this.broadcast({ t: "join", ...me, n: this.socks().length }, ws);
@@ -80,6 +90,9 @@ export class Room {
     } else if (m.t === "act" && ["bow", "clap", "suzu", "kuji", "ema", "report", "pray"].includes(m.a)) {
       this.broadcast({ t: "act", id: me.id, a: m.a, r: String(m.r || "").slice(0, 4) }, ws);
     }
+  }
+  prune(now) {  // 70秒応答のない接続（閉じ忘れ・スリープ）を片付ける
+    for (const w of this.socks()) { const a = w.deserializeAttachment(); if (a && a.seen && now - a.seen > 70e3) this.leave(w); }
   }
   async webSocketClose(ws) { this.leave(ws); }
   async webSocketError(ws) { this.leave(ws); }
@@ -114,6 +127,7 @@ export class Board {
       this.inc("ema"); this.last.set(key, now);
       return Response.json({ ok: true, id });
     }
+    if (what === "hide") { this.sql.exec(`UPDATE ema SET hidden=1 WHERE id=?`, String(b.id || "")); return Response.json({ ok: true }); }
     if (what === "pray") {
       if (now - (this.last.get(key + b.id) || 0) < 3e3) return Response.json({ ok: true });
       this.sql.exec(`UPDATE ema SET n = MAX(0, n + ?) WHERE id = ?`, b.on ? 1 : -1, String(b.id || ""));

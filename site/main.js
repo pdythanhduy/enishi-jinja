@@ -525,6 +525,9 @@ function loop() {
   const delta = want.clone().sub(controls.target).multiplyScalar(Math.min(1, dt * 4));
   controls.target.add(delta); camera.position.add(delta);
   controls.update();
+  // 千本鳥居の中ではカメラを笠木より下に（画面が朱一色にならないように）
+  const cp = camera.position;
+  if (cp.z > 2.2 && cp.z < 27.5 && Math.abs(cp.x) < 3.4 && cp.y > 2.45) cp.y += (2.45 - cp.y) * Math.min(1, dt * 12);
   for (let i = 0; i < fallData.length; i++) {
     const p = fallData[i]; p.y -= dt * 0.5 * p.s; p.x += Math.sin(t * 0.7 + i) * dt * 0.3; p.r += dt * 2;
     if (p.y < 0) { p.y = rand(6, 10); p.x = rand(-14, 14); p.z = rand(-24, 26); }
