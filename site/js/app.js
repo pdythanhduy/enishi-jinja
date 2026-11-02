@@ -5,17 +5,17 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030848";
-import { buildWorld } from "./world.js?v=11030848";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030848";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030848";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030848";
-import { deeds } from "../deeds.js?v=11030848";
-import { LIGHT_SPOTS } from "./arch.js?v=11030848";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030848";
-import { Lanterns, ambience } from "../fx.js?v=11030848";
-import { connect, board } from "../net.js?v=11030848";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030848";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030851";
+import { buildWorld } from "./world.js?v=11030851";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030851";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030851";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030851";
+import { deeds } from "../deeds.js?v=11030851";
+import { LIGHT_SPOTS } from "./arch.js?v=11030851";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030851";
+import { Lanterns, ambience } from "../fx.js?v=11030851";
+import { connect, board } from "../net.js?v=11030851";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030851";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -36,6 +36,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 900);
+const fitFov = () => { const a = innerWidth / innerHeight; camera.fov = a < 0.8 ? 66 : a < 1.2 ? 58 : 52; camera.aspect = a; camera.updateProjectionMatrix(); };
+fitFov();
 const env = createEnv(scene, renderer, { mobile: MOBILE });
 if (QS.get("season")) env.season = QS.get("season");
 const hourNow = () => (QS.get("hour") ? +QS.get("hour") : jstNow().getUTCHours() + jstNow().getUTCMinutes() / 60);
@@ -72,7 +74,7 @@ composer.addPass(bloom); composer.addPass(new OutputPass());
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
 controls.minDistance = 3.5; controls.maxDistance = 22; controls.maxPolarAngle = Math.PI * 0.48; controls.minPolarAngle = Math.PI * 0.12;
-camera.position.set(0, 6, 90); controls.target.set(0, 1.2, 80);
+camera.position.set(0, innerWidth < innerHeight ? 8 : 6, innerWidth < innerHeight ? 93 : 90); controls.target.set(0, 1.2, 80);
 
 // ------------------------------------------------------------------ 歩く（当たり判定つき）・道順
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
@@ -665,7 +667,7 @@ function loop() {
   }
   requestAnimationFrame(loop);
 }
-addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); fitFov(); });
 
 net = connect({ hall: "tosen", name: myName, look: myLook,
   onWelcome: (m) => m.others.forEach(addOther), onJoin: addOther, onLeave: (m) => removeOther(m.id), onCount: setCount,

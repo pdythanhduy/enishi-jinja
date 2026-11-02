@@ -6,7 +6,7 @@ export const MAT = {
   shu: std(0xd23a26, { roughness: 0.5 }), shuD: std(0xa82a1c, { roughness: 0.55 }), kuro: std(0x1c1a19, { roughness: 0.7 }),
   wood: std(0x6b4428), woodD: std(0x4a2e1c), woodL: std(0x9a6a3e), white: std(0xf3efe6, { roughness: 0.85 }), shoji: std(0xf7f1df, { emissive: 0xffd9a0, emissiveIntensity: 0.0 }),
   copper: std(0x3f7a68, { roughness: 0.55, metalness: 0.25 }), copperD: std(0x2d5a4c, { roughness: 0.6, metalness: 0.2 }), hinoki: std(0x5a3a2a, { roughness: 0.85 }),
-  gold: std(0xe3b54a, { metalness: 0.9, roughness: 0.28 }), stone: std(0x8e8a82, { roughness: 0.95 }), stoneD: std(0x6c6861, { roughness: 0.95 }), stoneL: std(0xa7a299, { roughness: 0.95 }),
+  gold: std(0xe3b54a, { metalness: 0.9, roughness: 0.28 }), stone: std(0x7f7b74, { roughness: 0.95 }), stoneD: std(0x625e58, { roughness: 0.95 }), stoneL: std(0x96918a, { roughness: 0.95 }),
   rope: std(0xd8c99a, { roughness: 1 }), paperW: std(0xffffff, { roughness: 0.9 }), tatami: std(0xb3ad76, { roughness: 0.95 }),
   water: new THREE.MeshStandardMaterial({ color: 0x2f5e7a, roughness: 0.08, metalness: 0.35, transparent: true, opacity: 0.92 }),
 };

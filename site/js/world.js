@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030848";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030848";
-import { FOLIAGE } from "./env.js?v=11030848";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030851";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030851";
+import { FOLIAGE } from "./env.js?v=11030851";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -16,7 +16,7 @@ export function buildWorld(scene, env, { mobile }) {
   const S = 300, N = mobile ? 150 : 220;
   const tg = new THREE.PlaneGeometry(S, S, N, N); tg.rotateX(-Math.PI / 2);
   const pos = tg.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
-  const grass = new THREE.Color(pal.ground), forest = new THREE.Color(env.season === "winter" ? 0xc9d2dc : 0x2f4a2c), gravel = new THREE.Color(0x8f8676), dirt = new THREE.Color(0x6b5a44);
+  const grass = new THREE.Color(pal.ground), forest = new THREE.Color(env.season === "winter" ? 0xc9d2dc : 0x2f4a2c), gravel = new THREE.Color(0x7f776a), dirt = new THREE.Color(0x6b5a44);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i) - 0, y = height(x, z); pos.setY(i, y);
     const inCourt = z > -6 && z <= 44 && Math.abs(x) < 24.5, side = z > 2 && z < 26 && Math.abs(x) >= 24.5 && Math.abs(x) < 42;
@@ -42,7 +42,7 @@ export function buildWorld(scene, env, { mobile }) {
 
   // ---------------------------------------------------------------- ① 大鳥居 と ② 参道の灯籠
   torii(scene, { z: 76, s: 2.3, gaku: "えにし神社" });
-  const entr = new THREE.Mesh(new THREE.PlaneGeometry(22, 12), new THREE.MeshStandardMaterial({ color: 0x9a9286, roughness: 1 })); entr.rotation.x = -Math.PI / 2; entr.position.set(0, 0.02, 82); entr.receiveShadow = true; scene.add(entr);
+  const entr = new THREE.Mesh(new THREE.PlaneGeometry(22, 12), new THREE.MeshStandardMaterial({ color: 0x7d766b, roughness: 1 })); entr.rotation.x = -Math.PI / 2; entr.position.set(0, 0.02, 82); entr.receiveShadow = true; scene.add(entr);
   for (let z = 72; z > 46; z -= 4.5) for (const x of [-4.2, 4.2]) W.lamps.push(toro(scene, x, z, 0, env));
   for (const x of [-5.5, 5.5]) W.lamps.push(toro(scene, x, 80, 0, env, 1.3));
 
