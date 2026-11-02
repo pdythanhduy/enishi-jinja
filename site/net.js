@@ -49,5 +49,6 @@ export const board = {
   list: (hall) => fetch(`${API}/ema/${hall}`).then((r) => r.json()),
   post: (hall, cat, text) => fetch(`${API}/ema/${hall}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cat, text }) }).then(async (r) => ({ ok: r.ok, ...(await r.json()) })),
   pray: (hall, id, on) => fetch(`${API}/pray/${hall}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, on }) }),
+  light: (hall) => fetch(`${API}/light/${hall}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json()),
   report: (hall) => fetch(`${API}/report/${hall}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json()),
 };

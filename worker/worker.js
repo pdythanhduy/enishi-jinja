@@ -42,7 +42,7 @@ export default {
       const r = await board.fetch(new Request("https://x/hide", { method: "POST", body: JSON.stringify({ id: b.id }) }));
       return json(req, await r.json(), r.status);
     }
-    if (["ema", "pray", "report"].includes(p[0])) {
+    if (["ema", "pray", "report", "light"].includes(p[0])) {
       const board = env.BOARD.get(env.BOARD.idFromName(hall));
       const r = await board.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}`,
         { method: req.method, body: req.method === "POST" ? await req.text() : undefined }));
@@ -87,7 +87,7 @@ export class Room {
       me.x = +m.x || 0; me.z = +m.z || 0; me.ry = +m.ry || 0; me.at = now;
       ws.serializeAttachment(me);
       this.broadcast({ t: "pos", id: me.id, x: me.x, z: me.z, ry: me.ry }, ws);
-    } else if (m.t === "act" && ["bow", "clap", "suzu", "kuji", "ema", "report", "pray"].includes(m.a)) {
+    } else if (m.t === "act" && ["bow", "clap", "suzu", "kuji", "ema", "report", "pray", "musubi", "omokaru", "goldfox"].includes(m.a)) {
       this.broadcast({ t: "act", id: me.id, a: m.a, r: String(m.r || "").slice(0, 4) }, ws);
     }
   }
@@ -112,7 +112,7 @@ export class Board {
     const u = new URL(req.url), what = u.pathname.slice(1), ip = u.searchParams.get("ip") || "";
     if (req.method === "GET") {
       const rows = this.sql.exec(`SELECT id,cat,text,n,ts FROM ema WHERE hidden=0 ORDER BY ts DESC LIMIT 60`).toArray();
-      return Response.json({ ema: rows, report: this.get("report:" + jst()), total: this.get("ema") });
+      return Response.json({ ema: rows, report: this.get("report:" + jst()), lights: this.get("light:" + jst()), total: this.get("ema") });
     }
     let b = {}; try { b = await req.json(); } catch {}
     const now = Date.now(), key = what + ip;
@@ -133,6 +133,11 @@ export class Board {
       this.sql.exec(`UPDATE ema SET n = MAX(0, n + ?) WHERE id = ?`, b.on ? 1 : -1, String(b.id || ""));
       this.last.set(key + b.id, now);
       return Response.json({ ok: true });
+    }
+    if (what === "light") {
+      if (now - (this.last.get(key) || 0) < 15e3) return Response.json({ ok: true, lights: this.get("light:" + jst()) });
+      this.inc("light:" + jst()); this.last.set(key, now);
+      return Response.json({ ok: true, lights: this.get("light:" + jst()) });
     }
     if (what === "report") {
       if (now - (this.last.get(key) || 0) < 3600e3) return Response.json({ ok: true, report: this.get("report:" + jst()) });

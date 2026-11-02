@@ -60,3 +60,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .story p{margin:.8rem 0}.story .moral{border-left:3px solid var(--red);padding-left:.8rem;color:var(--ink)}
 @media (max-width:520px){#actions button{width:66px}.p-rank{font-size:2.5rem}#hint{font-size:.68rem}}
 .tag.bub{background:rgba(250,246,234,.95);color:#2b2620;font-size:.72rem}.x{z-index:3}
+
+#room small{font-size:.66rem;color:var(--gold);letter-spacing:.05em}#room small b{letter-spacing:0;margin:0}
+#title-card{position:fixed;inset:0;z-index:40;display:grid;place-items:center;pointer-events:auto;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 30%,rgba(0,0,0,.55));transition:opacity 1.2s}
+#title-card.out{opacity:0}
+.tc-in{text-align:center;animation:tcIn 2.4s ease-out both}
+.tc-in h1{font-size:clamp(2.4rem,8vw,4.4rem);letter-spacing:.35em;margin:.3em 0 .2em .35em;text-shadow:0 0 24px rgba(255,190,110,.6)}
+.tc-sub{letter-spacing:.3em;font-size:.95rem;opacity:.85}.tc-hall{color:var(--gold);letter-spacing:.4em}.tc-skip{font-size:.7rem;opacity:.5;margin-top:2.5rem;font-family:system-ui}
+@keyframes tcIn{from{opacity:0;transform:translateY(12px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+#loading{background:#16201c url(img/og.jpg) center/cover}#loading::before{content:"";position:absolute;inset:0;background:rgba(10,12,20,.55)}.lg-in{position:relative}
+#title-card[hidden]{display:none}

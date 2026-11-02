@@ -8,11 +8,11 @@
 <meta property="og:title" content="えにし神社｜みんなで祈るネット神社">
 <meta property="og:description" content="ログイン不要。当選祈願・おみくじ・絵馬。知らない誰かと、同じ境内で静かに祈る。">
 <meta property="og:type" content="website">
-<meta property="og:image" content="og.png">
+<meta property="og:image" content="https://pdythanhduy.github.io/enishi-jinja/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#16201c">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=3">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -23,16 +23,17 @@
 <body>
 <div id="loading"><div class="lg-in"><div class="lg-torii">⛩</div><h1>えにし神社</h1><p>境内を開いています…</p></div></div>
 <canvas id="c"></canvas>
+<div id="title-card" hidden><div class="tc-in"><p class="tc-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="tc-hall">― 当選の社 ―</p><p class="tc-skip">タップでスキップ</p></div></div>
 
 <header id="hud-top">
-  <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人</div>
+  <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人<br><small>今日の祈りの灯り <b id="lights">0</b></small></div>
   <div class="pill-right">
     <button class="ibtn" id="btn-sound" title="音">🔈</button>
     <button class="ibtn" id="btn-story" title="由来">📜</button>
   </div>
 </header>
 <div id="me-tag"></div>
-<div id="hint">地面をタップで歩く · ドラッグで見回す</div>
+<div id="hint">地面をタップで歩く · ドラッグで見回す · 手水舎・おもかる石・狛狐もタップできます</div>
 <div id="toast"></div>
 <div id="step"></div>
 
@@ -91,6 +92,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="main.js?v=1"></script>
+<script type="module" src="main.js?v=3"></script>
 </body>
 </html>
