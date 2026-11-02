@@ -5,17 +5,17 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030844";
-import { buildWorld } from "./world.js?v=11030844";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030844";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030844";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030844";
-import { deeds } from "../deeds.js?v=11030844";
-import { LIGHT_SPOTS } from "./arch.js?v=11030844";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030844";
-import { Lanterns, ambience } from "../fx.js?v=11030844";
-import { connect, board } from "../net.js?v=11030844";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030844";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030848";
+import { buildWorld } from "./world.js?v=11030848";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030848";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030848";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030848";
+import { deeds } from "../deeds.js?v=11030848";
+import { LIGHT_SPOTS } from "./arch.js?v=11030848";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030848";
+import { Lanterns, ambience } from "../fx.js?v=11030848";
+import { connect, board } from "../net.js?v=11030848";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030848";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -152,7 +152,8 @@ document.querySelectorAll(".modal").forEach((m) => m.addEventListener("click", (
 let todayLights = 0;
 const setLights = (n) => { todayLights = n; $("#lights").textContent = n.toLocaleString(); };
 function releaseLight(x, y, z, mine) { lanterns.spawn(x, y + 1.6, z - 0.4, { mine }); setLights(todayLights + 1); }
-const hallOf = () => { const r = region(me.position.x, me.position.z); return HALLS.find((h) => h.id === (r === "west" ? "enmusubi" : r === "east" ? "gokaku" : "tosen")) || HALLS[0]; };
+const hallOf = () => { const r = region(me.position.x, me.position.z); const id = r === "west" ? "enmusubi" : r === "east" ? "gokaku" : r === "trail" && me.position.z < -58 ? "okunoin" : "tosen"; return HALLS.find((h) => h.id === id) || HALLS[0]; };
+let kujiHall = null;
 
 // ------------------------------------------------------------------ 地図（ミニマップ：絵地図の上に番号）
 const MAP_PIN = { ootorii: [260, 600], sando: [470, 610], pond: [745, 650], romon: [605, 430], temizu: [785, 465], juyosho: [950, 515], shinboku: [965, 405], honden: [840, 290], enmusubi: [480, 320], gokaku: [1135, 385], senbon: [900, 165], okunoin: [1030, 105], pagoda: [1240, 190] };
@@ -383,12 +384,13 @@ function toroNagashi() { deedHook("toro");
 let hall = HALLS[0];
 function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 function drawKuji() {
-  const h = hallOf(), list0 = OMIKUJI[h.id] || OMIKUJI.tosen, seed = hash(myName + today() + h.id);
+  const h = kujiHall || hallOf(), list0 = OMIKUJI[h.id] || OMIKUJI.tosen, seed = hash(myName + today() + h.id);
   const rk = RANKS[seed % 1000 < 170 ? 0 : seed % 1000 < 450 ? 1 : seed % 1000 < 700 ? 2 : seed % 1000 < 860 ? 3 : seed % 1000 < 960 ? 4 : 5];
   const list = list0.filter((o) => o.rank === rk.key); return { h, rk, o: list[(seed >>> 8) % list.length] };
 }
-function openKuji() {
-  open("#m-omikuji"); const done = store.get("enishi_kuji", {})[hallOf().id] === today();
+function openKuji(hid) {
+  kujiHall = HALLS.find((h) => h.id === hid) || hallOf();
+  open("#m-omikuji"); const done = store.get("enishi_kuji", {})[kujiHall.id] === today();
   $("#kuji-stage").hidden = done; $("#kuji-result").hidden = !done;
   if (done) showKuji(); else { $("#kuji-box").classList.remove("shake", "out"); $("#kuji-help").textContent = "箱をタップして、振ってください"; }
 }
@@ -397,7 +399,7 @@ $("#kuji-box").onclick = async () => {
   b.classList.add("shake"); $("#kuji-help").textContent = "心の中で、願いをひとつ…";
   for (let i = 0; i < 6; i++) setTimeout(() => tone([[400 + rand(0, 200), 0.3]], 0.15, 0.08), i * 230);
   await wait(1600); b.classList.add("out"); sfx.suzu(); await wait(900);
-  const k = store.get("enishi_kuji", {}); k[hallOf().id] = today(); store.set("enishi_kuji", k);
+  const k = store.get("enishi_kuji", {}); k[(kujiHall || hallOf()).id] = today(); store.set("enishi_kuji", k);
   $("#kuji-stage").hidden = true; $("#kuji-result").hidden = false; showKuji(); net?.act("kuji", drawKuji().rk.key);
 };
 function showKuji() {
@@ -406,7 +408,7 @@ function showKuji() {
   $("#r-items").innerHTML = o.items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
   $("#btn-again").textContent = rk.key === "凶" ? "結び所に結んで、厄を置いていく" : "結ぶ（ありがとう）";
 }
-const musubi = () => { const done = store.get("enishi_kuji", {})[hallOf().id] === today(); if (!done) return toast("先に授与所でおみくじを引いてから、ここに結びましょう 🎋"); addKuji(1); net?.act("musubi"); toast("おみくじを結びました。良い縁がありますように 🎋"); };
+const musubi = () => { const done = Object.values(store.get("enishi_kuji", {})).includes(today()); if (!done) return toast("先に授与所でおみくじを引いてから、ここに結びましょう 🎋"); addKuji(1); net?.act("musubi"); toast("おみくじを結びました。良い縁がありますように 🎋"); };
 $("#btn-again").onclick = () => { $("#m-omikuji").hidden = true; goPlace("juyosho"); setTimeout(() => walkTo([21, 27.6], () => musubi()), 300); };
 $("#btn-share").onclick = async () => {
   const { h, rk, o } = drawKuji();
@@ -473,7 +475,8 @@ function openJuyo() {
   $("#juyo-mamori").innerHTML = OMAMORI.map((o) => `<button data-o="${o.id}" class="${mine.includes(o.id) ? "have" : ""}"><span style="background:${o.color}"></span>${o.name}${mine.includes(o.id) ? "<small>受け取り済み</small>" : ""}</button>`).join("");
   open("#m-juyo");
 }
-$("#juyo-kuji").onclick = () => { $("#m-juyo").hidden = true; openKuji(); };
+$("#juyo-kuji").innerHTML = HALLS.map((h) => `<button data-k="${h.id}">🎋 ${h.name}のおみくじ</button>`).join("");
+$("#juyo-kuji").onclick = (e) => { const b = e.target.closest("button[data-k]"); if (!b) return; $("#m-juyo").hidden = true; openKuji(b.dataset.k); };
 $("#juyo-shuin").onclick = async (e) => {
   const b = e.target.closest("button[data-h]"); if (!b) return; const entry = book.addGoshuin(b.dataset.h); if (!entry) return;
   $("#m-juyo").hidden = true; await stampAnim(entry); deedHook("goshuin", { hall: entry.hall });
@@ -575,7 +578,7 @@ pollFest(); setInterval(pollFest, 60e3);
 refreshToku();
 
 // ------------------------------------------------------------------ 由来・当選報告
-function openStory() { const s = hallOf().story; $("#story-body").innerHTML = `<h2>${hallOf().name}の由来</h2><p class="lead">${s.lead}</p>${s.body.map((p) => `<p>${p}</p>`).join("")}<p class="moral">${s.moral}</p>`; open("#m-story"); }
+function openStory() { const H = hallOf(), s = H.story; $("#story-body").innerHTML = `<h2>${H.name}の由来</h2><p class="lead">${s.lead}</p>${s.body.map((p) => `<p>${p}</p>`).join("")}<p class="moral">${s.moral}</p>`; open("#m-story"); }
 $("#btn-story").onclick = openStory;
 async function report() {
   if (!confirm("当選しましたか？おめでとうございます！お礼参りとして記録します。")) return;
@@ -620,7 +623,7 @@ $("#title-card").onclick = () => intro && endIntro();
 
 // ------------------------------------------------------------------ loop
 const clock = new THREE.Clock(), v3 = new THREE.Vector3(), tagEl = $("#me-tag");
-let tick = 0;
+let tick = 0, lastHall = "tosen";
 function loop() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   stepMove(dt);
@@ -657,7 +660,8 @@ function loop() {
   if (++tick % 15 === 0) {
     refreshAction();
     const pl = nearestPlace(); if (pl && pl !== lastPlace) { lastPlace = pl; const p = PLACES[pl]; const el = $("#place"); el.innerHTML = `<b>${p.n}</b> ${p.name}<small>${p.vi}</small>`; el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); }
-    $("#hall-name").textContent = hallOf().name;
+    const H = hallOf(); $("#hall-name").textContent = H.name;
+    if (!intro && !busy && H.id !== lastHall) { lastHall = H.id; const seen = store.get("enishi_story_seen", {}); if (!seen[H.id] && H.id !== "tosen") { seen[H.id] = 1; store.set("enishi_story_seen", seen); setTimeout(openStory, 900); } }
   }
   requestAnimationFrame(loop);
 }
