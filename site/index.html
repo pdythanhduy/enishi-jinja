@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>えにし神社｜みんなで祈るネット神社</title>
+<meta name="description" content="ログイン不要。ブラウザでお参りできるネット神社。チケット・ポケカ・抽選の当選祈願、おみくじ、絵馬。知らない誰かと、同じ境内で静かに祈る。">
+<meta property="og:title" content="えにし神社｜みんなで祈るネット神社">
+<meta property="og:description" content="ログイン不要。当選祈願・おみくじ・絵馬。知らない誰かと、同じ境内で静かに祈る。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#16201c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
+<link rel="stylesheet" href="style.css?v=1">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="loading"><div class="lg-in"><div class="lg-torii">⛩</div><h1>えにし神社</h1><p>境内を開いています…</p></div></div>
+<canvas id="c"></canvas>
+
+<header id="hud-top">
+  <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人</div>
+  <div class="pill-right">
+    <button class="ibtn" id="btn-sound" title="音">🔈</button>
+    <button class="ibtn" id="btn-story" title="由来">📜</button>
+  </div>
+</header>
+<div id="me-tag"></div>
+<div id="hint">地面をタップで歩く · ドラッグで見回す</div>
+<div id="toast"></div>
+<div id="step"></div>
+
+<nav id="actions">
+  <button data-act="omairi"><span>⛩</span>お参り</button>
+  <button data-act="omikuji"><span>🎋</span>おみくじ</button>
+  <button data-act="ema"><span>🪵</span>絵馬</button>
+  <button data-act="report"><span>🎉</span>当選報告</button>
+</nav>
+
+<!-- おみくじ -->
+<section class="modal" id="m-omikuji" hidden>
+  <div class="sheet">
+    <button class="x" data-close>✕</button>
+    <div id="kuji-stage">
+      <div id="kuji-box"><div class="kb-top"></div><div class="kb-body">御<br>神<br>籤</div><div id="kuji-stick"></div></div>
+      <p class="sub" id="kuji-help">箱をタップして、振ってください</p>
+    </div>
+    <div id="kuji-result" hidden>
+      <div class="paper">
+        <div class="p-head">えにし神社 · <span id="r-hall"></span></div>
+        <div class="p-rank" id="r-rank"></div>
+        <div class="p-luck" id="r-luck"></div>
+        <p class="p-msg" id="r-msg"></p>
+        <dl class="p-items" id="r-items"></dl>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btn-share">結果をシェア</button>
+        <button class="btn" id="btn-again">結ぶ（ありがとう）</button>
+      </div>
+      <p class="sub">おみくじは一日一回。また明日、会いにきてください。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 絵馬 -->
+<section class="modal" id="m-ema" hidden>
+  <div class="sheet">
+    <button class="x" data-close>✕</button>
+    <h2>絵馬を奉納する</h2>
+    <p class="sub">名前は出ません。境内のみんなが、あなたの願いに「一緒に祈る🙏」できます。</p>
+    <div class="ema-cats" id="ema-cats"></div>
+    <textarea id="ema-text" maxlength="60" placeholder="例：12/20の東京公演、当たりますように"></textarea>
+    <div class="row"><span class="sub" id="ema-count">0/60</span><button class="btn primary" id="btn-ema">奉納する</button></div>
+    <h3>みんなの絵馬</h3>
+    <div id="ema-wall"></div>
+  </div>
+</section>
+
+<!-- 由来 -->
+<section class="modal" id="m-story" hidden>
+  <div class="sheet story">
+    <button class="x" data-close>✕</button>
+    <div id="story-body"></div>
+  </div>
+</section>
+
+<footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
+<script type="module" src="main.js?v=1"></script>
+</body>
+</html>
