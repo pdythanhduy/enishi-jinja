@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030831";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030831";
-import { FOLIAGE } from "./env.js?v=11030831";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030836";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030836";
+import { FOLIAGE } from "./env.js?v=11030836";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -126,6 +126,18 @@ export function buildWorld(scene, env, { mobile }) {
   const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0x8b2c3a });
   for (let r = 0; r < 3; r++) for (let cI = 0; cI < 6; cI++) { const x = -6.25 + cI * 2.5, z = -1.6 + r * 2.2; box(scene, 0.95, 0.12, 0.95, zab, x, hd.floorY + 0.06, z + 1); hdC.push([x, z + 1]); }
   W.cushions.tosen = hdC; W.altars.tosen = [0, -2.6];
+  // 縁結び・合格の賽銭箱と鈴
+  W.smallSaisen = {};
+  for (const [hid, hx] of [["enmusubi", -31], ["gokaku", 31]]) {
+    const sb = new THREE.Group(); sb.position.set(hx, 0, 17.9); scene.add(sb);
+    box(sb, 2.2, 0.8, 0.9, MAT.wood, 0, 0.4, 0); for (let i = -5; i <= 5; i++) box(sb, 0.05, 0.05, 0.85, MAT.kuro, i * 0.19, 0.82, 0, false);
+    box(sb, 1.8, 0.24, 0.05, MAT.gold, 0, 0.45, 0.46, false);
+    const sz = new THREE.Group(); sz.position.set(hx, 3.7, 16.9); scene.add(sz);
+    const bl = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), MAT.gold); bl.position.y = -0.3; sz.add(bl);
+    const rp = new THREE.Group(); sz.add(rp);
+    for (const [cc, dx] of [[0xd9412b, -0.06], [0xf4f1ea, 0], [hid === "enmusubi" ? 0xe86aa0 : 0x3b6db0, 0.06]]) cyl(rp, 0.04, 0.04, 2.6, new THREE.MeshStandardMaterial({ color: cc }), dx, -1.6, 0, 8, false);
+    W.smallSaisen[hid] = { box: sb, bell: bl, rope: rp };
+  }
   // 赤い糸の結び木（縁結び）・撫で牛（合格）
   const enTree = new THREE.Group(); enTree.position.set(-24.5 - 4, 0, 20.5); scene.add(enTree);
   cyl(enTree, 0.5, 0.7, 3.4, new THREE.MeshStandardMaterial({ color: 0x4a3426 }), 0, 1.7, 0, 10);

@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#16201c">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=11030831">
+<link rel="stylesheet" href="style.css?v=11030836">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -84,6 +84,20 @@
   </div>
 </section>
 
+<!-- 長押し（手水） -->
+<div id="hold" hidden><div class="hold-in"><h3 id="hold-title"></h3><p id="hold-sub"></p>
+  <button id="hold-btn"><span id="hold-ring"></span><b>長押し</b></button><button id="hold-skip">とばす</button></div></div>
+
+<!-- お賽銭 -->
+<section class="modal" id="m-coin" hidden>
+  <div class="sheet">
+    <button class="x" data-close>✕</button>
+    <h2>お賽銭を選ぶ</h2>
+    <p class="sub">金額に決まりはありません。語呂合わせで「ご縁」を願う人が多いです（お金は実際にはかかりません）。</p>
+    <div id="coin-list"></div>
+  </div>
+</section>
+
 <!-- 地図 -->
 <section class="modal" id="m-map" hidden>
   <div class="sheet map-sheet">
@@ -103,6 +117,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="js/app.js?v=11030831"></script>
+<script type="module" src="js/app.js?v=11030836"></script>
 </body>
 </html>

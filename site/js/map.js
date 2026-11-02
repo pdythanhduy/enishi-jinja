@@ -10,8 +10,8 @@ export const PLACES = {
   juyosho:  { n: 6,  name: "授与所",         vi: "Quầy bùa & quẻ",          pos: [18.5, 21], stand: [15.6, 21],  face: Math.PI / 2 },
   shinboku: { n: 7,  name: "御神木",         vi: "Cây thiêng",              pos: [12, 9],    stand: [12, 13.2],  face: Math.PI },
   honden:   { n: 8,  name: "本殿・当選の社", vi: "Điện chính (cầu trúng)",  pos: [0, 1],     stand: [0, 14.2],   face: Math.PI },
-  enmusubi: { n: 9,  name: "縁結びの社",     vi: "Điện cầu duyên",          pos: [-31, 12],  stand: [-31, 18.4], face: Math.PI },
-  gokaku:   { n: 10, name: "合格の社",       vi: "Điện cầu đỗ",             pos: [31, 12],   stand: [31, 18.4],  face: Math.PI },
+  enmusubi: { n: 9,  name: "縁結びの社",     vi: "Điện cầu duyên",          pos: [-31, 12],  stand: [-31, 19.2], face: Math.PI },
+  gokaku:   { n: 10, name: "合格の社",       vi: "Điện cầu đỗ",             pos: [31, 12],   stand: [31, 19.2],  face: Math.PI },
   senbon:   { n: 11, name: "千本鳥居",       vi: "Nghìn cổng torii",        pos: [14, -12],  stand: [14.5, -6.9], face: Math.PI },
   okunoin:  { n: 12, name: "奥の院",         vi: "Điện trên đỉnh núi",      pos: [-2, -78],  stand: [-2, -71],   face: Math.PI },
   pagoda:   { n: 13, name: "五重塔",         vi: "Tháp năm tầng",           pos: [40, -22],  stand: [39, -13.5], face: Math.PI },
@@ -62,6 +62,7 @@ const hallBlocks = (cx) => [[cx - 5.6, 7.9, cx + 5.6, 9.4], [cx - 5.6, 7.9, cx -
 export const BLOCKS = [
   [-10.6, -6.2, 10.6, -4.5], [-10.6, -6.2, -9, 8.3], [9, -6.2, 10.6, 8.3], [-10.6, 6.7, -3.8, 8.3], [3.8, 6.7, 10.6, 8.3],   // 本殿
   [-1.9, 11.7, 1.9, 13.1],                                    // 賽銭箱
+  [-32.15, 17.45, -29.85, 18.35], [29.85, 17.45, 32.15, 18.35],  // 縁結び・合格の賽銭箱
   ...hallBlocks(-31), ...hallBlocks(31),
   [-6.3, 38.9, -2.1, 43.1], [2.1, 38.9, 6.3, 43.1],           // 楼門の左右
   [-24.6, 40.6, -6.3, 41.4], [6.3, 40.6, 24.6, 41.4],         // 南の玉垣

@@ -5,14 +5,14 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030831";
-import { buildWorld } from "./world.js?v=11030831";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030831";
-import { LIGHT_SPOTS } from "./arch.js?v=11030831";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030831";
-import { Lanterns, ambience } from "../fx.js?v=11030831";
-import { connect, board } from "../net.js?v=11030831";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030831";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030836";
+import { buildWorld } from "./world.js?v=11030836";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030836";
+import { LIGHT_SPOTS } from "./arch.js?v=11030836";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030836";
+import { Lanterns, ambience } from "../fx.js?v=11030836";
+import { connect, board } from "../net.js?v=11030836";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030836";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -169,7 +169,9 @@ function nearestPlace() {
 // ------------------------------------------------------------------ その場でできること（近づくとボタンが変わる）
 const fox = (i) => W.foxes[i];
 const ACTIONS = [
-  { id: "omairi", label: "⛩ お参り", at: [0, 13.6], r: 3.2, run: () => omairi() },
+  { id: "omairi", label: "⛩ お参り", at: [0, 13.6], r: 3.2, run: () => omairi("tosen") },
+  { id: "omairi_en", label: "⛩ お参り（縁結び）", at: [-31, 19.1], r: 2.6, run: () => omairi("enmusubi") },
+  { id: "omairi_go", label: "⛩ お参り（合格）", at: [31, 19.1], r: 2.6, run: () => omairi("gokaku") },
   { id: "temizu", label: "💧 手水をとる", at: PLACES.temizu.stand, r: 3, run: () => temizu() },
   { id: "kuji", label: "🎋 おみくじを引く", at: PLACES.juyosho.stand, r: 3.4, run: () => openKuji() },
   { id: "ema", label: "🪵 絵馬を奉納", at: [15.5, 10.5], r: 4, run: () => { renderEma(); loadEma(); open("#m-ema"); } },
@@ -205,6 +207,10 @@ $("#act-report").onclick = () => report();
 function setActions(on) { document.querySelectorAll("#actions button").forEach((b) => (b.disabled = !on)); }
 async function doing(fn) { if (busy) return; busy = true; setActions(false); try { await fn(); } finally { busy = false; setActions(true); stepText(""); setPose(me, null); } }
 
+// ------------------------------------------------------------------ 行いのフック（徳・御朱印などで使う）
+const hooks = [];
+function deedHook(kind, data = {}) { for (const h of hooks) try { h(kind, data); } catch (e) { console.warn(e); } }
+
 // ------------------------------------------------------------------ 手水
 let purified = false;
 function drops(x, y, z) {
@@ -214,37 +220,79 @@ function drops(x, y, z) {
     (function f() { const k = (performance.now() - t0) / 1000; d.position.y = y + vy * k - 4.9 * k * k; if (d.position.y > 0.1 && k < 1.2) requestAnimationFrame(f); else scene.remove(d); })();
   }
 }
+// 長押しボタン（押し続けると円が満ちる）
+function holdStep(title, sub, ms = 900) {
+  return new Promise((resolve) => {
+    const el = $("#hold"); el.hidden = false; $("#hold-title").textContent = title; $("#hold-sub").textContent = sub;
+    const ring = $("#hold-ring"), btn = $("#hold-btn"); let t0 = 0, raf = 0, done = false;
+    const set = (k) => ring.style.setProperty("--k", k);
+    set(0);
+    const tick = () => { const k = Math.min(1, (performance.now() - t0) / ms); set(k); if (k >= 1) { done = true; cleanup(); el.hidden = true; resolve(true); } else raf = requestAnimationFrame(tick); };
+    const down = (e) => { e.preventDefault(); if (done) return; t0 = performance.now(); btn.classList.add("on"); sfx.splash(); raf = requestAnimationFrame(tick); };
+    const up = () => { if (done) return; cancelAnimationFrame(raf); btn.classList.remove("on"); set(0); };
+    const skip = () => { done = true; cleanup(); el.hidden = true; resolve(false); };
+    function cleanup() { btn.removeEventListener("pointerdown", down); btn.removeEventListener("pointerup", up); btn.removeEventListener("pointerleave", up); $("#hold-skip").removeEventListener("click", skip); btn.classList.remove("on"); }
+    btn.addEventListener("pointerdown", down); btn.addEventListener("pointerup", up); btn.addEventListener("pointerleave", up); $("#hold-skip").addEventListener("click", skip);
+  });
+}
 const temizu = () => doing(async () => {
   await new Promise((r) => walkTo(PLACES.temizu.stand, r)); me.rotation.y = 0; const u = me.userData; u.pose = "act";
-  for (const [t, arm] of [["左手を清める", 1], ["右手を清める", 0], ["口をすすぐ", 1], ["柄杓を清める", 1]]) {
-    stepText(t); u.arms[arm].rotation.x = -1.2; sfx.splash(); drops(me.position.x + (arm ? 0.3 : -0.3), 1.0, me.position.z + 0.6); await wait(1300); u.arms[arm].rotation.x = 0;
+  const steps = [["左手を清める", "右手で柄杓を持ち、水を汲んで左手にかけます", 1], ["右手を清める", "柄杓を左手に持ちかえて、右手にかけます", 0],
+    ["口をすすぐ", "左の手のひらに水を受け、口をすすぎます", 1], ["柄杓を清める", "柄杓を立て、残りの水で柄を流します", 1]];
+  for (const [t, sub, arm] of steps) {
+    stepText(t); u.arms[arm].rotation.x = -1.2;
+    const ok = await holdStep(t, sub);
+    if (!ok) break;
+    drops(me.position.x + (arm ? 0.3 : -0.3), 1.0, me.position.z + 0.6); await wait(350); u.arms[arm].rotation.x = 0;
   }
-  purified = true; toast("心と手を清めました。気持ちよくお参りできます 💧");
+  purified = true; stepText(""); toast("心と手を清めました。気持ちよくお参りできます 💧"); deedHook("temizu");
 });
 
 // ------------------------------------------------------------------ お参り（賽銭→鈴→二礼二拍手一礼）
-const omairi = () => doing(async () => {
-  await new Promise((r) => walkTo([0, 13.6], r, { route: region(me.position.x, me.position.z) !== "court" })); me.rotation.y = Math.PI;
+const SHRINES = {
+  tosen: { stand: [0, 13.6], bell: () => W.suzu, place: "honden" },
+  enmusubi: { stand: [-31, 19.1], bell: () => W.smallSaisen.enmusubi, place: "enmusubi" },
+  gokaku: { stand: [31, 19.1], bell: () => W.smallSaisen.gokaku, place: "gokaku" },
+};
+const COINS = [
+  { yen: 5, label: "5円", mean: "ご縁がありますように" }, { yen: 15, label: "15円", mean: "十分なご縁" }, { yen: 25, label: "25円", mean: "二重にご縁" },
+  { yen: 45, label: "45円", mean: "始終ご縁がありますように" }, { yen: 115, label: "115円", mean: "いいご縁" }, { yen: 485, label: "485円", mean: "四方八方からご縁" },
+];
+$("#coin-list").innerHTML = COINS.map((c, i) => `<button data-i="${i}"><b>${c.label}</b><small>${c.mean}</small></button>`).join("");
+function chooseCoin() {
+  return new Promise((resolve) => { open("#m-coin");
+    const list = $("#coin-list"), close = $("#m-coin [data-close]");
+    const pickIt = (e) => { const b = e.target.closest("button[data-i]"); if (!b) return; done(COINS[+b.dataset.i]); };
+    const cancel = () => done(null);
+    function done(c) { list.removeEventListener("click", pickIt); close.removeEventListener("click", cancel); $("#m-coin").hidden = true; resolve(c); }
+    list.addEventListener("click", pickIt); close.addEventListener("click", cancel);
+  });
+}
+const omairi = (sid = "tosen") => doing(async () => {
+  const S = SHRINES[sid];
+  await new Promise((r) => walkTo(S.stand, r, { route: Math.hypot(me.position.x - S.stand[0], me.position.z - S.stand[1]) > 6 })); me.rotation.y = Math.PI;
   const u = me.userData; u.pose = "act";
-  toast("お賽銭を入れて…", 1500);
+  const coinC = await chooseCoin(); if (!coinC) return;
+  toast(`${coinC.label}を納めます（${coinC.mean}）`, 2000);
   const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xd9b45a, metalness: 0.8, roughness: 0.3 }));
-  coin.position.set(me.position.x, 1.2, me.position.z - 0.3); scene.add(coin);
+  coin.position.set(me.position.x, me.position.y + 1.2, me.position.z - 0.3); scene.add(coin); const cy0 = coin.position.y;
   await new Promise((r) => { const t0 = performance.now(); (function f() { const k = Math.min(1, (performance.now() - t0) / 700);
-    coin.position.z = me.position.z - 0.3 - k * 0.9; coin.position.y = 1.2 + Math.sin(k * Math.PI) * 0.8; coin.rotation.x += 0.4; k < 1 ? requestAnimationFrame(f) : r(); })(); });
+    coin.position.z = me.position.z - 0.3 - k * 0.9; coin.position.y = cy0 + Math.sin(k * Math.PI) * 0.8 - k * 0.25; coin.rotation.x += 0.4; k < 1 ? requestAnimationFrame(f) : r(); })(); });
   scene.remove(coin); sfx.coin(); await wait(400); net?.act("suzu");
   u.arms.forEach((a) => (a.rotation.x = -2.4)); sfx.suzu();
-  for (let i = 0; i < 18; i++) { W.suzu.rope.rotation.x = Math.sin(i / 2) * 0.22 * (1 - i / 18); W.suzu.bell.position.x = Math.sin(i / 1.5) * 0.06; await wait(45); }
+  const BL = S.bell(); for (let i = 0; i < 18; i++) { BL.rope.rotation.x = Math.sin(i / 2) * 0.22 * (1 - i / 18); BL.bell.position.x = Math.sin(i / 1.5) * 0.06; await wait(45); }
   u.arms.forEach((a) => (a.rotation.x = 0)); await wait(400);
   for (let i = 0; i < 2; i++) { stepText(i ? "二 礼" : "一 礼"); net?.act("bow"); await bowTo(me, 1.25, 650); await wait(350); await bowTo(me, 0, 500); await wait(250); }
   stepText("二 拍 手"); net?.act("clap");
   for (let i = 0; i < 2; i++) { u.arms.forEach((a, j) => { a.rotation.x = -1.3; a.rotation.z = (j ? -1 : 1) * 0.05; }); sfx.clap(); await wait(260); u.arms.forEach((a, j) => (a.rotation.z = (j ? -1 : 1) * 0.6)); await wait(260); }
   u.arms.forEach((a, j) => { a.rotation.x = -1.3; a.rotation.z = (j ? -1 : 1) * 0.05; });
-  stepText("祈 る"); releaseLight(me.position.x, me.position.y, me.position.z, true); board.light(hallOf().id).then((r) => r?.lights && setLights(r.lights)).catch(() => {});
+  stepText("祈 る"); releaseLight(me.position.x, me.position.y, me.position.z, true); board.light(sid).then((r) => r?.lights && setLights(r.lights)).catch(() => {});
   await wait(2200);
   stepText("一 礼"); net?.act("bow"); u.arms.forEach((a, j) => { a.rotation.x = 0; a.rotation.z = (j ? -1 : 1) * 0.25; });
   await bowTo(me, 1.25, 650); await wait(500); await bowTo(me, 0, 600);
   const n = store.get("enishi_visits", 0) + 1; store.set("enishi_visits", n);
-  toast(purified ? `手水で清めてからの丁寧なお参りでした。${n}回目のご参拝です 🙏` : `お参りしました。${n}回目のご参拝です 🙏`); purified = false;
+  toast(purified ? `手水で清めてからの丁寧なお参りでした。${n}回目のご参拝です 🙏` : `お参りしました。${n}回目のご参拝です 🙏`);
+  deedHook("omairi", { sid, purified }); purified = false;
 });
 
 // ------------------------------------------------------------------ 正座して祈る（社の中）
@@ -255,7 +303,7 @@ const seiza = (hid) => doing(async () => {
     const x = me.position.x, z = me.position.z, inside = hid === "tosen" ? z < 8.3 : z < 15.9;
     if (inside) return walkTo([cx, cz], r);
     if (hid === "tosen") { path = [[2.7, 14.0], [2.7, 11.3], [0.8, 10.2], [0, 7.6], [cx * 0.4, 6.0], [cx, cz]]; onArrive = r; speedMul = 1; }
-    else { const hx = hid === "enmusubi" ? -31 : 31; path = [[hx, 17.6], [hx, 15.2], [cx, cz]]; onArrive = r; speedMul = 1; }
+    else { const hx = hid === "enmusubi" ? -31 : 31; path = [[hx, 19.2], [hx + 1.55, 19.2], [hx + 1.55, 16.3], [hx, 15.0], [cx, cz]]; onArrive = r; speedMul = 1; }
   });
   me.rotation.y = Math.PI;
   setPose(me, "seiza"); await wait(500);
@@ -468,4 +516,4 @@ loop();
 setTimeout(() => $("#loading").classList.add("done"), 300);
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
 if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
-window.__enishi = { scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+window.__enishi = { hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
