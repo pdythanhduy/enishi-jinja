@@ -42,6 +42,12 @@ export default {
       const r = await board.fetch(new Request("https://x/hide", { method: "POST", body: JSON.stringify({ id: b.id }) }));
       return json(req, await r.json(), r.status);
     }
+    if (p[0] === "remind" || p[0] === "msg" || p[0] === "toku" || p[0] === "festival") {   // 通知・徳（全体で一つ）
+      const rm = env.REMIND.get(env.REMIND.idFromName("all"));
+      const r = await rm.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}`,
+        { method: req.method, body: req.method === "POST" ? await req.text() : undefined }));
+      return json(req, await r.json(), r.status);
+    }
     if (["ema", "pray", "report", "light"].includes(p[0])) {
       const board = env.BOARD.get(env.BOARD.idFromName(hall));
       const r = await board.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}`,
@@ -147,3 +153,74 @@ export class Board {
     return Response.json({ error: "?" }, { status: 404 });
   }
 }
+
+// ------------------------------------------------------------------ 通知（絵馬の願いの日）と、境内全体の徳
+// 送る push は中身なし（暗号化不要）。端末の service worker が /msg で文面を取りにくる。
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const enc = new TextEncoder();
+let VKEY = null;
+async function vapidJwt(env, aud) {
+  if (!VKEY) VKEY = await crypto.subtle.importKey("jwk", { ...JSON.parse(env.VAPID_PRIVATE_JWK), ext: true }, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const h = b64u(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const c = b64u(enc.encode(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "https://pdythanhduy.github.io/enishi-jinja/" })));
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, VKEY, enc.encode(h + "." + c));
+  return h + "." + c + "." + b64u(sig);
+}
+async function webpush(env, endpoint) {
+  const r = await fetch(endpoint, { method: "POST", headers: { Authorization: `vapid t=${await vapidJwt(env, new URL(endpoint).origin)}, k=${env.VAPID_PUBLIC}`, TTL: "86400", Urgency: "normal", "Content-Length": "0" } });
+  return r.status;
+}
+const addDays = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 86400e3).toISOString().slice(0, 10);
+export class Remind {
+  constructor(state, env) {
+    this.state = state; this.env = env; this.sql = state.storage.sql; this.last = new Map();
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS rem (id TEXT PRIMARY KEY, ep TEXT, day TEXT, kind TEXT, text TEXT, sent INTEGER DEFAULT 0)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS msg (ep TEXT PRIMARY KEY, title TEXT, body TEXT, url TEXT, ts INTEGER)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS stat (k TEXT PRIMARY KEY, v INTEGER)`);
+  }
+  inc(k, n = 1) { this.sql.exec(`INSERT INTO stat (k,v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=v+?`, k, n, n); }
+  get(k) { const r = this.sql.exec(`SELECT v FROM stat WHERE k=?`, k).toArray()[0]; return r ? r.v : 0; }
+  async arm() {     // 毎日 8:00 JST（= 23:00 UTC）に起きる
+    const now = Date.now(), d = new Date(now); let t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 0, 0);
+    if (t <= now) t += 86400e3; const cur = await this.state.storage.getAlarm(); if (!cur || cur > t) await this.state.storage.setAlarm(t);
+  }
+  async alarm() {
+    const day = jst();
+    const due = this.sql.exec(`SELECT id, ep, kind, text FROM rem WHERE sent=0 AND day<=?`, day).toArray();
+    for (const r of due) {
+      const title = r.kind === "day" ? "🌸 今日は願いの日です" : "⛩ その後、いかがでしたか";
+      const body = r.kind === "day" ? `「${r.text}」\nえにし神社から、そっと応援しています。いってらっしゃい。` : `「${r.text}」の結果はどうでしたか？よかったら、お礼参りに来てください。`;
+      this.sql.exec(`INSERT OR REPLACE INTO msg (ep,title,body,url,ts) VALUES (?,?,?,?,?)`, r.ep, title, body, "./?from=remind", Date.now());
+      let st = 0; try { st = await webpush(this.env, r.ep); } catch {}
+      this.sql.exec(`UPDATE rem SET sent=? WHERE id=?`, st === 404 || st === 410 ? 2 : 1, r.id);
+    }
+    this.sql.exec(`DELETE FROM rem WHERE sent>0 AND day < ?`, addDays(day, -30));
+    await this.arm();
+  }
+  async fetch(req) {
+    const u = new URL(req.url), what = u.pathname.slice(1), ip = u.searchParams.get("ip") || "";
+    let b = {}; if (req.method === "POST") { try { b = await req.json(); } catch {} }
+    if (what === "remind") {
+      const ep = String(b.endpoint || ""), day = String(b.day || ""), text = String(b.text || "").slice(0, 60);
+      if (!/^https:\/\//.test(ep) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return Response.json({ error: "bad" }, { status: 400 });
+      if (day < jst() || day > addDays(jst(), 400)) return Response.json({ error: "日付を確かめてください" }, { status: 400 });
+      const n = this.sql.exec(`SELECT COUNT(*) AS c FROM rem WHERE ep=? AND sent=0`, ep).toArray()[0].c; if (n >= 10) return Response.json({ error: "通知は10件までです" }, { status: 429 });
+      const id = crypto.randomUUID().slice(0, 12);
+      this.sql.exec(`INSERT INTO rem (id,ep,day,kind,text) VALUES (?,?,?,?,?)`, id + "d", ep, day, "day", text);
+      this.sql.exec(`INSERT INTO rem (id,ep,day,kind,text) VALUES (?,?,?,?,?)`, id + "a", ep, addDays(day, 3), "after", text);
+      await this.arm(); return Response.json({ ok: true });
+    }
+    if (what === "msg") {
+      const r = this.sql.exec(`SELECT title, body, url FROM msg WHERE ep=?`, String(b.endpoint || "")).toArray()[0];
+      return Response.json(r || { title: "えにし神社", body: "境内でお待ちしています。", url: "./" });
+    }
+    if (what === "toku") {     // 境内全体の今日の徳（POST {n} で加算）
+      const k = "toku:" + jst();
+      if (req.method === "POST") { const now = Date.now(); if (now - (this.last.get(ip) || 0) > 1500) { this.inc(k, Math.max(1, Math.min(5, Math.round(+b.n || 1)))); this.last.set(ip, now); } }
+      return Response.json({ toku: this.get(k), goal: FEST_GOAL });
+    }
+    if (what === "festival") return Response.json({ toku: this.get("toku:" + jst()), goal: FEST_GOAL });
+    return Response.json({ error: "?" }, { status: 404 });
+  }
+}
+const FEST_GOAL = 300;   // 一日の徳がここに届くと夜祭り

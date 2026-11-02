@@ -11,8 +11,10 @@
 <meta property="og:image" content="https://pdythanhduy.github.io/enishi-jinja/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#16201c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=11030836">
+<link rel="stylesheet" href="style.css?v=11030841">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -29,6 +31,7 @@
   <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人<br><small>今日の祈りの灯り <b id="lights">0</b></small></div>
   <div class="pill-right">
     <button class="ibtn" id="btn-sound" title="音">🔈</button>
+    <button class="ibtn" id="btn-book" title="御朱印帳・御守り">📖</button>
     <button class="ibtn" id="btn-story" title="由来">📜</button>
   </div>
 </header>
@@ -78,6 +81,8 @@
     <p class="sub">名前は出ません。境内のみんなが、あなたの願いに「一緒に祈る🙏」できます。</p>
     <div class="ema-cats" id="ema-cats"></div>
     <textarea id="ema-text" maxlength="60" placeholder="例：12/20の東京公演、当たりますように"></textarea>
+    <div class="ema-date"><label>願いの日（当落日・試験日など・任意）<input type="date" id="ema-day"></label>
+      <label class="chk"><input type="checkbox" id="ema-notify"> その日の朝と、3日後に通知を受け取る</label></div>
     <div class="row"><span class="sub" id="ema-count">0/60</span><button class="btn primary" id="btn-ema">奉納する</button></div>
     <h3>みんなの絵馬</h3>
     <div id="ema-wall"></div>
@@ -95,6 +100,42 @@
     <h2>お賽銭を選ぶ</h2>
     <p class="sub">金額に決まりはありません。語呂合わせで「ご縁」を願う人が多いです（お金は実際にはかかりません）。</p>
     <div id="coin-list"></div>
+  </div>
+</section>
+
+<!-- 授与所 -->
+<section class="modal" id="m-juyo" hidden>
+  <div class="sheet">
+    <button class="x" data-close>✕</button>
+    <h2>授与所</h2>
+    <button class="btn primary wide" id="juyo-kuji">🎋 おみくじを引く（一日一回）</button>
+    <h3>御朱印</h3><div id="juyo-shuin" class="juyo-list"></div><p class="sub" id="juyo-limited"></p>
+    <h3>御守り</h3><div id="juyo-mamori" class="mamori-list"></div>
+  </div>
+</section>
+<section class="modal" id="m-stamp" hidden>
+  <div class="sheet center">
+    <button class="x" data-close>✕</button>
+    <h2 id="stamp-title"></h2>
+    <div id="stamp-view"></div>
+    <div class="row"><button class="btn primary" id="btn-stamp-share">シェア・保存</button><button class="btn" data-close>帳に収める</button></div>
+  </div>
+</section>
+<section class="modal" id="m-mamori" hidden>
+  <div class="sheet center">
+    <button class="x" data-close>✕</button>
+    <div id="mamori-view"></div><h2 id="mamori-name"></h2><p class="sub" id="mamori-desc"></p>
+    <button class="btn primary wide" id="btn-mamori">御守りを受ける</button>
+    <p class="sub">御守りの期限は一年です。期限がきたら、感謝してお返ししましょう。</p>
+  </div>
+</section>
+<section class="modal" id="m-book" hidden>
+  <div class="sheet wide-sheet">
+    <button class="x" data-close>✕</button>
+    <h2>わたしの帳</h2>
+    <div class="btabs"><button class="btab on" data-t="shuin">🖌 御朱印帳 <span id="book-count"></span></button><button class="btab" data-t="mamori">🧿 御守り</button></div>
+    <div id="book-shuin-wrap"><div id="book-shuin"></div><p class="sub">毎月1日・15日、季節、行事の日には限定の印が加わります。</p></div>
+    <div id="book-mamori" hidden></div>
   </div>
 </section>
 
@@ -117,6 +158,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="js/app.js?v=11030836"></script>
+<script type="module" src="js/app.js?v=11030841"></script>
 </body>
 </html>

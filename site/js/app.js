@@ -5,14 +5,15 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030836";
-import { buildWorld } from "./world.js?v=11030836";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030836";
-import { LIGHT_SPOTS } from "./arch.js?v=11030836";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030836";
-import { Lanterns, ambience } from "../fx.js?v=11030836";
-import { connect, board } from "../net.js?v=11030836";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030836";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030841";
+import { buildWorld } from "./world.js?v=11030841";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030841";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030841";
+import { LIGHT_SPOTS } from "./arch.js?v=11030841";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030841";
+import { Lanterns, ambience } from "../fx.js?v=11030841";
+import { connect, board } from "../net.js?v=11030841";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030841";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -172,8 +173,9 @@ const ACTIONS = [
   { id: "omairi", label: "⛩ お参り", at: [0, 13.6], r: 3.2, run: () => omairi("tosen") },
   { id: "omairi_en", label: "⛩ お参り（縁結び）", at: [-31, 19.1], r: 2.6, run: () => omairi("enmusubi") },
   { id: "omairi_go", label: "⛩ お参り（合格）", at: [31, 19.1], r: 2.6, run: () => omairi("gokaku") },
+  { id: "omairi_ok", label: "⛩ お参り（奥の院）", at: [-2, -73.4], r: 2.2, run: () => omairi("okunoin") },
   { id: "temizu", label: "💧 手水をとる", at: PLACES.temizu.stand, r: 3, run: () => temizu() },
-  { id: "kuji", label: "🎋 おみくじを引く", at: PLACES.juyosho.stand, r: 3.4, run: () => openKuji() },
+  { id: "kuji", label: "⛩ 授与所", at: PLACES.juyosho.stand, r: 3.4, run: () => openJuyo() },
   { id: "ema", label: "🪵 絵馬を奉納", at: [15.5, 10.5], r: 4, run: () => { renderEma(); loadEma(); open("#m-ema"); } },
   { id: "musubi", label: "🎋 おみくじを結ぶ", at: [21, 27.6], r: 2.8, run: () => musubi() },
   { id: "fox", label: "🦊 狐を撫でる", at: [-5.5, 19.6], r: 2.4, run: () => petFox(0) },
@@ -253,6 +255,7 @@ const SHRINES = {
   tosen: { stand: [0, 13.6], bell: () => W.suzu, place: "honden" },
   enmusubi: { stand: [-31, 19.1], bell: () => W.smallSaisen.enmusubi, place: "enmusubi" },
   gokaku: { stand: [31, 19.1], bell: () => W.smallSaisen.gokaku, place: "gokaku" },
+  okunoin: { stand: [-2, -73.4], bell: () => null, place: "okunoin" },
 };
 const COINS = [
   { yen: 5, label: "5円", mean: "ご縁がありますように" }, { yen: 15, label: "15円", mean: "十分なご縁" }, { yen: 25, label: "25円", mean: "二重にご縁" },
@@ -280,7 +283,7 @@ const omairi = (sid = "tosen") => doing(async () => {
     coin.position.z = me.position.z - 0.3 - k * 0.9; coin.position.y = cy0 + Math.sin(k * Math.PI) * 0.8 - k * 0.25; coin.rotation.x += 0.4; k < 1 ? requestAnimationFrame(f) : r(); })(); });
   scene.remove(coin); sfx.coin(); await wait(400); net?.act("suzu");
   u.arms.forEach((a) => (a.rotation.x = -2.4)); sfx.suzu();
-  const BL = S.bell(); for (let i = 0; i < 18; i++) { BL.rope.rotation.x = Math.sin(i / 2) * 0.22 * (1 - i / 18); BL.bell.position.x = Math.sin(i / 1.5) * 0.06; await wait(45); }
+  const BL = S.bell(); if (BL) for (let i = 0; i < 18; i++) { BL.rope.rotation.x = Math.sin(i / 2) * 0.22 * (1 - i / 18); BL.bell.position.x = Math.sin(i / 1.5) * 0.06; await wait(45); }
   u.arms.forEach((a) => (a.rotation.x = 0)); await wait(400);
   for (let i = 0; i < 2; i++) { stepText(i ? "二 礼" : "一 礼"); net?.act("bow"); await bowTo(me, 1.25, 650); await wait(350); await bowTo(me, 0, 500); await wait(250); }
   stepText("二 拍 手"); net?.act("clap");
@@ -410,7 +413,11 @@ $("#ema-wall").onclick = (e) => {
 $("#btn-ema").onclick = async () => {
   const t = $("#ema-text").value.trim(); if (t.length < 2) return toast("願いを書いてください"); $("#btn-ema").disabled = true;
   try { const r = await board.post(hallOf().id, emaCat, t); if (!r.ok) { toast(r.error || "奉納できませんでした"); return; }
-    $("#ema-text").value = ""; $("#ema-count").textContent = "0/60"; sfx.gong(); toast("絵馬を奉納しました 🪵"); net?.act("ema"); addEma(1); await loadEma(); }
+    const day = $("#ema-day").value, want = $("#ema-notify").checked;
+    $("#ema-text").value = ""; $("#ema-count").textContent = "0/60"; sfx.gong(); net?.act("ema"); addEma(1); deedHook("ema", {});
+    if (day && want) { const ok = await remindOn(day, t); toast(ok ? `絵馬を奉納しました 🪵 ${day.replace(/-/g, "/")}の朝にお知らせします` : "絵馬を奉納しました 🪵（通知は設定できませんでした）", 4200); }
+    else toast("絵馬を奉納しました 🪵");
+    $("#ema-day").value = ""; $("#ema-notify").checked = false; await loadEma(); }
   catch { toast("通信できませんでした。少し後でもう一度。"); } finally { $("#btn-ema").disabled = false; }
 };
 const emaGeo = new THREE.BoxGeometry(0.28, 0.22, 0.025), emaMat = new THREE.MeshStandardMaterial({ color: 0xe2c38a }); let emaN = 0;
@@ -418,6 +425,82 @@ function addEma(n) { for (let i = 0; i < n && emaN < 60; i++, emaN++) { const ro
   e.position.set(-1.95 + col * 0.28, (row ? 1.13 : 1.73), 0.05); e.rotation.z = rand(-0.08, 0.08); e.castShadow = true; W.emaRack.add(e); } }
 const kujiGeo = new THREE.BoxGeometry(0.05, 0.17, 0.03), kujiMat = new THREE.MeshStandardMaterial({ color: 0xf7f1e3 }); let kujiN = 0;
 function addKuji(n) { for (let i = 0; i < n && kujiN < 110; i++, kujiN++) { const k = new THREE.Mesh(kujiGeo, kujiMat); k.position.set(rand(-1.7, 1.7), (Math.random() < 0.5 ? 1.15 : 1.65) - 0.07, 0.02); k.rotation.z = rand(-0.4, 0.4); W.musubi.add(k); } }
+
+// ------------------------------------------------------------------ 授与所：おみくじ・御朱印・御守り
+const visited = () => { const v = store.get("enishi_visited", {}); return Object.keys(v).filter((k) => v[k] === today()); };
+hooks.push((kind, d) => { if (kind === "omairi") { const v = store.get("enishi_visited", {}); v[d.sid] = today(); store.set("enishi_visited", v); } });
+function openJuyo() {
+  const got = book.goshuin().filter((e) => e.day === today()).map((e) => e.hall), can = visited().filter((h) => !got.includes(h));
+  $("#juyo-shuin").innerHTML = can.length ? can.map((h) => `<button data-h="${h}">🖌 ${SHUIN[h].title}の御朱印</button>`).join("")
+    : `<p class="sub">${got.length ? "今日の御朱印はいただきました。" : "お参りをすると、その社の御朱印をいただけます。"}</p>`;
+  const lim = limitedFor().map((L) => L.name).join("・"); $("#juyo-limited").textContent = `今日の限定印：${lim}`;
+  const mine = book.omamori().map((x) => x.id);
+  $("#juyo-mamori").innerHTML = OMAMORI.map((o) => `<button data-o="${o.id}" class="${mine.includes(o.id) ? "have" : ""}"><span style="background:${o.color}"></span>${o.name}${mine.includes(o.id) ? "<small>受け取り済み</small>" : ""}</button>`).join("");
+  open("#m-juyo");
+}
+$("#juyo-kuji").onclick = () => { $("#m-juyo").hidden = true; openKuji(); };
+$("#juyo-shuin").onclick = async (e) => {
+  const b = e.target.closest("button[data-h]"); if (!b) return; const entry = book.addGoshuin(b.dataset.h); if (!entry) return;
+  $("#m-juyo").hidden = true; await stampAnim(entry); deedHook("goshuin", { hall: entry.hall });
+};
+$("#juyo-mamori").onclick = (e) => {
+  const b = e.target.closest("button[data-o]"); if (!b) return; const o = OMAMORI.find((x) => x.id === b.dataset.o);
+  $("#mamori-view").innerHTML = ""; $("#mamori-view").appendChild(drawOmamori(o)); $("#mamori-name").textContent = o.name; $("#mamori-desc").textContent = o.desc;
+  $("#btn-mamori").dataset.o = o.id; $("#m-juyo").hidden = true; open("#m-mamori");
+};
+$("#btn-mamori").onclick = () => { const r = book.addOmamori($("#btn-mamori").dataset.o); $("#m-mamori").hidden = true; tone([[1318, 0.3], [1760, 0.2]], 0.8, 0.1);
+  toast(`御守りを受けました。${r.until.replace(/-/g, "/")}まで、あなたを見守ります 🧿`); deedHook("omamori", { id: r.id }); };
+async function stampAnim(entry) {
+  const cv = drawShuin(entry); const v = $("#stamp-view"); v.innerHTML = ""; v.appendChild(cv); v.classList.remove("in"); void v.offsetWidth; v.classList.add("in");
+  $("#stamp-title").textContent = `${SHUIN[entry.hall].title}の御朱印`; open("#m-stamp");
+  await wait(500); tone([[180, 0.7], [90, 0.4]], 0.5, 0.35); noise(0.06, 500, 0.5, "lowpass");
+  $("#btn-stamp-share").onclick = () => shareCanvas(cv, `えにし神社の${SHUIN[entry.hall].title}で御朱印をいただきました ⛩\n#えにし神社 #御朱印`, "enishi-goshuin.png");
+}
+async function shareCanvas(cv, text, name) {
+  const url = location.origin + location.pathname;
+  try { const blob = await new Promise((r) => cv.toBlob(r, "image/png")), file = new File([blob], name, { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ text, url, files: [file] }); return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); } catch {}
+  window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank", "noopener");
+}
+// わたしの帳（御朱印帳・御守り）
+function openBook(tab = "shuin") {
+  const list = book.goshuin();
+  const halls = Object.keys(SHUIN);
+  $("#book-shuin").innerHTML = "";
+  const got = new Set(list.map((e) => e.hall));
+  list.slice().reverse().forEach((e) => { const cv = drawShuin(e); cv.className = "page"; cv.title = `${SHUIN[e.hall].title} ${e.date}`; cv.onclick = () => stampAnim(e); $("#book-shuin").appendChild(cv); });
+  halls.filter((h) => !got.has(h)).forEach((h) => { const d = document.createElement("div"); d.className = "page empty"; d.innerHTML = `<span>${SHUIN[h].title}</span><small>お参りしていただく</small>`; $("#book-shuin").appendChild(d); });
+  $("#book-count").textContent = `${list.length}枚`;
+  const now = new Date().toISOString().slice(0, 10);
+  $("#book-mamori").innerHTML = book.omamori().length ? "" : `<p class="sub">まだ御守りはありません。授与所で受けられます。</p>`;
+  book.omamori().forEach((m) => { const o = OMAMORI.find((x) => x.id === m.id); if (!o) return; const card = document.createElement("div"); card.className = "mamori-card"; const cv = drawOmamori(o, 120, 180);
+    const expired = m.until < now; card.appendChild(cv); card.insertAdjacentHTML("beforeend", `<b>${o.name}</b><small>${expired ? "期限が過ぎました。感謝してお返ししましょう" : `${m.until.replace(/-/g, "/")}まで`}</small>${expired ? `<button data-ret="${o.id}">お返しする</button>` : ""}`);
+    $("#book-mamori").appendChild(card); });
+  document.querySelectorAll(".btab").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
+  $("#book-shuin-wrap").hidden = tab !== "shuin"; $("#book-mamori").hidden = tab !== "mamori";
+  open("#m-book");
+}
+$("#m-book").addEventListener("click", (e) => { const t = e.target.closest(".btab"); if (t) openBook(t.dataset.t);
+  const r = e.target.closest("button[data-ret]"); if (r) { book.returnOmamori(r.dataset.ret); toast("ありがとうございました。御守りをお返ししました 🙏"); openBook("mamori"); } });
+$("#btn-book").onclick = () => openBook();
+
+// ------------------------------------------------------------------ 通知（願いの日）
+const VAPID = "BC-GYCaO7ijTKLfVV_Jt10YDxqXA1zoovjrt2OYcnhI0lElA6JyT3XKkG6PsMJlyoGt-YD5qZNwyfLta4mGdnso";
+const API = "https://enishi-rooms.thanhduy8vn.workers.dev";
+const pushOk = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+async function remindOn(day, text) {
+  if (!pushOk) { toast(/iPhone|iPad/.test(navigator.userAgent) ? "iPhoneは「ホーム画面に追加」してから開くと通知を受け取れます" : "このブラウザは通知に対応していません", 4200); return false; }
+  if (await Notification.requestPermission() !== "granted") return false;
+  try {
+    const reg = await Promise.race([navigator.serviceWorker.ready, wait(4000).then(() => null)]); if (!reg) return false;
+    const key = Uint8Array.from(atob(VAPID.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+    const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
+    const r = await fetch(API + "/remind", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint, day, text }) });
+    return r.ok;
+  } catch { return false; }
+}
 
 // ------------------------------------------------------------------ 由来・当選報告
 function openStory() { const s = hallOf().story; $("#story-body").innerHTML = `<h2>${hallOf().name}の由来</h2><p class="lead">${s.lead}</p>${s.body.map((p) => `<p>${p}</p>`).join("")}<p class="moral">${s.moral}</p>`; open("#m-story"); }
