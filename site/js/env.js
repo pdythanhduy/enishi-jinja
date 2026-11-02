@@ -76,7 +76,7 @@ export function createEnv(scene, renderer, { mobile }) {
       moon.lookAt(0, 0, 0); sunDisc.lookAt(0, 0, 0);
       sun.position.set(pos.x * 0.25, Math.max(25, pos.y * 0.3), 40); sun.target.position.set(0, 0, -10);
       api.lamp = s.lamp;
-      for (const m of lampMats) m.emissiveIntensity = (m.userData.base ?? 3) * (0.15 + 0.85 * s.lamp);
+      for (const m of lampMats) m.emissiveIntensity = m.userData.off ? 0.05 : (m.userData.base ?? 3) * (0.15 + 0.85 * s.lamp);
       for (const l of lampLights) l.intensity = (l.userData.base ?? 6) * s.lamp;
     },
     follow(p) { sun.position.add(new THREE.Vector3(p.x, 0, p.z).sub(sun.target.position).setY(0)); sun.target.position.set(p.x, 0, p.z); },

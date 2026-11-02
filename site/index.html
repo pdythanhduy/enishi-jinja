@@ -14,7 +14,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=11030841">
+<link rel="stylesheet" href="style.css?v=11030844">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -28,11 +28,13 @@
 <div id="title-card" hidden><div class="tc-in"><p class="tc-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="tc-hall">― みんなで祈るネット神社 ―</p><p class="tc-skip">タップでスキップ</p></div></div>
 
 <header id="hud-top">
-  <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人<br><small>今日の祈りの灯り <b id="lights">0</b></small></div>
+  <div class="pill" id="room"><b>えにし神社</b> <span id="hall-name">当選の社</span> · <span id="ppl">1</span>人<br><small>今日の祈りの灯り <b id="lights">0</b> · 徳 <b id="toku">0</b>（<span id="rank">参拝者</span>）</small>
+    <div class="gbar-wrap" title="境内のみんなの徳。満ちると夜祭り"><span>境内の徳</span><div class="gbar"><i id="gbar"></i></div><b id="gtoku">0/300</b></div></div>
   <div class="pill-right">
     <button class="ibtn" id="btn-sound" title="音">🔈</button>
+    <button class="ibtn" id="btn-quest" title="お勤め">📜</button>
     <button class="ibtn" id="btn-book" title="御朱印帳・御守り">📖</button>
-    <button class="ibtn" id="btn-story" title="由来">📜</button>
+    <button class="ibtn" id="btn-story" title="由来（社の物語）">📃</button>
   </div>
 </header>
 <div id="me-tag"></div>
@@ -139,6 +141,17 @@
   </div>
 </section>
 
+<!-- お勤め -->
+<section class="modal" id="m-quest" hidden>
+  <div class="sheet">
+    <button class="x" data-close>✕</button>
+    <h2>今日のお勤め</h2>
+    <p class="sub" id="q-rank"></p>
+    <ul id="q-list"></ul>
+    <p class="sub">すべて終えると徳 +5。落ち葉掃き・灯籠に火を灯す・迷子の子狐を送る、なども徳になります。みんなの徳が満ちると、その日は夜祭り（花火）になります。</p>
+  </div>
+</section>
+
 <!-- 地図 -->
 <section class="modal" id="m-map" hidden>
   <div class="sheet map-sheet">
@@ -158,6 +171,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="js/app.js?v=11030841"></script>
+<script type="module" src="js/app.js?v=11030844"></script>
 </body>
 </html>

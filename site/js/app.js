@@ -5,15 +5,17 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030841";
-import { buildWorld } from "./world.js?v=11030841";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030841";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030841";
-import { LIGHT_SPOTS } from "./arch.js?v=11030841";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030841";
-import { Lanterns, ambience } from "../fx.js?v=11030841";
-import { connect, board } from "../net.js?v=11030841";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030841";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030844";
+import { buildWorld } from "./world.js?v=11030844";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030844";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030844";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030844";
+import { deeds } from "../deeds.js?v=11030844";
+import { LIGHT_SPOTS } from "./arch.js?v=11030844";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030844";
+import { Lanterns, ambience } from "../fx.js?v=11030844";
+import { connect, board } from "../net.js?v=11030844";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030844";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -49,6 +51,9 @@ function updateLightPool() {
   POOL.forEach((l, i) => { const s = near[i]?.[0]; if (!s) { l.intensity = 0; return; } l.position.copy(s.v); l.color.setHex(s.color); l.distance = s.dist; l.intensity = s.int * env.lamp; });
 }
 const lanterns = new Lanterns(scene);
+const leaves = new Leaves(scene, env.season), darkL = new DarkLanterns(W.lamps), kit = new LostFox(scene), fireworks = new Fireworks(scene);
+setInterval(() => leaves.spawn(), 40e3);
+setInterval(() => darkL.turnOffRandom(), 150e3);
 
 // ------------------------------------------------------------------ 自分
 const myName = store.get("enishi_name", null) || `${pick(NAMES_A)}${pick(NAMES_B)}`; store.set("enishi_name", myName);
@@ -191,6 +196,10 @@ const ACTIONS = [
 let curAct = null;
 function currentAction() {
   const x = me.position.x, z = me.position.z;
+  if (kit.state === "follow" && W.foxes.some((f) => Math.hypot(f.position.x - x, f.position.z - z) < 3.2)) return { id: "kithome", label: "🦊 子狐を狛狐のもとへ", run: () => kitHome() };
+  if (kit.near(me.position)) return { id: "kit", label: "🦊 迷子の子狐を連れていく", run: () => kitFollow() };
+  const pile = leaves.near(me.position); if (pile) return { id: "leaf" + pile.x + pile.z, label: "🧹 落ち葉を掃く", run: () => sweep(pile) };
+  const dl = darkL.near(me.position); if (dl) return { id: "lamp" + dl.id, label: "🏮 灯籠に火を灯す", run: () => lightLamp(dl) };
   for (const a of ACTIONS) {
     if (a.box) { const [x0, z0, x1, z1] = a.box; if (x > x0 && x < x1 && z > z0 && z < z1) return a; }
     else if (Math.hypot(a.at[0] - x, a.at[1] - z) < a.r) return a;
@@ -198,7 +207,7 @@ function currentAction() {
   return null;
 }
 function refreshAction() {
-  const a = currentAction(); if (a === curAct) return; curAct = a;
+  const a = currentAction(); if ((a && a.id) === (curAct && curAct.id)) { curAct = a; return; } curAct = a;
   const b = $("#act-main"); b.innerHTML = a ? a.label : "⛩ 本殿へ";
   b.classList.toggle("glow", !!a);
 }
@@ -317,6 +326,32 @@ const seiza = (hid) => doing(async () => {
   toast("静かに祈りました。心が少し軽くなりますように 🙇");
 });
 
+// ------------------------------------------------------------------ 善行：落ち葉掃き・灯籠・迷子の子狐
+let broom = null;
+const sweep = (pile) => doing(async () => {
+  await new Promise((r) => walkTo([pile.x - 0.9, pile.z + 0.4], r)); me.rotation.y = Math.atan2(pile.x - me.position.x, pile.z - me.position.z);
+  const u = me.userData; u.pose = "act";
+  if (!broom) { broom = new THREE.Group(); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.4, 6), new THREE.MeshStandardMaterial({ color: 0xc9a46a })); st.position.y = -0.5; broom.add(st);
+    const br = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0xb8964a })); br.position.y = -1.25; br.rotation.x = Math.PI; broom.add(br); }
+  u.arms[0].add(broom); broom.position.set(0, -0.3, 0.1);
+  stepText("掃 く"); const sw = leaves.sweep(pile);
+  for (let i = 0; i < 8; i++) { u.arms[0].rotation.x = -0.6 + Math.sin(i * 1.2) * 0.5; u.arms[0].rotation.z = Math.sin(i * 1.2) * 0.5; noise(0.18, 3000, 0.08, "highpass"); await wait(150); }
+  await sw; u.arms[0].remove(broom); u.arms[0].rotation.z = 0.25;
+  toast("境内がきれいになりました 🍂"); deedHook("sweep");
+});
+const lightLamp = (g) => doing(async () => {
+  const v = new THREE.Vector3(); g.getWorldPosition(v);
+  await new Promise((r) => walkTo([v.x + (v.x > me.position.x ? -1.1 : 1.1), v.z], r)); me.rotation.y = Math.atan2(v.x - me.position.x, v.z - me.position.z);
+  const u = me.userData; u.pose = "act"; u.arms[1].rotation.x = -1.5; stepText("火を灯す"); await wait(900);
+  darkL.light(g, env); tone([[660, 0.3], [990, 0.2]], 0.8, 0.08); u.arms[1].rotation.x = 0;
+  toast("灯籠に火が灯りました。道ゆく人の足もとが明るくなります 🏮"); deedHook("lamp");
+});
+function kitFollow() { kit.follow(); tone([[1200, 0.3], [1500, 0.2]], 0.3, 0.1); toast("子狐がついてきます。狛狐（本殿前の狐の像）のところへ連れていきましょう 🦊", 4500); }
+const kitHome = () => doing(async () => {
+  bubbleAt(W.foxes[0], "コン♪"); bubbleAt(W.foxes[1], "コン！"); sfx.suzu(); await wait(600); kit.home();
+  releaseLight(me.position.x, me.position.y, me.position.z, true); toast("子狐が無事にお家に帰りました。狐たちがとても喜んでいます ✨", 4500); deedHook("kit");
+});
+
 // ------------------------------------------------------------------ 狐・撫で牛・赤い糸・鯉・灯籠流し（第一段階：簡易版）
 const goldM = new THREE.MeshStandardMaterial({ color: 0xffd36b, metalness: 0.9, roughness: 0.25, emissive: 0x7a5400, emissiveIntensity: 0.6 });
 function bubbleAt(obj, text, ms = 1600, dy = 2.8) {
@@ -333,10 +368,10 @@ function petFox(i) {
     setTimeout(() => keep.forEach(([m, mm]) => (m.material = mm)), 8000);
   }
 }
-function nadeUshi() { bubbleAt(W.ushi, "もぉ〜", 1500, 1.9); tone([[160, 0.5], [120, 0.3]], 0.6, 0.15); toast("撫で牛の頭を撫でました。知恵と合格を授かりますように 📚"); }
-function akaiIto() { bubbleAt(W.enTree, "💞", 1800, 3.4); tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.2, 0.1); releaseLight(W.enTree.position.x, 0, W.enTree.position.z, true); toast("赤い糸にご縁を願いました。同じ時に願った人がいると、糸がつながるかも…💞"); net?.act("ito"); }
-function feedKoi() { for (const k of W.koi) k.boost = 4; noise(0.2, 2500, 0.15, "highpass"); toast("鯉が集まってきました 🐟"); }
-function toroNagashi() {
+function nadeUshi() { deedHook("ushi"); bubbleAt(W.ushi, "もぉ〜", 1500, 1.9); tone([[160, 0.5], [120, 0.3]], 0.6, 0.15); toast("撫で牛の頭を撫でました。知恵と合格を授かりますように 📚"); }
+function akaiIto() { deedHook("ito"); bubbleAt(W.enTree, "💞", 1800, 3.4); tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.2, 0.1); releaseLight(W.enTree.position.x, 0, W.enTree.position.z, true); toast("赤い糸にご縁を願いました。同じ時に願った人がいると、糸がつながるかも…💞"); net?.act("ito"); }
+function feedKoi() { deedHook("koi"); for (const k of W.koi) k.boost = 4; noise(0.2, 2500, 0.15, "highpass"); toast("鯉が集まってきました 🐟"); }
+function toroNagashi() { deedHook("toro");
   const lamp = new THREE.Group(); const m = new THREE.MeshStandardMaterial({ color: 0xfff0d0, emissive: 0xffa040, emissiveIntensity: 2.6 });
   const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), m); b.position.y = 0.25; lamp.add(b);
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.55), new THREE.MeshStandardMaterial({ color: 0x6b4428 })); lamp.add(base);
@@ -408,7 +443,7 @@ function renderEma() {
 $("#ema-wall").onclick = (e) => {
   const b = e.target.closest("button[data-id]"); if (!b) return; const id = b.dataset.id, p = store.get("enishi_prayed", {}), on = !p[id];
   p[id] = on; store.set("enishi_prayed", p); const m = emaList.find((x) => x.id === id); if (m) m.n = Math.max(0, (m.n || 0) + (on ? 1 : -1));
-  renderEma(); board.pray(hallOf().id, id, on).catch(() => {}); if (on) { net?.act("pray"); toast("一緒に祈りました 🙏"); }
+  renderEma(); board.pray(hallOf().id, id, on).catch(() => {}); if (on) { net?.act("pray"); toast("一緒に祈りました 🙏"); deedHook("pray"); }
 };
 $("#btn-ema").onclick = async () => {
   const t = $("#ema-text").value.trim(); if (t.length < 2) return toast("願いを書いてください"); $("#btn-ema").disabled = true;
@@ -502,6 +537,43 @@ async function remindOn(day, text) {
   } catch { return false; }
 }
 
+// ------------------------------------------------------------------ 徳・お勤め・境内の徳（夜祭り）
+const D = deeds({
+  onChange: (pts, newRank) => { refreshToku(); if (pts > 0) flyToku(pts); if (newRank) setTimeout(() => toast(`🎊 位が上がりました：「${newRank}」`, 4200), 1200); },
+  onAllDone: () => setTimeout(() => toast("📜 今日のお勤めをすべて終えました。徳 +5 🎉", 4200), 1800),
+});
+const onceToday = (k) => { const m = store.get("enishi_once", {}); if (m[k] === today()) return false; m[k] = today(); store.set("enishi_once", m); return true; };
+const TOKU = { temizu: 1, goshuin: 1, ema: 1, omamori: 0, lamp: 2, kit: 3 };
+hooks.push((kind, d) => {
+  let pts = 0, q = null;
+  if (kind === "omairi") { pts = 2 + (d.purified ? 1 : 0); q = d.purified ? "temizu_omairi" : null; }
+  else if (kind === "sweep") { pts = 1; q = "sweep"; }
+  else if (kind === "pray") { pts = 1; q = "pray_ema"; }
+  else if (["koi", "ushi", "ito", "toro"].includes(kind)) pts = onceToday(kind) ? (kind === "toro" ? 2 : 1) : 0;
+  else pts = TOKU[kind] || 0;
+  if (!pts && !q) return;
+  D.add(pts, q);
+  if (pts) fetch(API_T + "/toku", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ n: pts }) }).then((r) => r.json()).then(setFest).catch(() => {});
+});
+const API_T = "https://enishi-rooms.thanhduy8vn.workers.dev";
+function refreshToku() { $("#toku").textContent = D.toku; $("#rank").textContent = D.rank(); $("#me-tag").textContent = `わたし · ${myName}（${D.rank()}）`; }
+function flyToku(n) { const b = document.createElement("div"); b.className = "toku-fly"; b.textContent = `徳 +${n}`; document.body.appendChild(b); setTimeout(() => b.remove(), 1600); }
+function openQuests() {
+  $("#q-list").innerHTML = D.quests().map((q) => `<li class="${q.done >= q.n ? "done" : ""}"><span>${q.done >= q.n ? "✅" : "⬜"} ${q.label}</span><b>${q.done}/${q.n}</b></li>`).join("");
+  const nx = D.next(); $("#q-rank").innerHTML = `徳 <b>${D.toku}</b>・位「${D.rank()}」${nx ? `（次の位まであと ${nx - D.toku}）` : ""}`; open("#m-quest");
+}
+$("#btn-quest").onclick = openQuests;
+let festOn = false;
+function setFest(r) {
+  if (!r || r.toku === undefined) return; const pct = Math.min(100, Math.round((r.toku / r.goal) * 100));
+  $("#gtoku").textContent = `${r.toku}/${r.goal}`; $("#gbar").style.width = pct + "%";
+  const on = r.toku >= r.goal; if (on && !festOn) toast("🎆 境内のみんなの徳が満ちました。今夜は夜祭りです！五重塔の空を見上げてください", 6000);
+  festOn = on; fireworks.on = on; document.body.classList.toggle("fest", on);
+}
+const pollFest = () => fetch(API_T + "/festival").then((r) => r.json()).then(setFest).catch(() => {});
+pollFest(); setInterval(pollFest, 60e3);
+refreshToku();
+
 // ------------------------------------------------------------------ 由来・当選報告
 function openStory() { const s = hallOf().story; $("#story-body").innerHTML = `<h2>${hallOf().name}の由来</h2><p class="lead">${s.lead}</p>${s.body.map((p) => `<p>${p}</p>`).join("")}<p class="moral">${s.moral}</p>`; open("#m-story"); }
 $("#btn-story").onclick = openStory;
@@ -563,7 +635,8 @@ function loop() {
   env.follow(me.position);
   for (const f of W.update) f(t, dt, me.position);
   for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * 3.2; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * 1.8; fl.lamp.position.y = 15.58 + Math.sin(t * 2 + fl.a) * 0.02; }
-  lanterns.update(dt, t);
+  lanterns.update(dt, t); kit.update(dt, me);
+  fireworks.update(dt, () => { tone([[60, 0.8], [90, 0.4]], 1.2, 0.25); setTimeout(() => noise(0.6, 2200, 0.12, "highpass"), 300); });
   for (const o of others.values()) {
     const d = o.to.clone().sub(o.av.position); d.y = 0; const dist = d.length(), u = o.av.userData;
     if (dist > 0.05) { o.av.position.add(d.multiplyScalar(Math.min(1, dt * 5))); u.walk += dt * 11; u.body.position.y = Math.abs(Math.sin(u.walk)) * 0.08; u.arms.forEach((a, i) => (a.rotation.x = Math.sin(u.walk + i * Math.PI) * 0.5)); }
@@ -599,4 +672,4 @@ loop();
 setTimeout(() => $("#loading").classList.add("done"), 300);
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
 if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
-window.__enishi = { hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+window.__enishi = { leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
