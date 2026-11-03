@@ -132,7 +132,71 @@ export function honden(parent, env, { x = 0, z = 0 } = {}) {
   chochin(g, -5.2, F + 3.7, D / 2 + 1.6, env, 1.6); chochin(g, 5.2, F + 3.7, D / 2 + 1.6, env, 1.6);
   for (let i = -3; i <= 3; i++) if (i) chochin(g, i * 2.4, F + 4.7, D / 2 + 0.2, env, 0.75, 0xffe7b0);
   lightSpot(g, F + 3, 12, 18, 0xffb06a);
+  hondenInterior(g, env, W, D, F);
   return { group: g, floorY: F + 0.3, front: z + D / 2 + 1 };
+}
+
+// 本殿の内陣：御簾・神鏡・御幣・鏡餅・榊・大太鼓・釣灯籠
+function hondenInterior(g, env, W, D, F) {
+  const y0 = F + 0.3, zb = -D / 2 + 1.0;
+  // 内陣の壇（二段）と金の縁
+  box(g, W - 5, 0.45, 2.6, MAT.woodD, 0, y0 + 0.22, zb + 0.9);
+  box(g, W - 8, 0.45, 1.6, MAT.wood, 0, y0 + 0.67, zb + 0.5);
+  for (const [w, yy, zz] of [[W - 5, y0 + 0.46, zb + 2.2], [W - 8, y0 + 0.91, zb + 1.3]]) box(g, w, 0.06, 0.06, MAT.gold, 0, yy, zz, false);
+  // 神鏡（台つき）
+  const mirM = new THREE.MeshStandardMaterial({ color: 0xf2f5fa, metalness: 1, roughness: 0.06 });
+  box(g, 0.5, 0.9, 0.3, MAT.kuro, 0, y0 + 1.35, zb + 0.4);
+  const mir = cyl(g, 0.75, 0.75, 0.08, mirM, 0, y0 + 2.4, zb + 0.4, 40); mir.rotation.x = Math.PI / 2;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.06, 8, 40), MAT.gold); rim.position.set(0, y0 + 2.4, zb + 0.44); g.add(rim);
+  // 御幣（金の紙垂）
+  for (const s of [-1, 1]) {
+    cyl(g, 0.04, 0.04, 2.0, MAT.woodL, s * 1.6, y0 + 1.9, zb + 0.5, 6);
+    for (let k = 0; k < 4; k++) { const p = box(g, 0.22, 0.34, 0.02, k % 2 ? MAT.paperW : MAT.gold, s * 1.6 + (k % 2 ? 0.12 : -0.12), y0 + 2.75 - k * 0.3, zb + 0.5, false); p.rotation.z = (k % 2 ? 1 : -1) * 0.25; }
+  }
+  // 榊（左右）
+  const sakM = std(0x2c5a2c, { roughness: 0.8 });
+  for (const s of [-1, 1]) {
+    cyl(g, 0.12, 0.1, 0.5, MAT.white, s * 2.7, y0 + 1.15, zb + 0.6, 10);
+    for (let k = 0; k < 7; k++) { const l = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), sakM); l.scale.set(1, 0.55, 0.7); l.position.set(s * 2.7 + Math.sin(k * 2.3) * 0.2, y0 + 1.5 + k * 0.13, zb + 0.6 + Math.cos(k * 1.7) * 0.12); g.add(l); }
+  }
+  // 三方に鏡餅・お神酒
+  const mochiM = std(0xfbf8f0, { roughness: 0.7 }), daiM = std(0xff8a1e, { roughness: 0.6 });
+  for (const s of [-1, 1]) {
+    const cx = s * 3.9; box(g, 0.7, 0.35, 0.7, MAT.woodL, cx, y0 + 0.62, zb + 1.7);
+    const m1 = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 10), mochiM); m1.scale.y = 0.5; m1.position.set(cx, y0 + 0.92, zb + 1.7); g.add(m1);
+    const m2 = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 10), mochiM); m2.scale.y = 0.55; m2.position.set(cx, y0 + 1.08, zb + 1.7); g.add(m2);
+    const dd = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), daiM); dd.position.set(cx, y0 + 1.22, zb + 1.7); g.add(dd);
+    for (const dz of [-0.25, 0.25]) cyl(g, 0.08, 0.1, 0.36, MAT.white, s * 4.9, y0 + 0.62, zb + 1.7 + dz, 10);
+  }
+  // 御簾（すだれ）と紫の房
+  const cv = document.createElement("canvas"); cv.width = 64; cv.height = 128; const x = cv.getContext("2d");
+  for (let yy = 0; yy < 128; yy += 4) { x.fillStyle = `rgba(${150 + Math.random() * 30},${115 + Math.random() * 20},60,0.9)`; x.fillRect(0, yy, 64, 3); }
+  x.fillStyle = "rgba(90,40,110,.95)"; for (const yy of [30, 90]) x.fillRect(0, yy, 64, 4);
+  const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.wrapS = THREE.RepeatWrapping; tx.repeat.set(6, 1);
+  const misuM = new THREE.MeshStandardMaterial({ map: tx, transparent: true, opacity: 0.88, roughness: 0.9, side: THREE.DoubleSide });
+  const misu = new THREE.Mesh(new THREE.PlaneGeometry(W - 6, 1.4), misuM); misu.position.set(0, F + 4.0, zb + 2.3); g.add(misu);
+  box(g, W - 5.6, 0.14, 0.14, MAT.kuro, 0, F + 4.75, zb + 2.3, false);
+  const fusaM = std(0x6a2a8a, { roughness: 0.8 });
+  for (const s of [-1, 0, 1]) { const f = cyl(g, 0.02, 0.12, 0.7, fusaM, s * 3.2, F + 3.0, zb + 2.36, 8, false); }
+  // 大太鼓（左手）
+  const drumG = new THREE.Group(); drumG.position.set(-7.5, y0, -3.3); g.add(drumG);
+  for (const s of [-1, 1]) { box(drumG, 0.12, 1.4, 0.12, MAT.woodD, s * 0.75, 0.7, 0); }
+  box(drumG, 1.7, 0.12, 0.3, MAT.woodD, 0, 0.15, 0);
+  const body = cyl(drumG, 0.62, 0.62, 0.9, std(0x7a3a1c, { roughness: 0.5 }), 0, 1.3, 0, 24); body.rotation.z = Math.PI / 2;
+  for (const s of [-1, 1]) { const hd = cyl(drumG, 0.6, 0.6, 0.02, std(0xe9dcc0, { roughness: 0.8 }), s * 0.46, 1.3, 0, 24, false); hd.rotation.z = Math.PI / 2;
+    const tm = new THREE.Mesh(new THREE.CircleGeometry(0.28, 3), std(0x1a1a1a)); tm.position.set(s * 0.475, 1.3, 0); tm.rotation.y = s * Math.PI / 2; drumG.add(tm); }
+  drumG.rotation.y = 0.9;
+  // 釣灯籠（青銅）：向拝の両脇の軒に
+  const bronze = std(0x6f6a3a, { metalness: 0.7, roughness: 0.45 });
+  for (const cx of [-7, -4.2, 4.2, 7]) {
+    const tg = new THREE.Group(); tg.position.set(cx, F + 4.75, D / 2 - 0.1); g.add(tg);
+    cyl(tg, 0.015, 0.015, 0.5, bronze, 0, -0.2, 0, 4, false);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.25, 6), bronze); cap.position.y = -0.55; tg.add(cap);
+    cyl(tg, 0.2, 0.2, 0.42, lampMat(0xfff0c8, 0xffa040, 2.0), 0, -0.88, 0, 6, false);
+    const bot = cyl(tg, 0.24, 0.16, 0.1, bronze, 0, -1.14, 0, 6, false);
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; box(tg, 0.03, 0.44, 0.03, bronze, Math.cos(a) * 0.21, -0.88, Math.sin(a) * 0.21, false); }
+  }
+  lightSpot(g, F + 2.5, 6, 10, 0xffc27a);
 }
 
 // ------------------------------------------------------------------ 小さな社（縁結び・合格）— 中に入れる
