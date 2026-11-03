@@ -5,33 +5,34 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031542";
-import { buildWorld } from "./world.js?v=11031542";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031542";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031542";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031542";
-import { deeds } from "../deeds.js?v=11031542";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031542";
-import { fireflies } from "../fx.js?v=11031542";
-import { LIGHT_SPOTS } from "./arch.js?v=11031542";
-import { freeze } from "./freeze.js?v=11031542";
-import { setupSeasonal } from "./seasonal.js?v=11031542";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031542";
-import { makeBGM } from "./bgm.js?v=11031542";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031542";
-import { setupKenno } from "./kenno.js?v=11031542";
-import { setupSocial } from "./social.js?v=11031542";
-import { setupProfile } from "./profile.js?v=11031542";
-import { setupZen } from "./zen.js?v=11031542";
-import { setupMixer } from "./mixer.js?v=11031542";
-import { setupShakyo } from "./shakyo.js?v=11031542";
-import { setupTour } from "./tour.js?v=11031542";
-import { setupChat } from "./chat.js?v=11031542";
-import { setupKito, ofudaImage } from "./kito.js?v=11031542";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031542";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031542";
-import { connect, board } from "../net.js?v=11031542";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031542";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031829";
+import { buildWorld } from "./world.js?v=11031829";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031829";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031829";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031829";
+import { deeds } from "../deeds.js?v=11031829";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031829";
+import { fireflies } from "../fx.js?v=11031829";
+import { LIGHT_SPOTS } from "./arch.js?v=11031829";
+import { freeze } from "./freeze.js?v=11031829";
+import { setupSeasonal } from "./seasonal.js?v=11031829";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031829";
+import { makeBGM } from "./bgm.js?v=11031829";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031829";
+import { setupKenno } from "./kenno.js?v=11031829";
+import { setupSocial } from "./social.js?v=11031829";
+import { setupProfile } from "./profile.js?v=11031829";
+import { setupChores } from "./chores.js?v=11031829";
+import { setupZen } from "./zen.js?v=11031829";
+import { setupMixer } from "./mixer.js?v=11031829";
+import { setupShakyo } from "./shakyo.js?v=11031829";
+import { setupTour } from "./tour.js?v=11031829";
+import { setupChat } from "./chat.js?v=11031829";
+import { setupKito, ofudaImage } from "./kito.js?v=11031829";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031829";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031829";
+import { connect, board } from "../net.js?v=11031829";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031829";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -142,6 +143,27 @@ function nearestFree(x, z) {
     if (!blocked(px, pz)) { const d = Math.hypot(px - me.position.x, pz - me.position.z); if (d < bd) { bd = d; best = [px, pz]; } } } if (best) return best; }
   return null;
 }
+// 階段：坂として補間すると、足が段に沈んだり浮いたりする。読みこみ時に、上から光線で段の上面を測っておく
+function measureStairs() {
+  const rc = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), meshes = [], bs = new THREE.Sphere();
+  for (const f of floors) if (f.ramp) {
+    const top = Math.max(...f.ramp) + 0.45, cxm = (f.x0 + f.x1) / 2, czm = (f.z0 + f.z1) / 2, R = Math.hypot(f.x1 - f.x0, f.z1 - f.z0) / 2 + 1;
+    meshes.length = 0;
+    scene.traverse((o) => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.visible || o.material?.transparent) return; for (let p = o; p; p = p.parent) if (p === me || p.userData?.otherId) return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); bs.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
+      if (Math.hypot(bs.center.x - cxm, bs.center.z - czm) < bs.radius + R && bs.center.y - bs.radius < top) meshes.push(o); });
+    const n = Math.ceil((f.z1 - f.z0) / 0.04), tab = new Float32Array(n + 1), xs = [0.22, 0.36, 0.64, 0.78].map((t) => f.x0 + (f.x1 - f.x0) * t);
+    for (let i = 0; i <= n; i++) {
+      const z = f.z0 + ((f.z1 - f.z0) * i) / n, ys = [];
+      for (const x of xs) { rc.set(new THREE.Vector3(x, top, z), down); rc.far = top + 3; const h = rc.intersectObjects(meshes, false)[0]; if (h) ys.push(h.point.y); }
+      ys.sort((a, b) => a - b); const lin = f.ramp[0] + ((f.ramp[1] - f.ramp[0]) * i) / n;
+      tab[i] = ys.length ? Math.max(Math.min(...f.ramp) - 0.05, Math.min(Math.max(...f.ramp) + 0.05, ys[ys.length >> 1])) : lin;
+    }
+    const dn = f.ramp[0] > f.ramp[1] ? 1 : -1;                                       // 段は一方向にだけ下がる（ほかの物に当たった点をならす）
+    if (dn > 0) for (let i = 1; i <= n; i++) tab[i] = Math.min(tab[i], tab[i - 1]); else for (let i = n - 1; i >= 0; i--) tab[i] = Math.min(tab[i], tab[i + 1]);
+    f.table = tab;
+  }
+}
 function walkTo(dest, cb = null, { route = false, fast = false } = {}) {
   prog.best = 1e9; prog.t = 0;
   if (me.userData.pose === "seiza" && !busy) setPose(me, null);      // 座って待っていたら立ち上がる
@@ -198,6 +220,8 @@ const sfx = {
   taiko: () => { tone([[70, 0.9], [105, 0.3]], 0.9, 0.35); noise(0.08, 300, 0.25, "lowpass"); }, splash: () => noise(0.5, 1800, 0.35, "highpass"),
 };
 $("#btn-sound").textContent = muted ? "🔇" : "🔈";
+// ------------------------------------------------------------------ 境内のお手伝い（chores.js）
+const chores = setupChores({ store, today, season: () => env.season, noise, tone, chime: () => tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.4, 0.08) });
 const startAmb = ambience(() => ac(), () => muted);
 const hayashi = matsuri(() => ac(), () => muted); let gestured = false;
 const syncHayashi = () => { if (gestured) hayashi.set(festOn && !muted); typeof bgm !== "undefined" && bgm.duck(festOn && !muted); };
@@ -329,6 +353,7 @@ function currentAction() {
   if (kit.state === "follow" && W.foxes.some((f) => Math.hypot(f.position.x - x, f.position.z - z) < 3.2)) return { id: "kithome", label: "🦊 子狐を狛狐のもとへ", run: () => kitHome() };
   if (kit.near(me.position)) return { id: "kit", label: "🦊 迷子の子狐を連れていく", run: () => kitFollow() };
   const pile = leaves.near(me.position); if (pile) return { id: "leaf" + pile.x + pile.z, label: "🧹 落ち葉を掃く", run: () => sweep(pile) };
+  const ch = chores.near(me.position); if (ch) return { id: "chore_" + ch.id, label: `${ch.label}（お手伝い）`, run: () => doChore(ch) };
   const dl = darkL.near(me.position); if (dl) return { id: "lamp" + dl.id, label: "🏮 灯籠に火を灯す", run: () => lightLamp(dl) };
   for (const a of ACTIONS) {
     if (a.box) { const [x0, z0, x1, z1] = a.box; if (x > x0 && x < x1 && z > z0 && z < z1) return a; }
@@ -504,16 +529,14 @@ const sweep = (pile) => doing(async () => {
   if (!broom) { broom = new THREE.Group(); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.4, 6), new THREE.MeshStandardMaterial({ color: 0xc9a46a })); st.position.y = -0.5; broom.add(st);
     const br = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0xb8964a })); br.position.y = -1.25; br.rotation.x = Math.PI; broom.add(br); }
   u.arms[0].add(broom); broom.position.set(0, -0.3, 0.1);
-  const NEED = 7;
-  await tapGame("掃 く", NEED, (k) => {
-    const sgn = k % 2 ? 1 : -1; u.arms[0].rotation.x = -0.9; u.arms[0].rotation.z = sgn * 0.7; setTimeout(() => { u.arms[0].rotation.z = -sgn * 0.2; }, 120);
-    noise(0.22, 2600 + Math.random() * 800, 0.1, "highpass"); leaves.burst(pile.x, pile.z, 6);
-    pile.g.scale.setScalar(Math.max(0.05, 1 - k / NEED)); pile.g.position.x += 0.05 * sgn;
-  });
-  leaves.remove(pile); u.arms[0].remove(broom); u.arms[0].rotation.set(0, 0, 0.25);
-  deedHook("sweep");
-  const f = pickFind();
-  if (f.id === "none") { toast("境内がきれいになりました 🍂 ありがとうございます"); return; }
+  const f = pickFind(); let k = 0;
+  const r = await chores.sweepGame({ find: f, onStroke: () => {
+    const sgn = ++k % 2 ? 1 : -1; u.arms[0].rotation.x = -0.9; u.arms[0].rotation.z = sgn * 0.7; setTimeout(() => { u.arms[0].rotation.z = -sgn * 0.2; }, 120);
+    if (k % 3 === 0) { leaves.burst(pile.x, pile.z, 3); pile.g.scale.setScalar(Math.max(0.15, pile.g.scale.x * 0.96)); } } });
+  u.arms[0].remove(broom); u.arms[0].rotation.set(0, 0, 0.25);
+  if (!r.ok) return;
+  leaves.remove(pile); deedHook("sweep");
+  if (f.id === "none") { toast("境内がきれいになりました 🍂 ありがとうございます（徳 +2）"); return; }
   const got = store.get("enishi_finds", {}); got[f.id] = (got[f.id] || 0) + 1; store.set("enishi_finds", got);
   tone([[1318, 0.3], [1760, 0.25], [2637, 0.15]], 1.2, 0.08);
   bubbleAt(me, f.icon, 2200, 2.2);
@@ -540,6 +563,22 @@ function bubbleAt(obj, text, ms = 1600, dy = 2.8) {
   const v = new THREE.Vector3(); obj.getWorldPosition(v); v.y += dy; v.project(camera);
   b.style.left = (v.x * 0.5 + 0.5) * innerWidth + "px"; b.style.top = (-v.y * 0.5 + 0.5) * innerHeight + "px"; setTimeout(() => b.remove(), ms);
 }
+// お手伝い：その場所へ行き、手を動かす（arms で小さく所作）
+const CHORE_MSG = { fox0: "狛狐がぴかぴかになりました。狐たちが嬉しそうです 🦊✨", fox1: "狛狐がぴかぴかになりました。狐たちが嬉しそうです 🦊✨",
+  chozu: "手水鉢がすっきりきれいに。次に来る人も、気持ちよく清められます 💧", uchimizu: "打ち水で参道がしっとり涼しくなりました。夏の風物詩です 💦",
+  kusa: "五重塔のまわりがすっきりしました。お花はそのまま、元気に咲いています 🌼" };
+const doChore = (c) => doing(async () => {
+  await new Promise((r) => walkTo(c.at, r, { route: Math.hypot(me.position.x - c.at[0], me.position.z - c.at[1]) > 6 }));
+  const tgt = c.id.startsWith("fox") ? W.foxes[c.id === "fox0" ? 0 : 1]?.position : c.id === "chozu" ? { x: PLACES.temizu.pos[0], z: PLACES.temizu.pos[1] } : null;
+  if (tgt) me.rotation.y = Math.atan2(tgt.x - me.position.x, tgt.z - me.position.z);
+  const u = me.userData; u.pose = "act"; let k = 0;
+  const ok = await chores.run(c, () => { const s = ++k % 2 ? 1 : -1; u.arms[1].rotation.x = -1.0; u.arms[1].rotation.z = s * 0.5; setTimeout(() => (u.arms[1].rotation.z = -0.25), 110); });
+  u.arms.forEach((a, i) => a.rotation.set(0, 0, (i ? -1 : 1) * 0.25));
+  if (!ok) return;
+  deedHook("chore", { id: c.id }); releaseLight(c.at[0], footY(c.at[0], c.at[1]), c.at[1], true);
+  if (c.id.startsWith("fox")) { bubbleAt(W.foxes[c.id === "fox0" ? 0 : 1], "コン♪", 1800); sfx.suzu(); }
+  toast(`${c.id === "uchimizu" && env.season === "winter" ? "参道の雪をよけて、歩きやすくなりました ❄" : CHORE_MSG[c.id]}（徳 +3）`, 5000);
+});
 function petFox(i) {
   const f = fox(i); bubbleAt(f, "コン♪"); tone([[880, 0.4], [1320, 0.2]], 0.4, 0.12);
   const n = store.get("enishi_pet", 0) + 1; store.set("enishi_pet", n);
@@ -770,7 +809,8 @@ const TOKU = { temizu: 1, goshuin: 1, ema: 1, omamori: 0, lamp: 2, kit: 3 };
 hooks.push((kind, d) => {
   let pts = 0, q = null;
   if (kind === "omairi") pts = 2 + (d.purified ? 1 : 0);
-  else if (kind === "sweep") pts = 1;
+  else if (kind === "sweep") pts = 2;
+  else if (kind === "chore") pts = 3;
   else if (kind === "pray") pts = 1;
   else if (["koi", "ushi", "ito", "toro"].includes(kind)) pts = onceToday(kind) ? (kind === "toro" ? 2 : 1) : 0;
   else if (kind === "kito") pts = onceToday("kito") ? 5 : 0;
@@ -910,6 +950,7 @@ net = connect({ hall: "tosen", name: myName, look: myLook,
   onSt: (m) => { const o = others.get(m.id); if (!o) return; if (m.kind === "say") { if (!o.muted && m.text) { bubble(o, m.text, 6500); chat.add(o, m.text); } } else { o.st = m.text || ""; paintTag(o); } },
   onNope: () => toast("その言葉は境内では使えません") });
 board.list("tosen").then((r) => { addEma(r.total || 0); addKuji(Math.min(60, Math.floor((r.lights || 0) / 2))); const n = r.lights || 0; setLights(n); for (let i = 0; i < Math.min(n, MOBILE ? 80 : 160); i++) lanterns.spawn(0, 0, 0, { instant: true }); }).catch(() => {});
+scene.updateMatrixWorld(true); try { measureStairs(); } catch (e) { console.warn("stairs", e); }
 loop();
 $("#loading").classList.add("ready"); setTimeout(() => $("#loading").classList.add("done"), Math.max(300, 1400 - performance.now()));   // 絵を少しだけ見せてから
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
@@ -1019,4 +1060,4 @@ function hangEma() {
   });
 }
 hangEma();
-window.__enishi = { zen, mixer, tour, shakyo, social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+window.__enishi = { chores, zen, mixer, tour, shakyo, social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };

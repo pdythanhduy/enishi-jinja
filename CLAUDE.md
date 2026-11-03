@@ -39,6 +39,13 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
       - Finishing adds a 奉納 seal and +10 徳 (up to 3 a day) and is saved in `enishi_shakyo`.
       - 絵馬を描く is a brush canvas. The drawing is kept only on the device (`enishi_myema`, max 6) and is hung on `W.emaRack`.
     - `tour.js`: 境内めぐり, a 40 s slow arc per PLACES entry with fades and captions, and 奥の院の池, a fixed view with floating lanterns. Tap or Esc exits.
+  - `chores.js`: お手伝い mini-games, each with no timer, once a day, +3 徳 via `deedHook("chore")`.
+    - Chores: 狛狐を磨く (×2), 手水鉢を洗う, 打ち水 (雪かき in winter) and 草むしり (keep the flowers).
+    - Leaf sweeping is now a broom game: push leaves into the 塵取り. A find is hidden under the leaves, and the game gives +2 徳.
+    - `chores.near(p)` feeds `currentAction`. Debug with `__enishi.chores.run(spec)`.
+  - Stairs: ramp floors in map.js get a `table` of real step heights. `measureStairs()` in app.js raycasts them at startup, so feet land on each tread instead of sliding along a slope.
+  - Bows pivot at the hip (HIP 0.6 in avatar.js `bowTo`).
+  - Effects go through `AC.fxBus`, which has its own volume (`enishi_fxvol`, default 0.4). Tapping a blocked spot walks to the nearest free point, and walking gives up after 1.4 s without progress.
   - `chat.js`: room chat (💬 button at bottom left). Lines are up to 60 characters, filtered by the NG list on both client and server.
     - Tap a line to mute or report that person. Reports from 3 different people silence that socket in that room (`t:"rep"`, in-memory in the Room DO).
     - Nothing is stored server-side.

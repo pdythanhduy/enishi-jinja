@@ -142,6 +142,7 @@ export function bridgeY(x, z) {
 }
 export function footY(x, z) {
   for (const f of floors) if (x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1) {
+    if (f.table) { const n = f.table.length - 1, i = Math.round(((z - f.z0) / (f.z1 - f.z0)) * n); return f.table[Math.max(0, Math.min(n, i))]; }   // 段ごとの実際の高さ
     if (f.ramp) { const k = (z - f.z0) / (f.z1 - f.z0); return f.ramp[0] + (f.ramp[1] - f.ramp[0]) * k; }
     return f.y;
   }
