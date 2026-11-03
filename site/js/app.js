@@ -5,26 +5,27 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031340";
-import { buildWorld } from "./world.js?v=11031340";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031340";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031340";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031340";
-import { deeds } from "../deeds.js?v=11031340";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031340";
-import { fireflies } from "../fx.js?v=11031340";
-import { LIGHT_SPOTS } from "./arch.js?v=11031340";
-import { freeze } from "./freeze.js?v=11031340";
-import { makeBGM } from "./bgm.js?v=11031340";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031340";
-import { setupKenno } from "./kenno.js?v=11031340";
-import { setupSocial } from "./social.js?v=11031340";
-import { setupProfile } from "./profile.js?v=11031340";
-import { setupKito } from "./kito.js?v=11031340";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031340";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031340";
-import { connect, board } from "../net.js?v=11031340";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031340";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031358";
+import { buildWorld } from "./world.js?v=11031358";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031358";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031358";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031358";
+import { deeds } from "../deeds.js?v=11031358";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031358";
+import { fireflies } from "../fx.js?v=11031358";
+import { LIGHT_SPOTS } from "./arch.js?v=11031358";
+import { freeze } from "./freeze.js?v=11031358";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031358";
+import { makeBGM } from "./bgm.js?v=11031358";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031358";
+import { setupKenno } from "./kenno.js?v=11031358";
+import { setupSocial } from "./social.js?v=11031358";
+import { setupProfile } from "./profile.js?v=11031358";
+import { setupKito } from "./kito.js?v=11031358";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031358";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031358";
+import { connect, board } from "../net.js?v=11031358";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031358";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -54,6 +55,7 @@ env.set(hourNow());
 setInterval(() => env.set(hourNow()), 60e3);
 
 const W = buildWorld(scene, env, { mobile: MOBILE });
+const TZ = buildTemizuya(scene, env, PLACES.temizu.pos); W.update.push((t) => TZ.tick(t));
 // 光源プール：近くの灯籠・社殿だけ本物の光で照らす（遠くは発光だけ）
 const POOL = Array.from({ length: MOBILE ? 5 : 8 }, () => { const l = new THREE.PointLight(0xffa04a, 0, 9, 1.7); scene.add(l); return l; });
 const spotPos = LIGHT_SPOTS.map((s) => { const v = new THREE.Vector3(); s.obj.updateWorldMatrix(true, false); s.obj.getWorldPosition(v); const sc = new THREE.Vector3(); s.obj.getWorldScale(sc); v.y += s.y * sc.y; return { ...s, v }; });
@@ -214,26 +216,51 @@ let kujiHall = null;
 
 // ------------------------------------------------------------------ 地図（ミニマップ：絵地図の上に番号）
 const MAP_PIN = { ootorii: [260, 600], sando: [470, 610], pond: [745, 650], romon: [605, 430], temizu: [785, 465], juyosho: [950, 515], shinboku: [965, 405], honden: [840, 290], enmusubi: [480, 320], gokaku: [1135, 385], senbon: [900, 165], okunoin: [1030, 105], pagoda: [1240, 190] };
-$("#map-pins").innerHTML = Object.entries(PLACES).map(([k, p]) => { const [px, py] = MAP_PIN[k];
-  return `<button class="pin" data-k="${k}" style="left:${(px / 1408) * 100}%;top:${(py / 768) * 100}%"><b>${p.n}</b><span>${p.name}<small>${p.vi}</small></span></button>`; }).join("");
-// 境内図の座標あわせ：場所の座標 → 絵地図のピクセル（13か所から最小二乗で一次変換を求める）
-const mapXY = (() => {
-  const rows = Object.entries(PLACES).map(([k, p]) => [p.pos[0], p.pos[1], ...MAP_PIN[k]]);
-  const fit = (col) => {
-    const S = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], t = [0, 0, 0];
-    for (const r of rows) { const v = [r[0], r[1], 1]; for (let i = 0; i < 3; i++) { t[i] += v[i] * r[col]; for (let j = 0; j < 3; j++) S[i][j] += v[i] * v[j]; } }
-    for (let i = 0; i < 3; i++) { for (let k = i + 1; k < 3; k++) { const f = S[k][i] / S[i][i]; for (let j = i; j < 3; j++) S[k][j] -= f * S[i][j]; t[k] -= f * t[i]; } }
-    const x = [0, 0, 0]; for (let i = 2; i >= 0; i--) { let s = t[i]; for (let j = i + 1; j < 3; j++) s -= S[i][j] * x[j]; x[i] = s / S[i][i]; }
-    return x;
+// 境内図：3Dの境内を真上から写した絵地図。北（山）が上
+const MAPB = { x0: -48, x1: 48, z0: -34, z1: 88 }, MW = 640, MH = 813;
+const mapPct = (x, z) => [Math.min(96, Math.max(4, ((x - MAPB.x0) / (MAPB.x1 - MAPB.x0)) * 100)), Math.min(97, Math.max(3, ((z - MAPB.z0) / (MAPB.z1 - MAPB.z0)) * 100))];
+$("#map-pins").innerHTML = Object.entries(PLACES).map(([k, p]) => { const [l, t] = mapPct(p.pos[0], p.pos[1]);
+  const up = p.pos[1] < MAPB.z0 ? " up" : "";
+  return `<button class="pin${up}" data-k="${k}" style="left:${l}%;top:${t}%" aria-label="${p.name}"><b>${up ? "↑" : p.n}</b><span>${p.name}<small>${p.vi}</small></span></button>`; }).join("");
+$("#map-legend").innerHTML = Object.entries(PLACES).map(([k, p]) => `<li><button data-k="${k}"><b>${p.n}</b>${p.name}<small>${p.vi}</small></button></li>`).join("");
+$("#map-legend").onclick = (e) => { const b = e.target.closest("[data-k]"); if (!b) return; goPlace(b.dataset.k); $("#m-map").hidden = true; };
+let mapDrawn = false;
+function drawMap() {
+  if (mapDrawn) return; mapDrawn = true;
+  const size = new THREE.Vector2(); renderer.getSize(size); const pr = renderer.getPixelRatio(), hour = env.hour, fog = scene.fog;
+  const hidden = [me, ...[...others.values()].map((o) => o.av)].filter((o) => o.visible); hidden.forEach((o) => (o.visible = false));
+  env.set(12.5); scene.fog = null;
+  renderer.setPixelRatio(1); renderer.setSize(MW, MH, false);
+  const cam = new THREE.OrthographicCamera(MAPB.x0, MAPB.x1, -MAPB.z0, -MAPB.z1, 150, 215);   // 高さ 50 m より上（雲）は写さない
+  cam.position.set(0, 200, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix();
+  renderer.render(scene, cam);
+  const shot = new Image(); shot.src = renderer.domElement.toDataURL("image/png");
+  renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); scene.fog = fog; env.set(hour); hidden.forEach((o) => (o.visible = true));
+  // 古い絵地図のように：和紙の色を重ね、縁を暗くし、方位と題を描く
+  shot.onload = () => {
+    const c = document.createElement("canvas"); c.width = MW; c.height = MH; const x = c.getContext("2d");
+    x.filter = "saturate(0.85) contrast(1.05) brightness(1.04)"; x.drawImage(shot, 0, 0); x.filter = "none";
+    x.globalCompositeOperation = "multiply"; x.fillStyle = "rgba(240,224,190,0.42)"; x.fillRect(0, 0, MW, MH);
+    x.globalCompositeOperation = "source-over";
+    const vg = x.createRadialGradient(MW / 2, MH / 2, MH * 0.32, MW / 2, MH / 2, MH * 0.62); vg.addColorStop(0, "rgba(40,24,10,0)"); vg.addColorStop(1, "rgba(40,24,10,0.55)"); x.fillStyle = vg; x.fillRect(0, 0, MW, MH);
+    x.strokeStyle = "rgba(90,58,34,.85)"; x.lineWidth = 10; x.strokeRect(5, 5, MW - 10, MH - 10); x.strokeStyle = "rgba(227,181,74,.7)"; x.lineWidth = 2; x.strokeRect(16, 16, MW - 32, MH - 32);
+    // 題箋
+    x.fillStyle = "rgba(251,246,234,.92)"; x.fillRect(34, 34, 58, 250); x.strokeStyle = "#8a2a1c"; x.lineWidth = 2; x.strokeRect(38, 38, 50, 242);
+    x.fillStyle = "#2b2016"; x.font = `bold 30px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`; x.textAlign = "center"; x.textBaseline = "top";
+    [..."えにし神社境内図"].forEach((ch, i) => x.fillText(ch, 63, 48 + i * 29));
+    // 方位
+    const cx = 64, cy = MH - 78; x.strokeStyle = "rgba(43,32,22,.85)"; x.lineWidth = 2; x.beginPath(); x.arc(cx, cy, 30, 0, 7); x.stroke();
+    x.fillStyle = "#8a2a1c"; x.beginPath(); x.moveTo(cx, cy - 28); x.lineTo(cx + 8, cy); x.lineTo(cx - 8, cy); x.fill();
+    x.fillStyle = "#2b2016"; x.beginPath(); x.moveTo(cx, cy + 28); x.lineTo(cx + 8, cy); x.lineTo(cx - 8, cy); x.fill();
+    x.font = `bold 22px "Hiragino Mincho ProN","Yu Mincho",serif`; x.fillStyle = "#8a2a1c"; x.fillText("北", cx, cy - 58);
+    $("#map-img").src = c.toDataURL("image/jpeg", 0.88);
   };
-  const A = fit(2), B = fit(3);
-  return (x, z) => [Math.min(1400, Math.max(8, A[0] * x + A[1] * z + A[2])), Math.min(760, Math.max(8, B[0] * x + B[1] * z + B[2]))];
-})();
+}
 const mapMe = document.createElement("div"); mapMe.className = "map-me"; mapMe.innerHTML = "<i></i><span>現在地</span>"; $("#map-pins").appendChild(mapMe);
 const mapOthers = document.createElement("div"); mapOthers.className = "map-others"; $("#map-pins").appendChild(mapOthers);
 function paintMapMe() {
-  const [px, py] = mapXY(me.position.x, me.position.z); mapMe.style.left = (px / 1408) * 100 + "%"; mapMe.style.top = (py / 768) * 100 + "%";
-  mapOthers.innerHTML = [...others.values()].map((o) => { const [x, y] = mapXY(o.av.position.x, o.av.position.z); return `<b style="left:${(x / 1408) * 100}%;top:${(y / 768) * 100}%" title="${o.name.replace(/[<>&"]/g, "")}"></b>`; }).join("");
+  const [l, t] = mapPct(me.position.x, me.position.z); mapMe.style.left = l + "%"; mapMe.style.top = t + "%"; mapMe.style.setProperty("--ry", `${Math.PI - me.rotation.y}rad`);
+  mapOthers.innerHTML = [...others.values()].map((o) => { const [x, y] = mapPct(o.av.position.x, o.av.position.z); return `<b style="left:${x}%;top:${y}%" title="${o.name.replace(/[<>&"]/g, "")}"></b>`; }).join("");
 }
 setInterval(() => { if (!$("#m-map").hidden) paintMapMe(); }, 500);
 $("#map-pins").onclick = (e) => { const b = e.target.closest(".pin"); if (!b) return; goPlace(b.dataset.k); $("#m-map").hidden = true; };
@@ -294,7 +321,7 @@ function refreshAction() {
   b.classList.toggle("glow", !!a);
 }
 $("#act-main").onclick = () => { if (busy) return; ac(); if (curAct) curAct.run(); else goPlace("honden"); };
-$("#act-map").onclick = () => { paintMapMe(); open("#m-map"); };
+$("#act-map").onclick = () => { drawMap(); paintMapMe(); open("#m-map"); };
 $("#act-ema").onclick = () => { renderEma(); loadEma(); open("#m-ema"); };
 $("#act-report").onclick = () => report();
 $("#act-say").onclick = () => social?.toggleSay();
@@ -329,17 +356,16 @@ function holdStep(title, sub, ms = 900) {
     btn.addEventListener("pointerdown", down); btn.addEventListener("pointerup", up); btn.addEventListener("pointerleave", up); $("#hold-skip").addEventListener("click", skip);
   });
 }
+// 水のしずく（柄杓から落ちる）
+function drip(p) {
+  const d = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 5), new THREE.MeshBasicMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.9 })); d.position.copy(p); d.position.x += rand(-0.02, 0.02); scene.add(d);
+  const vx = rand(-0.12, 0.12), vz = rand(-0.12, 0.12), t0 = performance.now(), y0 = p.y;
+  (function f() { const k = (performance.now() - t0) / 1000; d.position.y = y0 - 4.9 * k * k; d.position.x += vx * 0.016; d.position.z += vz * 0.016; if (d.position.y > footY(d.position.x, d.position.z) + 0.02 && k < 1.2) requestAnimationFrame(f); else scene.remove(d); })();
+}
 const temizu = () => doing(async () => {
-  await new Promise((r) => walkTo(PLACES.temizu.stand, r)); me.rotation.y = 0; const u = me.userData; u.pose = "act";
-  const steps = [["左手を清める", "右手で柄杓を持ち、水を汲んで左手にかけます", 1], ["右手を清める", "柄杓を左手に持ちかえて、右手にかけます", 0],
-    ["口をすすぐ", "左の手のひらに水を受け、口をすすぎます", 1], ["柄杓を清める", "柄杓を立て、残りの水で柄を流します", 1]];
-  for (const [t, sub, arm] of steps) {
-    stepText(t); u.arms[arm].rotation.x = -1.2;
-    const ok = await holdStep(t, sub);
-    if (!ok) break;
-    drops(me.position.x + (arm ? 0.3 : -0.3), 1.0, me.position.z + 0.6); await wait(350); u.arms[arm].rotation.x = 0;
-  }
-  purified = true; stepText(""); toast("心と手を清めました。気持ちよくお参りできます 💧"); deedHook("temizu");
+  const ok = await runTemizu({ me, camera, setCine, stepText, holdStep, wait, tone, noise, drip, stand: PLACES.temizu.stand, walk: (p) => new Promise((r) => walkTo(p, r)) }, TZ);
+  stepText(""); if (!ok) return;
+  purified = true; toast("心と手を清めました。気持ちよくお参りできます 💧"); deedHook("temizu");
 });
 
 // ------------------------------------------------------------------ お参り（賽銭→鈴→二礼二拍手一礼）
@@ -833,6 +859,7 @@ const hideOthers = (on) => { for (const o of others.values()) { o.av.visible = !
 const freeCushion = () => { const taken = [...others.values()].map((o) => o.to); const cs = [...W.cushions.tosen].sort((a, b) => Math.hypot(a[0], a[1] + 0.6) - Math.hypot(b[0], b[1] + 0.6));
   return cs.find(([x, z]) => !taken.some((t) => Math.hypot(t.x - x, t.z - z) < 0.6)) || cs[0]; };
 const othersInHonden = () => [...others.values()].filter((o) => inHonden(o.av.position.x, o.av.position.z)).map((o) => o.name);
+const tzSound = waterSound({ ac, muted: () => muted, audioReady: () => gestured }, TZ); W.update.push(() => tzSound(me));
 const kito = setupKito({ hideOthers, freeCushion, othersInHonden, isBusy: () => busy, inCine: () => !!cine || !!intro, scene, camera, me, W, env, store, sfx, tone, noise, ac, muted: () => muted, wait, toast, setPose, bowTo, doing, setCine, goSeat, walkTo2: walkP,
   deedHook, today, ng: ngText, getName: () => myName, get net() { return net; } });
 // ------------------------------------------------------------------ 身支度（profile.js）

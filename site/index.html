@@ -14,7 +14,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=11031340">
+<link rel="stylesheet" href="style.css?v=11031358">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -162,7 +162,8 @@
   <div class="sheet map-sheet">
     <button class="x" data-close>✕</button>
     <h2>えにし神社 境内図</h2>
-    <div class="map-wrap"><img src="img/map.jpg" alt="えにし神社の境内図"><div id="map-pins"></div></div>
+    <div class="map-wrap"><img id="map-img" src="img/map.jpg" alt="えにし神社の境内図（真上から見た境内）" width="640" height="813"><div id="map-pins"></div></div>
+    <ol class="map-legend" id="map-legend"></ol>
     <p class="sub">赤く光る印が<b>現在地</b>、青い点は境内にいる人です。番号をタップすると、その場所まで歩いていきます。</p>
   </div>
 </section>
@@ -176,6 +177,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="js/app.js?v=11031340"></script>
+<script type="module" src="js/app.js?v=11031358"></script>
 </body>
 </html>

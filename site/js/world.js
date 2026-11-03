@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031340";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031340";
-import { FOLIAGE } from "./env.js?v=11031340";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031358";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031358";
+import { FOLIAGE } from "./env.js?v=11031358";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -71,7 +71,7 @@ export function buildWorld(scene, env, { mobile }) {
   for (const s of [-1, 1]) { torii(scene, { x: s * 24.5, z: 17, s: 0.9, ry: Math.PI / 2, gaku: null }); }
 
   // ---------------------------------------------------------------- ⑤ 手水舎 ⑥ 授与所 ⑦ 御神木
-  temizuya(scene, env, { x: PLACES.temizu.pos[0], z: PLACES.temizu.pos[1] });
+  // 手水舎は js/temizu.js（水の流れと所作）
   juyosho(scene, env, { x: PLACES.juyosho.pos[0] + 1.5, z: PLACES.juyosho.pos[1] });
   const kusu = new THREE.MeshStandardMaterial({ color: env.season === "winter" ? 0x3d5a3a : 0x3f6a36, roughness: 0.9, flatShading: true });
   shinboku(scene, { x: PLACES.shinboku.pos[0], z: PLACES.shinboku.pos[1] }, kusu);
