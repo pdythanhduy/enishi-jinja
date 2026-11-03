@@ -1,5 +1,6 @@
 // 身支度：名前と見た目を選ぶ。初めての参拝では、境内に入る前にここから。
-import { LOOK, parseLook, lookString, restyle } from "./avatar.js?v=11032357";
+import { mountPicker } from "./i18n.js?v=11040014";
+import { LOOK, parseLook, lookString, restyle } from "./avatar.js?v=11040014";
 
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
 const RANKS = [[0, "参拝者"], [10, "常連さん"], [30, "氏子"], [70, "世話役"], [150, "総代"], [300, "神様の友"]];
@@ -22,7 +23,7 @@ export function setupProfile(A) {
     <p class="sub pf-err" id="pf-err" role="alert"></p>
     <div class="row"><button class="btn" id="pf-cancel">もとに戻す</button><button class="btn primary" id="pf-save">この姿で参拝する</button></div>
   </div>`;
-  document.body.appendChild(m);
+  document.body.appendChild(m); mountPicker(m.querySelector(".profile-sheet"));   // はじめての人も言語を選べるように
   const $ = (s) => m.querySelector(s);
   let L = parseLook(A.getLook()), saved = A.getLook(), first = false;
 

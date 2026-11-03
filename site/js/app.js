@@ -5,37 +5,39 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032357";
-import { buildWorld } from "./world.js?v=11032357";
-import { PEAK } from "./vista.js?v=11032357";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032357";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032357";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032357";
-import { deeds } from "../deeds.js?v=11032357";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032357";
-import { fireflies } from "../fx.js?v=11032357";
-import { LIGHT_SPOTS } from "./arch.js?v=11032357";
-import { freeze } from "./freeze.js?v=11032357";
-import { setupSeasonal } from "./seasonal.js?v=11032357";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032357";
-import { makeBGM } from "./bgm.js?v=11032357";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032357";
-import { setupKenno } from "./kenno.js?v=11032357";
-import { setupSocial } from "./social.js?v=11032357";
-import { setupProfile } from "./profile.js?v=11032357";
-import { setupChores } from "./chores.js?v=11032357";
-import { setupSagyo } from "./sagyo.js?v=11032357";
-import { setupWelcome } from "./welcome.js?v=11032357";
-import { setupZen } from "./zen.js?v=11032357";
-import { setupMixer } from "./mixer.js?v=11032357";
-import { setupShakyo } from "./shakyo.js?v=11032357";
-import { setupTour } from "./tour.js?v=11032357";
-import { setupChat } from "./chat.js?v=11032357";
-import { setupKito, ofudaImage } from "./kito.js?v=11032357";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032357";
-import { Lanterns, matsuri } from "../fx.js?v=11032357";
-import { connect, board } from "../net.js?v=11032357";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032357";
+import { initI18n, t as tr, mountPicker } from "./i18n.js?v=11040014";
+initI18n();   // 日本語以外のブラウザでは、画面の文字を English / Tiếng Việt に
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11040014";
+import { buildWorld } from "./world.js?v=11040014";
+import { PEAK } from "./vista.js?v=11040014";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11040014";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11040014";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11040014";
+import { deeds } from "../deeds.js?v=11040014";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11040014";
+import { fireflies } from "../fx.js?v=11040014";
+import { LIGHT_SPOTS } from "./arch.js?v=11040014";
+import { freeze } from "./freeze.js?v=11040014";
+import { setupSeasonal } from "./seasonal.js?v=11040014";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11040014";
+import { makeBGM } from "./bgm.js?v=11040014";
+import { setupGuide, STEP_OF } from "./guide.js?v=11040014";
+import { setupKenno } from "./kenno.js?v=11040014";
+import { setupSocial } from "./social.js?v=11040014";
+import { setupProfile } from "./profile.js?v=11040014";
+import { setupChores } from "./chores.js?v=11040014";
+import { setupSagyo } from "./sagyo.js?v=11040014";
+import { setupWelcome } from "./welcome.js?v=11040014";
+import { setupZen } from "./zen.js?v=11040014";
+import { setupMixer } from "./mixer.js?v=11040014";
+import { setupShakyo } from "./shakyo.js?v=11040014";
+import { setupTour } from "./tour.js?v=11040014";
+import { setupChat } from "./chat.js?v=11040014";
+import { setupKito, ofudaImage } from "./kito.js?v=11040014";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11040014";
+import { Lanterns, matsuri } from "../fx.js?v=11040014";
+import { connect, board } from "../net.js?v=11040014";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11040014";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -315,7 +317,7 @@ const sndPop = document.createElement("div"); sndPop.id = "snd-pop"; sndPop.hidd
 sndPop.innerHTML = `<p class="kicker">音</p>
   <label class="snd-row"><span>🎵 境内の音楽<small>昼は「境内の調べ」、夜は「月夜の調べ」</small></span><input type="checkbox" id="snd-bgm"></label>
   <label class="snd-vol"><span>音量</span><input type="range" id="snd-vol" min="0" max="100"></label>`;
-document.body.appendChild(sndPop);
+document.body.appendChild(sndPop); mountPicker(sndPop);   // 🌐 言語の切りかえ
 const paintSnd = () => { $("#snd-bgm").checked = bgmOn; $("#snd-vol").value = Math.round(store.get("enishi_vol", 0.55) * 100); $("#btn-sound").textContent = bgmOn ? "🎵" : "🔈"; };
 bgm.setVolume(store.get("enishi_vol", 0.55)); paintSnd();
 $("#btn-sound").onclick = (e) => { e.stopPropagation(); sndPop.hidden = !sndPop.hidden; paintSnd(); };
@@ -1019,8 +1021,8 @@ refreshToku();
 function openStory() { const H = hallOf(), s = H.story; $("#story-body").innerHTML = `<h2>${H.name}の由来</h2><p class="lead">${s.lead}</p>${s.body.map((p) => `<p>${p}</p>`).join("")}<p class="moral">${s.moral}</p>`; open("#m-story"); }
 $("#btn-story").onclick = openStory;
 async function report() {
-  if (!confirm(`${hallOf().name}での願いが叶いましたか？
-おめでとうございます。神さまへのお礼参りとして記録します。`)) return;
+  if (!confirm(tr(`${hallOf().name}での願いが叶いましたか？
+おめでとうございます。神さまへのお礼参りとして記録します。`))) return;
   sfx.suzu(); net?.act("report"); try { const r = await board.report(hallOf().id); reportCount = r.report || reportCount; } catch {}
   toast(`🎉 おめでとうございます！今日は${Math.max(1, reportCount)}人がお礼参りに来ました。`, 4200);
 }
