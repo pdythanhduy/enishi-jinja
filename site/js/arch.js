@@ -51,8 +51,8 @@ export function roof(parent, { w, d, h, lift = 0.35, thick = 0.22, mat = MAT.cop
     const tri = new THREE.Shape(); tri.moveTo(-half * 0.92, 0); tri.lineTo(0, h * 0.92); tri.lineTo(half * 0.92, 0); tri.closePath();
     const tg = new THREE.ShapeGeometry(tri); const tm = new THREE.Mesh(tg, MAT.white); tm.rotation.y = s * Math.PI / 2; tm.position.set(s * (w / 2 - 0.25), 0.02, 0); g.add(tm);
     // 破風板：妻の斜めの縁に沿わせる（棟 (0,h) から 軒 (±half, lift) まで）
-    const L = Math.hypot(half, h - lift), ang = Math.atan2(h - lift, half);
-    for (const r of [-1, 1]) { const b = box(g, 0.1, 0.16, L, MAT.gold, s * (w / 2 + 0.02), (h + lift) / 2 + 0.05, r * half / 2, false); b.rotation.x = r * ang; }
+    const pts = top.map(([zz, yy]) => new THREE.Vector3(s * (w / 2 + 0.03), yy - thick * 0.45, zz));
+    const bg = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.09, 6, false), MAT.gold); g.add(bg);
   }
   return g;
 }
