@@ -17,7 +17,7 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 
 ## Rules
 - **Before every commit, run `python tools/bump.py`.** It adds `?v=` cache-busting to the relative imports. Without it, browsers keep serving stale modules.
-- Check JS syntax with `node --check site/js/*.js site/fx.js`.
+- Check JS syntax with `node --check site/js/*.js site/fx.js`, but always load the page too: node --check once missed a broken string literal that the browser rejected.
 - Never print or commit `.env`. It holds CF_WORKER_TOKEN, ADMIN_KEY, GEMINI_API_KEY and VAPID keys.
 - Commit messages end with the Co-Authored-By / Claude-Session lines given by the harness.
 
@@ -34,8 +34,8 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 - Rituals: temizu, coin choice, omairi, seiza.
 - Features: omikuji, shared ema (with date reminders and push), goshuin book, omamori, 徳/quests, 夜祭り fireworks + お囃子 music.
 - Scenery: winter snow, decor pass, curved gable bargeboards.
+- Small-hall interiors (`smallHallInterior` in arch.js, `theme: "en"|"go"`): 縁結び has red threads, 猪目 plaque, 千羽鶴, 夫婦石, pink ema. 合格 has 掛け軸, 撫で牛, desk with brush and plum, daruma, blue ema.
+- Trees between the camera and the player fade with a dithered shader (`W.treeFade`, world.js). Trees are kept out of the small-hall footprints.
 
 ## Next ideas
-- Small-hall interiors to match the honden.
-- Fade trees that block the camera.
 - Performance check on a real phone.

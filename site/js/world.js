@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030917";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030917";
-import { FOLIAGE } from "./env.js?v=11030917";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030932";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030932";
+import { FOLIAGE } from "./env.js?v=11030932";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -119,8 +119,8 @@ export function buildWorld(scene, env, { mobile }) {
   for (const x of [-12, 12]) for (const z of [24, 34]) W.lamps.push(toro(scene, x, z, 0, env));
 
   // ---------------------------------------------------------------- ⑨ 縁結びの社 ⑩ 合格の社
-  const en = smallHall(scene, env, { x: PLACES.enmusubi.pos[0], z: PLACES.enmusubi.pos[1], roofMat: new THREE.MeshStandardMaterial({ color: 0x6a3a52, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0xc23a5a }) });
-  const go = smallHall(scene, env, { x: PLACES.gokaku.pos[0], z: PLACES.gokaku.pos[1], roofMat: new THREE.MeshStandardMaterial({ color: 0x2c3a5a, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0x2c4a8a }) });
+  const en = smallHall(scene, env, { x: PLACES.enmusubi.pos[0], z: PLACES.enmusubi.pos[1], roofMat: new THREE.MeshStandardMaterial({ color: 0x6a3a52, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0xc23a5a }), theme: "en" });
+  const go = smallHall(scene, env, { x: PLACES.gokaku.pos[0], z: PLACES.gokaku.pos[1], roofMat: new THREE.MeshStandardMaterial({ color: 0x2c3a5a, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0x2c4a8a }), theme: "go" });
   W.cushions.enmusubi = en.cushions; W.cushions.gokaku = go.cushions; W.altars.enmusubi = en.altar; W.altars.gokaku = go.altar;
   // 本殿の中の座布団
   const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0x8b2c3a });
@@ -197,7 +197,8 @@ export function buildWorld(scene, env, { mobile }) {
 
   // ---------------------------------------------------------------- 木々（InstancedMesh：幹＋葉）
   const trees = { momiji: [], sakura: [], ume: [], sugi: [] };
-  const add = (k, x, z, s = 1) => trees[k].push([x, z, s]);
+  const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中に木が生えないように
+  const add = (k, x, z, s = 1) => { if (!halls.some(([hx, hz]) => Math.abs(x - hx) < 8 && Math.abs(z - hz) < 6.5)) trees[k].push([x, z, s]); };
   for (let z = 74; z > 45; z -= 3.2) for (const sgn of [-1, 1]) add("momiji", sgn * sr(7.5, 11), z + sr(-1, 1), sr(0.9, 1.3));        // 参道の紅葉
   for (let i = 0; i < 40; i++) { const x = sr(-40, -8), z = sr(46, 84); if (Math.abs(x) > 7.5) add("momiji", x, z, sr(0.9, 1.4)); }
   for (let i = 0; i < 30; i++) { const x = sr(30, 44), z = sr(44, 84); add("momiji", x, z, sr(0.9, 1.4)); }
@@ -234,6 +235,29 @@ export function buildWorld(scene, env, { mobile }) {
   trees.sugi.forEach(([x, z, s], i) => { const y = height(x, z);
     o3.position.set(x, y + 0.8 * s, z); o3.rotation.set(0, 0, 0); o3.scale.set(s, 1.6 * s, s); o3.updateMatrix(); trunkI.setMatrixAt(ti++, o3.matrix);
     o3.position.set(x, y + 3.6 * s, z); o3.rotation.set(0, sr(0, 3), 0); o3.scale.setScalar(s); o3.updateMatrix(); sugiI.setMatrixAt(i, o3.matrix); });
+  // カメラとプレイヤーの間の木を網目状に透かす（シェーダーで点描ディザ）
+  const fadeU = { uCam: { value: new THREE.Vector3(0, -999, 0) }, uTgt: { value: new THREE.Vector3(0, -999, 0) } };
+  for (const m of [trunkM, leafM, sugiM]) m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, fadeU);
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", `#include <common>
+varying vec3 vFadeW;`)
+      .replace("#include <project_vertex>", `#include <project_vertex>
+vec4 fw = vec4(transformed, 1.0);
+#ifdef USE_INSTANCING
+fw = instanceMatrix * fw;
+#endif
+vFadeW = (modelMatrix * fw).xyz;`);
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", `#include <common>
+varying vec3 vFadeW; uniform vec3 uCam, uTgt;`)
+      .replace("#include <clipping_planes_fragment>", `#include <clipping_planes_fragment>
+      { vec3 ab = uTgt - uCam; float t = clamp(dot(vFadeW - uCam, ab) / max(dot(ab, ab), 1e-3), 0.0, 1.0);
+        float d = length(vFadeW - (uCam + ab * t)), r = mix(0.9, 2.4, t);
+        float a = mix(0.18, 1.0, smoothstep(r * 0.55, r, d)) + step(0.97, t);
+        vec2 q = mod(floor(gl_FragCoord.xy), 4.0);
+        float b = (mod(q.x, 2.0) * 2.0 + mod(q.y, 2.0) * 3.0 - 4.0 * mod(q.x, 2.0) * mod(q.y, 2.0)) / 4.0 + (step(2.0, q.x) * 2.0 + step(2.0, q.y) * 3.0 - 4.0 * step(2.0, q.x) * step(2.0, q.y)) / 16.0;
+        if (a < 1.0 && a <= b + 0.03) discard; }`);
+  };
+  W.treeFade = (cam, tgt) => { fadeU.uCam.value.copy(cam); fadeU.uTgt.value.copy(tgt); };
   for (const im of [trunkI, leafI, sugiI]) { im.castShadow = true; im.receiveShadow = true; scene.add(im); }
   leafI.instanceColor.needsUpdate = true;
   W.leafMat = leafM;

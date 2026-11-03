@@ -5,19 +5,19 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030917";
-import { buildWorld } from "./world.js?v=11030917";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030917";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030917";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030917";
-import { deeds } from "../deeds.js?v=11030917";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11030917";
-import { fireflies } from "../fx.js?v=11030917";
-import { LIGHT_SPOTS } from "./arch.js?v=11030917";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030917";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11030917";
-import { connect, board } from "../net.js?v=11030917";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030917";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030932";
+import { buildWorld } from "./world.js?v=11030932";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030932";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030932";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030932";
+import { deeds } from "../deeds.js?v=11030932";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11030932";
+import { fireflies } from "../fx.js?v=11030932";
+import { LIGHT_SPOTS } from "./arch.js?v=11030932";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030932";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11030932";
+import { connect, board } from "../net.js?v=11030932";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030932";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -645,6 +645,7 @@ function loop() {
     if (region(me.position.x, me.position.z) === "trail" && me.position.y + 2.6 < camera.position.y) camera.position.y += (me.position.y + 2.6 - camera.position.y) * Math.min(1, dt * 10);
     const gy = footY(camera.position.x, camera.position.z) + 0.8; if (camera.position.y < gy) camera.position.y = gy;   // 地面にめり込まない
   }
+  W.treeFade?.(camera.position, controls.target);
   env.follow(me.position);
   for (const f of W.update) f(t, dt, me.position);
   for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * 3.2; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * 1.8; fl.lamp.position.y = 15.58 + Math.sin(t * 2 + fl.a) * 0.02; }
