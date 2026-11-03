@@ -3,6 +3,7 @@ import * as THREE from "three";
 
 export const jstNow = () => new Date(Date.now() + 9 * 3600e3);
 export function season(d = jstNow()) {
+  const q = typeof location !== "undefined" && new URLSearchParams(location.search).get("season"); if (["spring", "summer", "autumn", "winter"].includes(q)) return q;
   const m = d.getUTCMonth() + 1;
   return m >= 3 && m <= 5 ? "spring" : m >= 6 && m <= 8 ? "summer" : m >= 9 && m <= 11 ? "autumn" : "winter";
 }

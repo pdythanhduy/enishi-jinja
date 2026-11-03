@@ -132,3 +132,50 @@ export function ambience(getCtx, isMuted) {
   };
 }
 function rand(a, b) { return a + Math.random() * (b - a); }
+
+// お囃子（夜祭り）: 太鼓＋篠笛の五音音階を手続き生成
+export function matsuri(getCtx, isMuted) {
+  let on = false, timer = 0, step = 0, bus;
+  const SCALE = [0, 2, 5, 7, 9, 12, 14, 17]; // 民謡音階っぽい五音
+  const BASE = 587.33; // D5
+  const PHRASES = [[0, 2, 3, 2, 1, 0, -1, 0], [3, 4, 5, 4, 3, 2, 3, -1], [5, 4, 3, 4, 2, 1, 0, -1], [0, 1, 2, 4, 3, 2, 0, -1]];
+  const taiko = (a, t, big) => {
+    const o = a.createOscillator(), g = a.createGain(); o.type = "sine";
+    o.frequency.setValueAtTime(big ? 110 : 190, t); o.frequency.exponentialRampToValueAtTime(big ? 48 : 90, t + 0.25);
+    g.gain.setValueAtTime(big ? 0.55 : 0.22, t); g.gain.exponentialRampToValueAtTime(0.0001, t + (big ? 0.6 : 0.25));
+    o.connect(g).connect(bus); o.start(t); o.stop(t + 0.7);
+  };
+  const kane = (a, t) => { // 当たり鉦
+    [[1580, 0.05], [2370, 0.03], [3950, 0.015]].forEach(([f, v]) => { const o = a.createOscillator(), g = a.createGain(); o.type = "square";
+      o.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18); o.connect(g).connect(bus); o.start(t); o.stop(t + 0.2); });
+  };
+  const fue = (a, t, deg, dur) => {
+    const f = BASE * Math.pow(2, SCALE[deg] / 12), o = a.createOscillator(), g = a.createGain(), vib = a.createOscillator(), vg = a.createGain(), lp = a.createBiquadFilter();
+    o.type = "triangle"; o.frequency.setValueAtTime(f * 0.97, t); o.frequency.linearRampToValueAtTime(f, t + 0.06);
+    vib.frequency.value = 5.5; vg.gain.value = f * 0.012; vib.connect(vg).connect(o.frequency);
+    lp.type = "lowpass"; lp.frequency.value = 3200;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 0.05); g.gain.setValueAtTime(0.07, t + dur * 0.8); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(lp).connect(g).connect(bus); o.start(t); vib.start(t); o.stop(t + dur + 0.05); vib.stop(t + dur + 0.05);
+  };
+  const BEAT = 0.3; // 秒/拍（約100bpm の8分）
+  const tick = () => {
+    if (!on) return; const a = getCtx();
+    if (!isMuted()) {
+      const t = a.currentTime + 0.05, s = step % 16, ph = PHRASES[Math.floor(step / 16) % PHRASES.length];
+      if (s === 0 || s === 6 || s === 8 || s === 11) taiko(a, t, s === 0 || s === 8);
+      else if (s % 2 === 0) taiko(a, t, false);
+      if (s % 4 === 2) kane(a, t);
+      if (s % 2 === 0) { const d = ph[s / 2]; if (d >= 0) fue(a, t, d, BEAT * 1.9); }
+    }
+    step++; timer = setTimeout(tick, BEAT * 1000);
+  };
+  return {
+    set(v) {
+      if (v === on) return; on = v; const a = getCtx();
+      if (!bus) { bus = a.createGain(); bus.connect(a.destination); }
+      bus.gain.cancelScheduledValues(a.currentTime); bus.gain.setValueAtTime(bus.gain.value, a.currentTime);
+      bus.gain.linearRampToValueAtTime(v ? 0.6 : 0, a.currentTime + 2);
+      if (v) { step = 0; clearTimeout(timer); tick(); } else clearTimeout(timer);
+    },
+  };
+}

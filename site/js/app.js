@@ -5,19 +5,19 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030903";
-import { buildWorld } from "./world.js?v=11030903";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030903";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030903";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030903";
-import { deeds } from "../deeds.js?v=11030903";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds } from "./decor.js?v=11030903";
-import { fireflies } from "../fx.js?v=11030903";
-import { LIGHT_SPOTS } from "./arch.js?v=11030903";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030903";
-import { Lanterns, ambience } from "../fx.js?v=11030903";
-import { connect, board } from "../net.js?v=11030903";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030903";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030911";
+import { buildWorld } from "./world.js?v=11030911";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030911";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030911";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030911";
+import { deeds } from "../deeds.js?v=11030911";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11030911";
+import { fireflies } from "../fx.js?v=11030911";
+import { LIGHT_SPOTS } from "./arch.js?v=11030911";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030911";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11030911";
+import { connect, board } from "../net.js?v=11030911";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030911";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -56,7 +56,7 @@ function updateLightPool() {
 }
 const lanterns = new Lanterns(scene);
 // 仕上げ（質感・幟・提灯の列・岩と植え込み・雲・蛍・映り込み）
-const texTick = textures(W), noboriTick = nobori(scene), rowTick = lanternRows(scene, env); rocksAndBushes(scene, env.season);
+const texTick = textures(W), noboriTick = nobori(scene), rowTick = lanternRows(scene, env); rocksAndBushes(scene, env.season); snowRoofs(env.season);
 const cloudTick = clouds(scene), ffTick = env.season === "summer" || env.season === "autumn" ? fireflies(scene, MOBILE ? 40 : 80) : () => {};
 const envUpdate = environment(renderer, scene, env); setInterval(envUpdate, 10 * 60e3);
 const leaves = new Leaves(scene, env.season), darkL = new DarkLanterns(W.lamps), kit = new LostFox(scene), fireworks = new Fireworks(scene);
@@ -148,8 +148,10 @@ const sfx = {
 };
 $("#btn-sound").textContent = muted ? "🔇" : "🔈";
 const startAmb = ambience(() => ac(), () => muted);
-addEventListener("pointerdown", () => { ac(); startAmb(); });
-$("#btn-sound").onclick = () => { muted = !muted; store.set("enishi_mute", muted); $("#btn-sound").textContent = muted ? "🔇" : "🔈"; };
+const hayashi = matsuri(() => ac(), () => muted); let gestured = false;
+const syncHayashi = () => { if (gestured) hayashi.set(festOn && !muted); };
+addEventListener("pointerdown", () => { ac(); startAmb(); gestured = true; syncHayashi(); });
+$("#btn-sound").onclick = () => { muted = !muted; store.set("enishi_mute", muted); $("#btn-sound").textContent = muted ? "🔇" : "🔈"; syncHayashi(); };
 
 // ------------------------------------------------------------------ UI
 const toast = (t, ms = 2800) => { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), ms); };
@@ -579,7 +581,7 @@ function setFest(r) {
   if (!r || r.toku === undefined) return; const pct = Math.min(100, Math.round((r.toku / r.goal) * 100));
   $("#gtoku").textContent = `${r.toku}/${r.goal}`; $("#gbar").style.width = pct + "%";
   const on = r.toku >= r.goal; if (on && !festOn) toast("🎆 境内のみんなの徳が満ちました。今夜は夜祭りです！五重塔の空を見上げてください", 6000);
-  festOn = on; fireworks.on = on; document.body.classList.toggle("fest", on);
+  festOn = on; fireworks.on = on; document.body.classList.toggle("fest", on); syncHayashi();
 }
 const pollFest = () => fetch(API_T + "/festival").then((r) => r.json()).then(setFest).catch(() => {});
 pollFest(); setInterval(pollFest, 60e3);
@@ -684,4 +686,4 @@ loop();
 setTimeout(() => $("#loading").classList.add("done"), 300);
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
 if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
-window.__enishi = { leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+window.__enishi = { hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };

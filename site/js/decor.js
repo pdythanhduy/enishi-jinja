@@ -1,7 +1,7 @@
 // 仕上げ：反射（環境マップ）、瓦・砂利のテクスチャ、幟、提灯の列、岩・植え込み、雲、蛍、水面のきらめき
 import * as THREE from "three";
-import { MAT, chochin } from "./arch.js?v=11030903";
-import { height, POND } from "./map.js?v=11030903";
+import { MAT, chochin } from "./arch.js?v=11030911";
+import { height, POND } from "./map.js?v=11030911";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let sd = 11; const sr = (a, b) => a + ((sd = (sd * 16807) % 2147483647) / 2147483647) * (b - a);
@@ -123,4 +123,18 @@ export function clouds(scene) {
     s.scale.set(rnd(60, 120), rnd(18, 30), 1); s.position.set(rnd(-250, 250), rnd(70, 120), rnd(-300, -60)); scene.add(s); list.push(s); }
   return (t, env) => { const night = env.lamp, eve = env.hour > 16.3 && env.hour < 19;
     for (const s of list) { s.position.x += 0.02; if (s.position.x > 260) s.position.x = -260; s.material.color.set(eve ? 0xffb08a : night > 0.5 ? 0x2a3050 : 0xffffff); s.material.opacity = night > 0.5 ? 0.35 : 0.55; } };
+}
+
+// ------------------------------------------------------------------ 冬：屋根に積もる雪（上向きの面だけ白く）
+export function snowRoofs(season, mats = [MAT.copper, MAT.copperD, MAT.hinoki, MAT.stoneD, MAT.kuro]) {
+  if (season !== "winter") return;
+  for (const m of mats) {
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vSnowN;")
+        .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nvSnowN = normalize(mat3(modelMatrix) * objectNormal);");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vSnowN;")
+        .replace("#include <color_fragment>", "#include <color_fragment>\nfloat sn = smoothstep(0.45, 0.8, vSnowN.y);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 0.98), sn);");
+    };
+    m.customProgramCacheKey = () => "snow"; m.needsUpdate = true;
+  }
 }
