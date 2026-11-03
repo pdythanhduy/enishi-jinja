@@ -251,7 +251,7 @@ export function setupKito(A) {
   };
 
   // ---------------------------------------------------------------- 儀式
-  function run({ name, gan, wish }) {
+  function run({ name, gan, wish, group = false, names = [] }) {
     return A.doing(async () => {
       aborted = false; running = true;
       let voice = null, stopFue = () => {};
@@ -259,9 +259,9 @@ export function setupKito(A) {
       try {
         // 着座
         A.toast("本殿の祈祷の座へ向かいます", 2000);
-        await A.goSeat([SEAT.x, SEAT.z]);
+        await A.goSeat(group ? A.freeCushion() : [SEAT.x, SEAT.z]);
         me.rotation.y = Math.PI; A.setPose(me, "seiza");
-        ov.hidden = false; ov.classList.remove("leaving"); document.body.classList.add("cine"); A.hideOthers(true);
+        ov.hidden = false; ov.classList.remove("leaving"); document.body.classList.add("cine"); if (!group) A.hideOthers(true);
         lookNow.set(0, 2.6, -0.5); A.setCine(cineTick);
         shot([3.4, 4.0, 4.4], [0, 2.6, -0.6], 3.0);
         priest.rotation.y = 0; await glide(priest, new THREE.Vector3(-0.9, FLOOR, -0.5), 2200, Math.PI * 0.15);
@@ -286,11 +286,13 @@ export function setupKito(A) {
         await glide(priest, new THREE.Vector3(0, FLOOR, -0.75), 900, Math.PI);
         shot([0.9, 3.0, 2.7], [0, 3.3, -2.6], 2.6);
         await A.bowTo(priest, 1.0, 700); await w(300); await A.bowTo(priest, 0, 600); A.sfx.taiko(); await w(500);
-        const norito =
-          `掛けまくも畏き えにしの大神の大前に 恐み恐みも白さく\n今日の生日の足日に ${name} ${gan}の為に\n` +
-          (wish ? `「${wish}」と 願ひ奉る状を\n` : "") +
-          `平けく安けく聞こし食して 夜の守り日の守りに 守り幸へ給へと 恐み恐みも白す`;
-        const spansN = setText(norito, [name, wish && `「${wish}」`]);
+        const all = group ? [name, ...names.filter((n) => n && n !== name)].slice(0, 12) : [name];
+        const norito = group
+          ? `掛けまくも畏き えにしの大神の大前に 恐み恐みも白さく\n今日の生日の足日に 参列の ${all.join(" ")} 等\n各も各も 心に願ひ奉る状を\n平けく安けく聞こし食して 夜の守り日の守りに 守り幸へ給へと 恐み恐みも白す`
+          : `掛けまくも畏き えにしの大神の大前に 恐み恐みも白さく\n今日の生日の足日に ${name} ${gan}の為に\n` +
+            (wish ? `「${wish}」と 願ひ奉る状を\n` : "") +
+            `平けく安けく聞こし食して 夜の守り日の守りに 守り幸へ給へと 恐み恐みも白す`;
+        const spansN = setText(norito, group ? all : [name, wish && `「${wish}」`]);
         let climax = false;
         await recite(spansN, 5.2, voice, () => {
           if (climax) return; climax = true; glowTo = 1; A.tone([[523, 0.25], [784, 0.2], [1046, 0.15]], 3.2, 0.06);
@@ -345,7 +347,7 @@ export function setupKito(A) {
         await glide(priest, new THREE.Vector3(-0.6, FLOOR, -0.2), 900, Math.PI * 0.6);
         await A.bowTo(priest, 0.6, 600); await A.bowTo(priest, 0, 500);
         await w(400);
-        const rec = { name, gan, wish, date: reiwa(), day: A.today() };
+        const rec = { name, gan: group ? "心願成就" : gan, wish: group ? `合同祈祷・${all.length}人で` : wish, date: reiwa(), day: A.today() };
         const list = A.store.get("enishi_ofuda", []); list.unshift(rec); A.store.set("enishi_ofuda", list.slice(0, 30));
         const first = A.store.get("enishi_kito", {}).day !== A.today();
         A.store.set("enishi_kito", { gan, wish, day: A.today() });
@@ -357,7 +359,7 @@ export function setupKito(A) {
         nusa.visible = false; priest.position.copy(PRIEST_HOME); priest.rotation.y = 0; miko.position.copy(MIKO_HOME); miko.rotation.y = 0;
         [pu, mu].forEach((x) => x.arms.forEach((a, i) => { a.rotation.x = 0; a.rotation.z = (i ? -1 : 1) * 0.22; })); pu.body.rotation.x = 0;
         priest.userData.arms[1].children.slice(2).forEach((c) => priest.userData.arms[1].remove(c));
-        ov.hidden = true; $(".kt-text").innerHTML = ""; $(".kt-cue").hidden = true; document.body.classList.remove("cine"); A.hideOthers(false);
+        ov.hidden = true; $(".kt-text").innerHTML = ""; $(".kt-cue").hidden = true; document.body.classList.remove("cine"); A.hideOthers(false); joined = false;
         A.setCine(null);
       }
     });
@@ -388,5 +390,37 @@ export function setupKito(A) {
     window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank", "noopener");
   };
 
-  return { open: openForm, run, priest, miko, get running() { return running; } };
+  // ---------------------------------------------------------------- 合同祈祷：毎時0分と30分（日本時間）。本殿にいる人みんなの名前を読み上げる
+  const bar = document.createElement("div"); bar.id = "gokito"; bar.hidden = true;
+  bar.innerHTML = `<span class="gk-t"></span><button class="btn primary gk-go" type="button">参列する</button>`;
+  document.body.appendChild(bar);
+  let joined = false, joinedAt = 0, lastLeft = 1e9;
+  const inHonden = () => Math.abs(me.position.x) < 9 && me.position.z < 8.3 && me.position.z > -4.5;
+  const secsLeft = () => { const d = new Date(Date.now() + 9 * 3600e3), m = d.getUTCMinutes(), s = d.getUTCSeconds(); return ((m < 30 ? 30 : 60) - m) * 60 - s; };
+  bar.querySelector(".gk-go").onclick = () => {
+    if (A.isBusy() || joined) return;
+    joined = true; joinedAt = Date.now(); A.toast("本殿で合同祈祷を待ちます。始まるまで座ってお待ちください", 3200);
+    A.goSeat(A.freeCushion()).then(() => { if (joined && !running) { me.rotation.y = Math.PI; A.setPose(me, "seiza"); } });
+    paintBar();
+  };
+  function paintBar() {
+    const left = secsLeft(), show = left <= 300 && !running && !A.inCine?.();
+    bar.hidden = !show; if (!show) return;
+    const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
+    bar.querySelector(".gk-t").innerHTML = `<small>本殿 · 毎時0分と30分</small>⛩ 合同祈祷まで ${mm}:${ss}`;
+    const b = bar.querySelector(".gk-go"); b.textContent = joined || inHonden() ? "参列しています" : "参列する"; b.disabled = joined || inHonden();
+  }
+  setInterval(() => {
+    const left = secsLeft();
+    if (joined && !inHonden() && Date.now() - joinedAt > 25e3 && !A.isBusy()) joined = false;     // 本殿を離れたら取り消し
+    // 0分・30分になった瞬間（残りが急に増える）
+    if (left > lastLeft + 60) {
+      if ((joined || inHonden()) && !running && !A.isBusy()) {
+        const names = A.othersInHonden();
+        A.net?.act("kito"); run({ name: A.getName(), gan: "心願成就", wish: "", group: true, names });
+      } else if (!running) A.toast("⛩ 本殿で合同祈祷が始まりました。次は30分後です", 3200);
+    }
+    lastLeft = left; paintBar();
+  }, 1000);
+  return { open: openForm, run, priest, miko, get running() { return running; }, secsLeft };
 }

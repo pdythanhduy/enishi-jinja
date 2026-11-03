@@ -5,25 +5,25 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031057";
-import { buildWorld } from "./world.js?v=11031057";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031057";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031057";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031057";
-import { deeds } from "../deeds.js?v=11031057";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031057";
-import { fireflies } from "../fx.js?v=11031057";
-import { LIGHT_SPOTS } from "./arch.js?v=11031057";
-import { freeze } from "./freeze.js?v=11031057";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031057";
-import { setupKenno } from "./kenno.js?v=11031057";
-import { setupSocial } from "./social.js?v=11031057";
-import { setupProfile } from "./profile.js?v=11031057";
-import { setupKito } from "./kito.js?v=11031057";
-import { makeAvatar, setPose, bowTo, restyle } from "./avatar.js?v=11031057";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031057";
-import { connect, board } from "../net.js?v=11031057";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031057";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031058";
+import { buildWorld } from "./world.js?v=11031058";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031058";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031058";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031058";
+import { deeds } from "../deeds.js?v=11031058";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031058";
+import { fireflies } from "../fx.js?v=11031058";
+import { LIGHT_SPOTS } from "./arch.js?v=11031058";
+import { freeze } from "./freeze.js?v=11031058";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031058";
+import { setupKenno } from "./kenno.js?v=11031058";
+import { setupSocial } from "./social.js?v=11031058";
+import { setupProfile } from "./profile.js?v=11031058";
+import { setupKito } from "./kito.js?v=11031058";
+import { makeAvatar, setPose, bowTo, restyle } from "./avatar.js?v=11031058";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031058";
+import { connect, board } from "../net.js?v=11031058";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031058";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -115,6 +115,7 @@ canvas.addEventListener("pointerup", (e) => {
   if (hit) { walkTo([hit.point.x, hit.point.z]); $("#hint").style.opacity = 0; }
 });
 function walkTo(dest, cb = null, { route = false, fast = false } = {}) {
+  if (me.userData.pose === "seiza" && !busy) setPose(me, null);      // 座って待っていたら立ち上がる
   path = route ? routeTo([me.position.x, me.position.z], dest) : [dest];
   onArrive = cb; speedMul = fast ? 2.4 : 1;
 }
@@ -740,7 +741,11 @@ async function goSeat([sx, sz]) {
   if (Math.hypot(me.position.x - sx, me.position.z - sz) > 0.4) { path = []; onArrive = null; me.position.set(sx, footY(sx, sz), sz); }
 }
 const hideOthers = (on) => { for (const o of others.values()) { o.av.visible = !on; o.tag.style.visibility = on ? "hidden" : ""; if (o.bubble) o.bubble.style.visibility = on ? "hidden" : ""; } };
-const kito = setupKito({ hideOthers, scene, camera, me, W, env, store, sfx, tone, noise, ac, muted: () => muted, wait, toast, setPose, bowTo, doing, setCine, goSeat, walkTo2: walkP,
+// 本殿の空いている座布団（前列の真ん中から）・本殿にいる人の名前
+const freeCushion = () => { const taken = [...others.values()].map((o) => o.to); const cs = [...W.cushions.tosen].sort((a, b) => Math.hypot(a[0], a[1] + 0.6) - Math.hypot(b[0], b[1] + 0.6));
+  return cs.find(([x, z]) => !taken.some((t) => Math.hypot(t.x - x, t.z - z) < 0.6)) || cs[0]; };
+const othersInHonden = () => [...others.values()].filter((o) => Math.abs(o.av.position.x) < 9 && o.av.position.z < 8.3 && o.av.position.z > -4.5).map((o) => o.name);
+const kito = setupKito({ hideOthers, freeCushion, othersInHonden, isBusy: () => busy, inCine: () => !!cine || !!intro, scene, camera, me, W, env, store, sfx, tone, noise, ac, muted: () => muted, wait, toast, setPose, bowTo, doing, setCine, goSeat, walkTo2: walkP,
   deedHook, today, ng: ngText, getName: () => myName, get net() { return net; } });
 // ------------------------------------------------------------------ 身支度（profile.js）
 const cleanText = (t) => String(t || "").replace(/[<>&"'`\\]/g, "").replace(/\s+/g, " ").trim().slice(0, 12);
