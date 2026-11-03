@@ -140,7 +140,47 @@ export function honden(parent, env, { x = 0, z = 0, s = 1 } = {}) {
   for (let i = -3; i <= 3; i++) if (i) chochin(g, i * 2.4, F + 4.7, D / 2 + 0.2, env, 0.75, 0xffe7b0);
   lightSpot(g, F + 3, 12, 18, 0xffb06a);
   const mirror = hondenInterior(g, env, W, D, F);
+  hondenGlory(g, env, W, D, F);
   return { group: g, floorY: (F + 0.3) * s, front: z + (D / 2 + 1) * s, mirror };
+}
+
+// 本殿の華やかさ：唐破風・蟇股の彫刻・飾り金具
+let KAERU = null;
+function hondenGlory(g, env, W, D, F) {
+  // 唐破風：向拝の正面に、中央が盛り上がり両端が反る波形の破風
+  const hw = 4.9, prof = (x) => { const u = Math.min(1, Math.abs(x) / hw); return 1.3 * Math.pow(1 - u * u, 1.6) + 0.6 * Math.pow(u, 5); };
+  const band = (th) => { const sh = new THREE.Shape(), N = 40; for (let i = 0; i <= N; i++) { const x = -hw + (2 * hw * i) / N; i ? sh.lineTo(x, prof(x) + th) : sh.moveTo(x, prof(x) + th); }
+    for (let i = N; i >= 0; i--) { const x = -hw + (2 * hw * i) / N; sh.lineTo(x, prof(x) - th); } sh.closePath(); return sh; };
+  const zf = D / 2 + 4.62, yb = F + 4.55;
+  const board = new THREE.Mesh(new THREE.ExtrudeGeometry(band(0.24), { depth: 0.22, bevelEnabled: false, curveSegments: 1 }), MAT.kuro); board.position.set(0, yb, zf - 0.22); board.castShadow = true; g.add(board);
+  const slab = new THREE.Mesh(new THREE.ExtrudeGeometry(band(0.1), { depth: 2.6, bevelEnabled: false, curveSegments: 1 }), MAT.copper); slab.position.set(0, yb + 0.28, zf - 2.75); slab.castShadow = true; g.add(slab);
+  const edge = []; for (let i = 0; i <= 40; i++) { const x = -hw + (2 * hw * i) / 40; edge.push(new THREE.Vector3(x, yb + prof(x) + 0.26, zf + 0.01)); }
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(edge), 60, 0.05, 6, false), MAT.gold));
+  // 懸魚（中央の金の飾り）
+  const gegyo = new THREE.Group(); gegyo.position.set(0, yb + 1.05, zf + 0.04); g.add(gegyo);
+  const petal = new THREE.CylinderGeometry(0.16, 0.16, 0.05, 16);
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2, p = new THREE.Mesh(petal, MAT.gold); p.rotation.x = Math.PI / 2; p.position.set(Math.cos(a) * 0.22, Math.sin(a) * 0.22 - 0.25, 0); gegyo.add(p); }
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 10), MAT.gold); core.position.y = -0.25; gegyo.add(core);
+  // 蟇股（極彩色の彫刻）：正面の柱の間と向拝に
+  if (!KAERU) {
+    const c = document.createElement("canvas"); c.width = 256; c.height = 128; const x = c.getContext("2d");
+    x.fillStyle = "#1d2a3a"; x.fillRect(0, 0, 256, 128);
+    x.strokeStyle = "#e3b54a"; x.lineWidth = 8; x.beginPath(); x.moveTo(8, 120); x.quadraticCurveTo(128, -30, 248, 120); x.stroke();
+    const leaf = (lx, ly, r, rot) => { x.save(); x.translate(lx, ly); x.rotate(rot); x.fillStyle = "#3f8a4a"; x.beginPath(); x.ellipse(0, 0, r * 1.6, r * 0.6, 0, 0, 7); x.fill(); x.restore(); };
+    for (const [lx, ly, r, rt] of [[70, 92, 16, -0.5], [186, 92, 16, 0.5], [96, 108, 13, -0.2], [160, 108, 13, 0.2], [52, 70, 12, -0.9], [204, 70, 12, 0.9]]) leaf(lx, ly, r, rt);
+    for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2; x.fillStyle = k % 2 ? "#e85a6a" : "#d23a4a"; x.beginPath(); x.ellipse(128 + Math.cos(a) * 18, 76 + Math.sin(a) * 14, 18, 11, a, 0, 7); x.fill(); }
+    x.fillStyle = "#f6d36b"; x.beginPath(); x.arc(128, 76, 11, 0, 7); x.fill();
+    for (const [bx, col] of [[40, "#f3a6b8"], [216, "#8ac6e8"]]) { x.fillStyle = col; for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; x.beginPath(); x.arc(bx + Math.cos(a) * 8, 46 + Math.sin(a) * 8, 7, 0, 7); x.fill(); } x.fillStyle = "#f6d36b"; x.beginPath(); x.arc(bx, 46, 5, 0, 7); x.fill(); }
+    x.strokeStyle = "#e3b54a"; x.lineWidth = 6; x.strokeRect(3, 3, 250, 122);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; KAERU = new THREE.MeshStandardMaterial({ map: t, roughness: 0.55, metalness: 0.12 });
+  }
+  for (const cx of [-7, -4, 0, 4, 7]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(cx === 0 ? 2.6 : 1.9, 0.62), KAERU); p.position.set(cx, F + 4.63, D / 2 + 0.13); g.add(p); }
+  { const p = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.7), KAERU); p.position.set(0, F + 4.0, D / 2 + 2.77); g.add(p); }
+  // 飾り金具：柱の頭と足に金の輪
+  const ring = new THREE.TorusGeometry(0.33, 0.05, 6, 20);
+  const cols = [-8.6, -5.4, -2.6, 2.6, 5.4, 8.6];
+  for (const cx of cols) for (const cz of [-D / 2 + 0.4, D / 2 - 0.4]) for (const yy of [F + 4.75, F + 0.55]) { const r = new THREE.Mesh(ring, MAT.gold); r.rotation.x = Math.PI / 2; r.position.set(cx, yy, cz); g.add(r); }
+  for (const cx of [-3.4, 3.4]) for (const yy of [F + 4.05, F + 0.55]) { const r = new THREE.Mesh(ring, MAT.gold); r.rotation.x = Math.PI / 2; r.position.set(cx, yy, D / 2 + 2.6); g.add(r); }
 }
 
 // 本殿の内陣：御簾・神鏡・御幣・鏡餅・榊・大太鼓・釣灯籠
@@ -184,6 +224,43 @@ function hondenInterior(g, env, W, D, F) {
   box(g, W - 5.6, 0.14, 0.14, MAT.kuro, 0, F + 4.75, zb + 2.3, false);
   const fusaM = std(0x6a2a8a, { roughness: 0.8 });
   for (const s of [-1, 0, 1]) { const f = cyl(g, 0.02, 0.12, 0.7, fusaM, s * 3.2, F + 3.0, zb + 2.36, 8, false); }
+  // 御扉：奥の本殿へ通じる黒漆の扉（金の飾り）
+  box(g, 3.4, 3.4, 0.12, MAT.kuro, 0, y0 + 2.6, -D / 2 + 0.78);
+  box(g, 0.05, 3.3, 0.02, MAT.gold, 0, y0 + 2.6, -D / 2 + 0.85, false);
+  for (const s of [-1, 1]) {
+    for (const yy of [y0 + 1.4, y0 + 2.6, y0 + 3.8]) box(g, 0.9, 0.12, 0.02, MAT.gold, s * 1.2, yy, -D / 2 + 0.85, false);
+    const rg = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.022, 6, 16), MAT.gold); rg.position.set(s * 0.22, y0 + 2.4, -D / 2 + 0.87); g.add(rg);
+  }
+  // 神饌：三方に米・酒・塩・水・魚・野菜・果物
+  const sanbo = (x, z, item) => { box(g, 0.5, 0.05, 0.5, MAT.woodL, x, y0 + 0.75, z); box(g, 0.34, 0.25, 0.34, MAT.woodL, x, y0 + 0.6, z); item(x, y0 + 0.78, z); };
+  const white = std(0xfbfaf4, { roughness: 0.6 }), fishM = std(0xc8835a, { roughness: 0.5, metalness: 0.2 });
+  const items = [
+    (x, y, z) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), white); m.position.set(x, y, z); g.add(m); },                       // 米
+    (x, y, z) => { for (const d of [-0.1, 0.1]) cyl(g, 0.055, 0.075, 0.3, white, x + d, y + 0.15, z, 10, false); },                                                                       // 御神酒
+    (x, y, z) => { const m = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.22, 12), white); m.position.set(x, y + 0.11, z); g.add(m); },                                             // 塩
+    (x, y, z) => { cyl(g, 0.1, 0.08, 0.12, white, x, y + 0.06, z, 12, false); },                                                                                                     // 水
+    (x, y, z) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), fishM); m.scale.set(2.2, 0.6, 0.8); m.position.set(x, y + 0.06, z); g.add(m); },                    // 魚
+    (x, y, z) => { for (let k = 0; k < 3; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), std(0x4f8a3a)); m.scale.set(0.8, 1.6, 0.8); m.position.set(x - 0.08 + k * 0.08, y + 0.1, z); g.add(m); } },   // 野菜
+    (x, y, z) => { for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), std(k % 2 ? 0xe07a2a : 0xc8281e, { roughness: 0.4 })); m.position.set(x - 0.06 + (k % 2) * 0.12, y + 0.07 + Math.floor(k / 2) * 0.1, z); g.add(m); } },   // 果物
+  ];
+  items.forEach((it, i) => sanbo(-2.4 + i * 0.8, zb + 1.85, it));
+  // 真榊：五色の絹と、鏡・剣・玉
+  const silk = [0x2c6db3, 0xf6d36b, 0xd9412b, 0xf4f1ea, 0x6a2a8a];
+  for (const s of [-1, 1]) {
+    const sx = s * 5.9, sz = zb + 2.6;
+    box(g, 0.6, 0.18, 0.6, MAT.kuro, sx, y0 + 0.09, sz); cyl(g, 0.04, 0.05, 3.0, MAT.woodL, sx, y0 + 1.6, sz, 8);
+    for (let k = 0; k < 8; k++) { const l = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), std(0x2c5a2c)); l.scale.set(1, 0.55, 0.7); l.position.set(sx + Math.sin(k * 2.1) * 0.25, y0 + 3.0 + (k % 3) * 0.12, sz + Math.cos(k * 1.7) * 0.2); g.add(l); }
+    silk.forEach((c, k) => { const b = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 1.7), std(c, { side: THREE.DoubleSide, roughness: 0.6 })); b.position.set(sx - 0.24 + k * 0.12, y0 + 2.05, sz + 0.06); g.add(b); });
+    if (s > 0) { const mr = cyl(g, 0.2, 0.2, 0.03, std(0xf2f5fa, { metalness: 1, roughness: 0.06 }), sx, y0 + 2.75, sz + 0.1, 20, false); mr.rotation.x = Math.PI / 2; }
+    else { box(g, 0.05, 0.75, 0.02, std(0xdfe4ea, { metalness: 1, roughness: 0.15 }), sx, y0 + 2.4, sz + 0.1, false); box(g, 0.18, 0.04, 0.04, MAT.gold, sx, y0 + 2.0, sz + 0.1, false); }
+    const jewel = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.03, 6, 12, Math.PI * 1.4), std(0x3f9a6a, { roughness: 0.3 })); jewel.position.set(sx, y0 + 1.25, sz + 0.12); g.add(jewel);
+  }
+  // 雪洞（ぼんぼり）：参道の両脇に
+  for (const sx of [-2.4, 2.4]) for (const zz of [0.2, 3.4]) {
+    cyl(g, 0.03, 0.05, 1.1, MAT.kuro, sx, y0 + 0.55, zz, 6, false); box(g, 0.34, 0.03, 0.34, MAT.kuro, sx, y0 + 0.02, zz, false);
+    cyl(g, 0.17, 0.14, 0.42, sharedLamp(0xfff4dc, 0xffb050, 2.2, env), sx, y0 + 1.3, zz, 6, false);
+    cyl(g, 0.19, 0.19, 0.03, MAT.shu, sx, y0 + 1.52, zz, 6, false);
+  }
   // 結界：参拝者はここまで（祭壇の手前の低い柵としめ縄）
   for (const s of [-1, 1]) {
     const x0 = s * 1.6, x1 = s * (W / 2 - 1.2), cxm = (x0 + x1) / 2, len = Math.abs(x1 - x0), zz = -2.05;

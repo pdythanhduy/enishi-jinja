@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031413";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031413";
-import { FOLIAGE } from "./env.js?v=11031413";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031417";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031417";
+import { FOLIAGE } from "./env.js?v=11031417";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -125,10 +125,17 @@ export function buildWorld(scene, env, { mobile }) {
   const go = smallHall(scene, env, { x: PLACES.gokaku.pos[0], z: PLACES.gokaku.pos[1], W: SMALL.W, D: SMALL.D, F: SMALL.F, roofMat: new THREE.MeshStandardMaterial({ color: 0x2c3a5a, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0x2c4a8a }), theme: "go", crest: 0xf6d36b });
   W.cushions.enmusubi = en.cushions; W.cushions.gokaku = go.cushions; W.altars.enmusubi = en.altar; W.altars.gokaku = go.altar;
   // 本殿の中の座布団
-  const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0x8b2c3a });
-  for (let r = 0; r < 3; r++) for (let cI = 0; cI < 6; cI++) { const [x, z] = hw(-6.25 + cI * 2.5, -1.6 + r * 2.2 + 1); box(scene, 0.95, 0.12, 0.95, zab, x, hd.floorY + 0.06, z).userData.static = true; hdC.push([x, z]); }
+  const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0xc9b27a, roughness: 0.95 });   // 円座（い草の丸い座）
+  for (let r = 0; r < 2; r++) for (const cx of [-4.6, -3.0, 3.0, 4.6]) { const [x, z] = hw(cx, 1.5 + r * 2.2); const c = cyl(scene, 0.42, 0.44, 0.09, zab, x, hd.floorY + 0.05, z, 20); c.userData.static = true; hdC.push([x, z]); }
   W.cushions.tosen = hdC; W.altars.tosen = hw(0, -2.6);
   W.hondenMirror = hd.mirror;
+  // ライトアップ：夜、本殿の正面を足もとから照らす
+  { const cv = document.createElement("canvas"); cv.width = 64; cv.height = 128; const c = cv.getContext("2d");
+    const gv = c.createLinearGradient(0, 128, 0, 0); gv.addColorStop(0, "rgba(255,196,120,1)"); gv.addColorStop(0.45, "rgba(255,170,90,.35)"); gv.addColorStop(1, "rgba(255,150,80,0)"); c.fillStyle = gv; c.fillRect(0, 0, 64, 128);
+    const gh = c.createLinearGradient(0, 0, 64, 0); gh.addColorStop(0, "rgba(0,0,0,1)"); gh.addColorStop(0.5, "rgba(0,0,0,0)"); gh.addColorStop(1, "rgba(0,0,0,1)"); c.globalCompositeOperation = "destination-out"; c.fillStyle = gh; c.fillRect(0, 0, 64, 128);
+    const glowM = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, fog: false });
+    for (const cx of [-7.0, -4.0, 0, 4.0, 7.0]) { const [x, z] = hw(cx, 7.35); const p = new THREE.Mesh(new THREE.PlaneGeometry(3.2 * HONDEN.S, 6.4 * HONDEN.S), glowM); p.position.set(x, 3.3 * HONDEN.S, z); scene.add(p); }
+    W.update.push(() => { glowM.opacity = 0.55 * env.lamp; }); }
   // 縁結び・合格の賽銭箱と鈴
   W.smallSaisen = {};
   for (const [hid, hx] of [["enmusubi", -SMALL.X], ["gokaku", SMALL.X]]) {
