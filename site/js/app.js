@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031924";
-import { buildWorld } from "./world.js?v=11031924";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031924";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031924";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031924";
-import { deeds } from "../deeds.js?v=11031924";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031924";
-import { fireflies } from "../fx.js?v=11031924";
-import { LIGHT_SPOTS } from "./arch.js?v=11031924";
-import { freeze } from "./freeze.js?v=11031924";
-import { setupSeasonal } from "./seasonal.js?v=11031924";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031924";
-import { makeBGM } from "./bgm.js?v=11031924";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031924";
-import { setupKenno } from "./kenno.js?v=11031924";
-import { setupSocial } from "./social.js?v=11031924";
-import { setupProfile } from "./profile.js?v=11031924";
-import { setupChores } from "./chores.js?v=11031924";
-import { setupSagyo } from "./sagyo.js?v=11031924";
-import { setupWelcome } from "./welcome.js?v=11031924";
-import { setupZen } from "./zen.js?v=11031924";
-import { setupMixer } from "./mixer.js?v=11031924";
-import { setupShakyo } from "./shakyo.js?v=11031924";
-import { setupTour } from "./tour.js?v=11031924";
-import { setupChat } from "./chat.js?v=11031924";
-import { setupKito, ofudaImage } from "./kito.js?v=11031924";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031924";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031924";
-import { connect, board } from "../net.js?v=11031924";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031924";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031949";
+import { buildWorld } from "./world.js?v=11031949";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031949";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031949";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031949";
+import { deeds } from "../deeds.js?v=11031949";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031949";
+import { fireflies } from "../fx.js?v=11031949";
+import { LIGHT_SPOTS } from "./arch.js?v=11031949";
+import { freeze } from "./freeze.js?v=11031949";
+import { setupSeasonal } from "./seasonal.js?v=11031949";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031949";
+import { makeBGM } from "./bgm.js?v=11031949";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031949";
+import { setupKenno } from "./kenno.js?v=11031949";
+import { setupSocial } from "./social.js?v=11031949";
+import { setupProfile } from "./profile.js?v=11031949";
+import { setupChores } from "./chores.js?v=11031949";
+import { setupSagyo } from "./sagyo.js?v=11031949";
+import { setupWelcome } from "./welcome.js?v=11031949";
+import { setupZen } from "./zen.js?v=11031949";
+import { setupMixer } from "./mixer.js?v=11031949";
+import { setupShakyo } from "./shakyo.js?v=11031949";
+import { setupTour } from "./tour.js?v=11031949";
+import { setupChat } from "./chat.js?v=11031949";
+import { setupKito, ofudaImage } from "./kito.js?v=11031949";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031949";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031949";
+import { connect, board } from "../net.js?v=11031949";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031949";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -171,11 +171,40 @@ function walkTo(dest, cb = null, { route = false, fast = false } = {}) {
   prog.best = 1e9; prog.t = 0;
   if (me.userData.pose === "seiza" && !busy) setPose(me, null);      // 座って待っていたら立ち上がる
   path = route ? routeTo([me.position.x, me.position.z], dest) : [dest];
-  onArrive = cb; speedMul = fast ? 2.4 : 1;
+  onArrive = cb; speedMul = fast ? 1.6 : 1;
 }
 const SPEED = 3.4, step = new THREE.Vector3();
 let stuck = 0, avoidSide = 0; const prog = { best: 1e9, t: 0 };   // 目的地に近づけているか
+// 移動の入力：画面左下のスティック（スマホ）と WASD・矢印キー（PC）。カメラの向きを前として歩く
+const joy = { x: 0, y: 0 }, keys = new Set();
+addEventListener("keydown", (e) => { if (e.target.closest?.("input,textarea,[contenteditable]")) return; const k = e.key.toLowerCase(); if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) { keys.add(k); if (k.startsWith("arrow")) e.preventDefault(); } });
+addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase())); addEventListener("blur", () => keys.clear());
+function moveInput() {
+  let x = joy.x, y = joy.y;
+  if (keys.has("a") || keys.has("arrowleft")) x -= 1; if (keys.has("d") || keys.has("arrowright")) x += 1;
+  if (keys.has("w") || keys.has("arrowup")) y -= 1; if (keys.has("s") || keys.has("arrowdown")) y += 1;
+  const m = Math.hypot(x, y); return m > 1 ? [x / m, y / m, 1] : [x, y, m];
+}
+const fwd = new THREE.Vector3();
+function steer(dt) {
+  const [ix, iy, m] = moveInput(); const u = me.userData;
+  if (m < 0.15 || busy || cine || intro) return false;
+  if (path.length) { path = []; onArrive = null; speedMul = 1; }
+  if (u.pose === "seiza") setPose(me, null);
+  camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+  const dx = fwd.x * -iy + -fwd.z * ix, dz = fwd.z * -iy + fwd.x * ix, dl = Math.hypot(dx, dz) || 1, s = SPEED * Math.min(1, m) * dt;
+  const ang = Math.atan2(dx, dz); me.rotation.y += ((((ang - me.rotation.y) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI) * Math.min(1, dt * 12);
+  const nx = me.position.x + (dx / dl) * s, nz = me.position.z + (dz / dl) * s;
+  if (!blocked(nx, nz)) { me.position.x = nx; me.position.z = nz; }
+  else if (!blocked(nx, me.position.z)) me.position.x = nx;                                  // 壁に沿ってすべる
+  else if (!blocked(me.position.x, nz)) me.position.z = nz;
+  u.walk += dt * 11 * Math.min(1, m); u.body.position.y = Math.abs(Math.sin(u.walk)) * 0.08; u.arms.forEach((a, i) => (a.rotation.x = Math.sin(u.walk + i * Math.PI) * 0.5));
+  me.position.y += (footY(me.position.x, me.position.z) - me.position.y) * Math.min(1, dt * 14);
+  $("#hint").style.opacity = 0;
+  return true;
+}
 function stepMove(dt) {
+  if (steer(dt)) return;
   const u = me.userData;
   if (path.length) {
     const [tx, tz] = path[0], dx = tx - me.position.x, dz = tz - me.position.z, dist = Math.hypot(dx, dz);
@@ -313,7 +342,9 @@ $("#map-pins").onclick = (e) => { const b = e.target.closest(".pin"); if (!b) re
 function goPlace(k, cb) {
   const p = PLACES[k]; if (!p || busy) return;
   toast(`${p.n}. ${p.name}へ向かいます`, 1800);
-  walkTo(p.stand, () => { me.rotation.y = p.face; cb && cb(); }, { route: true, fast: true });
+  const arrive = () => { me.rotation.y = p.face; cb && cb(); };
+  if (Math.hypot(p.stand[0] - me.position.x, p.stand[1] - me.position.z) > 38) warpTo(p.stand).then(arrive);   // 遠い場所は、暗転してそのまま
+  else walkTo(p.stand, arrive, { route: true });
 }
 
 // 今いる場所の名前
@@ -1022,6 +1053,18 @@ setupSeasonal({ scene, W, toast, addAction: (a) => ACTIONS.unshift(a), addGan: (
     tone([[1046, 0.3], [1568, 0.2]], 1.0, 0.08); bubbleAt(me, "🍬", 2200, 2.2); D.add(1);
     toast("🍬 千歳飴をいただきました。細く長く、粘り強く…子どもの長寿と健やかな成長を願う縁起物です", 5200);
   } });
+// ------------------------------------------------------------------ 画面のスティック（さわれる端末だけ）
+if (matchMedia("(pointer: coarse)").matches) {
+  const pad = document.createElement("div"); pad.id = "joy"; pad.innerHTML = "<i></i>"; document.body.appendChild(pad);
+  const knob = pad.querySelector("i"); let id = null, cx = 0, cy = 0;
+  const R = 44;
+  const set = (x, y) => { const d = Math.hypot(x, y), k = d > R ? R / d : 1; knob.style.transform = `translate(${x * k}px, ${y * k}px)`; joy.x = (x * k) / R; joy.y = (y * k) / R; };
+  pad.addEventListener("pointerdown", (e) => { e.preventDefault(); id = e.pointerId; pad.setPointerCapture(id); const r = pad.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; set(e.clientX - cx, e.clientY - cy); pad.classList.add("on"); });
+  pad.addEventListener("pointermove", (e) => { if (e.pointerId !== id) return; e.preventDefault(); set(e.clientX - cx, e.clientY - cy); });
+  const end = (e) => { if (e.pointerId !== id) return; id = null; set(0, 0); pad.classList.remove("on"); };
+  pad.addEventListener("pointerup", end); pad.addEventListener("pointercancel", end);
+  $("#hint").textContent = "左下のスティックで歩く · ドラッグで見回す · 地面をタップでもOK";
+} else $("#hint").textContent = "WASD・矢印キーで歩く · ドラッグで見回す · 地面をクリックでもOK";
 // ------------------------------------------------------------------ 静のひととき（zen.js・mixer.js・shakyo.js・tour.js）
 let stResend = 0;
 const setStatusAll = (t) => { myStatus = t; store.set("enishi_status", t); refreshToku(); net?.st(t, "st"); clearTimeout(stResend); stResend = setTimeout(() => net?.st(myStatus, "st"), 9000); };

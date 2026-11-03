@@ -116,6 +116,7 @@ export function setupChores(A) {
       cv.onpointerdown = (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); down = true; last = pt(e); brush.x = last[0]; brush.y = last[1];
         if (item && !item.got && item.visible && Math.hypot(last[0] - item.x, last[1] - item.y) < 26) { item.got = true; A.tone?.([[1318, 0.3], [1760, 0.25], [2637, 0.15]], 1.0, 0.07); pop(item.x - 20, item.y - 30, `${item.f.icon} 見つけた！`, "big"); } };
       cv.onpointermove = (e) => {
+        e.preventDefault();
         const p = pt(e); brush.x = p[0]; brush.y = p[1]; if (!down || !last) return;
         const dx = p[0] - last[0], dy = p[1] - last[1], d = Math.hypot(dx, dy); if (d < 1) return;
         brush.ang += (Math.atan2(dx, -dy) * 0.25 - brush.ang) * 0.3; let hit = 0;
@@ -194,6 +195,7 @@ export function setupChores(A) {
       cv.onpointerdown = (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); down = true; last = pt(e); dab(...last);
         if (water) { rustle(0.07, 1800, 0.35, "highpass"); pop(last[0], last[1] - 20, "パシャ", "soft"); } };
       cv.onpointermove = (e) => {
+        e.preventDefault();
         if (!down) return; const p = pt(e), d = Math.hypot(p[0] - last[0], p[1] - last[1]); if (d < 2) return;
         const n = Math.ceil(d / (water ? 18 : 8)); for (let i = 1; i <= n; i++) dab(last[0] + ((p[0] - last[0]) * i) / n, last[1] + ((p[1] - last[1]) * i) / n);
         const now = performance.now(); if (now - lastSound > (water ? 260 : 90)) { lastSound = now;
