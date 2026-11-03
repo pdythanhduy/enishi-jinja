@@ -6,7 +6,7 @@ export const MAT = {
   shu: std(0xd23a26, { roughness: 0.5 }), shuD: std(0xa82a1c, { roughness: 0.55 }), kuro: std(0x1c1a19, { roughness: 0.7 }),
   wood: std(0x6b4428), woodD: std(0x4a2e1c), woodL: std(0x9a6a3e), white: std(0xf3efe6, { roughness: 0.85 }), shoji: std(0xf7f1df, { emissive: 0xffd9a0, emissiveIntensity: 0.0 }),
   copper: std(0x3f7a68, { roughness: 0.55, metalness: 0.25 }), copperD: std(0x2d5a4c, { roughness: 0.6, metalness: 0.2 }), hinoki: std(0x5a3a2a, { roughness: 0.85 }),
-  gold: std(0xe3b54a, { metalness: 0.9, roughness: 0.28 }), stone: std(0x7f7b74, { roughness: 0.95 }), stoneD: std(0x625e58, { roughness: 0.95 }), stoneL: std(0x96918a, { roughness: 0.95 }),
+  gold: std(0xe3b54a, { metalness: 0.9, roughness: 0.28 }), stone: std(0xcfc9bf, { roughness: 0.95 }), stoneD: std(0xa39e95, { roughness: 0.95 }), stoneL: std(0xe2ddd3, { roughness: 0.95 }),
   rope: std(0xd8c99a, { roughness: 1 }), paperW: std(0xffffff, { roughness: 0.9 }), tatami: std(0xb3ad76, { roughness: 0.95 }),
   water: new THREE.MeshStandardMaterial({ color: 0x2f5e7a, roughness: 0.08, metalness: 0.35, transparent: true, opacity: 0.92 }),
 };
@@ -43,14 +43,16 @@ export function roof(parent, { w, d, h, lift = 0.35, thick = 0.22, mat = MAT.cop
   box(g, w + 0.2, 0.32, 0.42, MAT.kuro, 0, h + 0.1, 0);
   if (ridgeGold) {
     for (const s of [-1, 1]) {      // 千木（交差する飾り）
-      for (const r of [-1, 1]) { const c = box(g, 0.12, 1.3, 0.12, MAT.gold, s * (w / 2 - 0.1), h + 0.6, r * 0.18); c.rotation.x = r * 0.5; }
+      if (w > 12) for (const r of [-1, 1]) { const c = box(g, 0.12, 1.1, 0.12, MAT.gold, s * (w / 2 - 0.15), h + 0.55, r * 0.16); c.rotation.x = r * 0.42; }
     }
     for (let i = -2; i <= 2; i++) cyl(g, 0.11, 0.11, 0.7, MAT.gold, i * (w / 6), h + 0.38, 0, 10).rotation.x = Math.PI / 2;   // 鰹木
   }
   if (gable) for (const s of [-1, 1]) {    // 破風（妻の金の縁取り）
     const tri = new THREE.Shape(); tri.moveTo(-half * 0.92, 0); tri.lineTo(0, h * 0.92); tri.lineTo(half * 0.92, 0); tri.closePath();
     const tg = new THREE.ShapeGeometry(tri); const tm = new THREE.Mesh(tg, MAT.white); tm.rotation.y = s * Math.PI / 2; tm.position.set(s * (w / 2 - 0.25), 0.02, 0); g.add(tm);
-    for (const r of [-1, 1]) { const b = box(g, 0.08, 0.14, half * 1.15, MAT.gold, s * (w / 2 - 0.2), h * 0.52, r * half * 0.48, false); b.rotation.x = r * -0.62; }
+    // 破風板：妻の斜めの縁に沿わせる（棟 (0,h) から 軒 (±half, lift) まで）
+    const L = Math.hypot(half, h - lift), ang = Math.atan2(h - lift, half);
+    for (const r of [-1, 1]) { const b = box(g, 0.1, 0.16, L, MAT.gold, s * (w / 2 + 0.02), (h + lift) / 2 + 0.05, r * half / 2, false); b.rotation.x = r * ang; }
   }
   return g;
 }
@@ -75,7 +77,7 @@ export function toro(parent, x, z, y = 0, env, scale = 1) {
   const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(scale); parent.add(g);
   cyl(g, 0.45, 0.55, 0.28, MAT.stoneD, 0, 0.14, 0, 6); cyl(g, 0.14, 0.17, 1.05, MAT.stone, 0, 0.8, 0, 12);
   cyl(g, 0.44, 0.3, 0.2, MAT.stone, 0, 1.42, 0, 6); box(g, 0.52, 0.44, 0.52, MAT.stone, 0, 1.73, 0);
-  const fm = lampMat(0xffe2a8, 0xffa040, 3.2); box(g, 0.32, 0.27, 0.54, fm, 0, 1.73, 0, false); box(g, 0.54, 0.27, 0.32, fm, 0, 1.73, 0, false);
+  const fm = lampMat(0xffe2a8, 0xffa040, 2.4); box(g, 0.32, 0.27, 0.54, fm, 0, 1.73, 0, false); box(g, 0.54, 0.27, 0.32, fm, 0, 1.73, 0, false);
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.42, 6), MAT.stoneD); cap.position.y = 2.15; cap.castShadow = true; g.add(cap);
   cyl(g, 0.1, 0.1, 0.16, MAT.stone, 0, 2.42, 0, 10);
   lightSpot(g, 1.73 * scale, 5, 9);
@@ -86,7 +88,7 @@ export function toro(parent, x, z, y = 0, env, scale = 1) {
 // 提灯
 export function chochin(parent, x, y, z, env, s = 1, col = 0xfff3d6) {
   const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); parent.add(g);
-  const m = lampMat(col, 0xff9a3a, 2.6);
+  const m = lampMat(col, 0xff9a3a, 1.8);
   const b = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), m); b.scale.y = 1.35; g.add(b);
   cyl(g, 0.21, 0.21, 0.08, MAT.kuro, 0, 0.45, 0, 12, false); cyl(g, 0.21, 0.21, 0.08, MAT.kuro, 0, -0.45, 0, 12, false);
   env && env.registerLamp(m, null);

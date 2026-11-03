@@ -5,17 +5,19 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030851";
-import { buildWorld } from "./world.js?v=11030851";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030851";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030851";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030851";
-import { deeds } from "../deeds.js?v=11030851";
-import { LIGHT_SPOTS } from "./arch.js?v=11030851";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030851";
-import { Lanterns, ambience } from "../fx.js?v=11030851";
-import { connect, board } from "../net.js?v=11030851";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030851";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030903";
+import { buildWorld } from "./world.js?v=11030903";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030903";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030903";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030903";
+import { deeds } from "../deeds.js?v=11030903";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds } from "./decor.js?v=11030903";
+import { fireflies } from "../fx.js?v=11030903";
+import { LIGHT_SPOTS } from "./arch.js?v=11030903";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030903";
+import { Lanterns, ambience } from "../fx.js?v=11030903";
+import { connect, board } from "../net.js?v=11030903";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030903";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -53,6 +55,10 @@ function updateLightPool() {
   POOL.forEach((l, i) => { const s = near[i]?.[0]; if (!s) { l.intensity = 0; return; } l.position.copy(s.v); l.color.setHex(s.color); l.distance = s.dist; l.intensity = s.int * env.lamp; });
 }
 const lanterns = new Lanterns(scene);
+// 仕上げ（質感・幟・提灯の列・岩と植え込み・雲・蛍・映り込み）
+const texTick = textures(W), noboriTick = nobori(scene), rowTick = lanternRows(scene, env); rocksAndBushes(scene, env.season);
+const cloudTick = clouds(scene), ffTick = env.season === "summer" || env.season === "autumn" ? fireflies(scene, MOBILE ? 40 : 80) : () => {};
+const envUpdate = environment(renderer, scene, env); setInterval(envUpdate, 10 * 60e3);
 const leaves = new Leaves(scene, env.season), darkL = new DarkLanterns(W.lamps), kit = new LostFox(scene), fireworks = new Fireworks(scene);
 setInterval(() => leaves.spawn(), 40e3);
 setInterval(() => darkL.turnOffRandom(), 150e3);
@@ -640,7 +646,7 @@ function loop() {
   env.follow(me.position);
   for (const f of W.update) f(t, dt, me.position);
   for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * 3.2; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * 1.8; fl.lamp.position.y = 15.58 + Math.sin(t * 2 + fl.a) * 0.02; }
-  lanterns.update(dt, t); kit.update(dt, me);
+  lanterns.update(dt, t); kit.update(dt, me); texTick(t); noboriTick(t); rowTick(t); cloudTick(t, env); ffTick(t);
   fireworks.update(dt, () => { tone([[60, 0.8], [90, 0.4]], 1.2, 0.25); setTimeout(() => noise(0.6, 2200, 0.12, "highpass"), 300); });
   for (const o of others.values()) {
     const d = o.to.clone().sub(o.av.position); d.y = 0; const dist = d.length(), u = o.av.userData;
@@ -654,7 +660,7 @@ function loop() {
     if (o.bubble) { o.bubble.style.display = vis ? "" : "none"; o.bubble.style.left = X; o.bubble.style.top = `calc(${Y} - 22px)`; }
   }
   net?.pos(me.position.x, me.position.z, me.rotation.y);
-  bloom.strength = (MOBILE ? 0.55 : 0.8) * (0.12 + 0.88 * env.lamp); bloom.threshold = 0.78 + (1 - env.lamp) * 0.2;
+  bloom.strength = (MOBILE ? 0.42 : 0.55) * (0.12 + 0.88 * env.lamp); bloom.threshold = 0.86 + (1 - env.lamp) * 0.12; bloom.radius = 0.45;
   composer.render();
   v3.copy(me.position); v3.y += 2.15; v3.project(camera);
   tagEl.style.display = intro ? "none" : ""; tagEl.style.left = (v3.x * 0.5 + 0.5) * innerWidth + "px"; tagEl.style.top = (-v3.y * 0.5 + 0.5) * innerHeight + "px";
