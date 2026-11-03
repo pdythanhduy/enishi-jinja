@@ -1,10 +1,12 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032314";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032314";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032314";
-import { koiSchool } from "./koi.js?v=11032314";
-import { FOLIAGE } from "./env.js?v=11032314";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032333";
+import { buildMonzen } from "./monzen.js?v=11032333";
+import { buildVista } from "./vista.js?v=11032333";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032333";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032333";
+import { koiSchool } from "./koi.js?v=11032333";
+import { FOLIAGE } from "./env.js?v=11032333";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -327,10 +329,12 @@ export function buildWorld(scene, env, opts = {}) {
   for (let i = 0; i < 18; i++) add("sakura", sr(-41, -26), sr(3, 25), sr(0.9, 1.3));                                                   // 縁結びの桜
   for (let i = 0; i < 16; i++) { const x = sr(26, 41), z = sr(3, 25); if (Math.hypot(x - 28, z - 21) > 2.5) add("ume", x, z, sr(0.7, 1)); } // 合格の梅
   for (let i = 0; i < (opts.lite ? 200 : mobile ? 420 : 760); i++) {                                                                                     // 山の杉林
-    const x = sr(-130, 130), z = sr(-140, 120);
+    const x = sr(-130, 130), z = sr(-140, 148);
     if (z > -8 && Math.abs(x) < 46 && z < 86) continue;
+    if (z >= 84 && Math.abs(x) < 15.5 && z < 134.5) continue;                              // 門前町の通りと町家
+    if (z > 118 && Math.abs(x) < 18 + (z - 118) * 0.9) continue;                            // 見晴らし台からの眺め（谷と海）をふさがない
     if (Math.abs(x) < 26 && z > -24) continue;                                             // 本殿の裏
-    const y = height(x, z); if (y < 0.5 && z > -8) continue;
+    const y = height(x, z); if (y < 0.5 && z > -8 && z < 134) continue;
     let near = false; for (let k = 0; k < trailPts.length; k += 6) if ((trailPts[k].x - x) ** 2 + (trailPts[k].z - z) ** 2 < 16) { near = true; break; }
     if (near || Math.hypot(x + 2, z + 72) < 12 || Math.hypot(x - 40, z + 22) < 8) continue;
     add("sugi", x, z, sr(0.8, 1.6));
@@ -411,5 +415,8 @@ varying vec3 vFadeW; uniform vec3 uCam, uTgt;`)
       o3.position.set(center.x + p.x, height(center.x + p.x, center.z + p.z) + p.y, center.z + p.z); o3.rotation.set(p.r, p.r * 0.7, 0); o3.scale.setScalar(1); o3.updateMatrix(); petals.setMatrixAt(i, o3.matrix); }
     petals.instanceMatrix.needsUpdate = true; });
 
+  // 門前町・一の鳥居・見晴らし台・遥拝所と、遠くの谷・海・山並み・縁の峰
+  buildMonzen(scene, env, W);
+  const vista = buildVista(scene, env, opts); W.vista = vista; W.update.push((t) => vista.tick(t));
   return W;
 }

@@ -89,6 +89,8 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
     - `makeStream` builds a mountain stream: a bed ribbon, flowing water with foam on steep parts, and bank stones.
     - Its path is `STREAM` in map.js: from the summit pond it runs 3 m beside the trail, on the side opposite the lanterns. The trail shoulders are flattened to 6.6 m so the stream lies flat.
     - The stream has a babbling sound from the nearest point.
+  - `monzen.js` (門前町, south of 大鳥居, `MONZEN` in map.js): 8 町家; usable ones are 茶屋 (sit on the 縁台), 土鈴 shop (one 土鈴 a day, goes to 宝物), 案内所 (map) and 酒蔵 (杉玉). Also 一の鳥居 (stone) with 社号標, and the 見晴らし台 (3-shot view, `miharasu`). The 遥拝所 stone at 奥の院 (`PLACES.yohai`) faces 縁の峰.
+  - `vista.js`: distant scenery. Valley town at y = −38 with night lights, 縁の浦 sea (`coastZ`), three mountain rings, 縁の峰 (`PEAK`, the shrine's sacred mountain; the yohai face is computed from it) and a morning cloud sea. Camera far is 1500.
   - `freeze.js`: at startup, merges the meshes of groups marked `userData.static = true` (arch.js builders) into one mesh per material. Groups stay for position lookups. Anything that moves, or swaps materials per mesh, must NOT be marked static. Moving parts inside a static group can set `userData.live = true` (as the honden doors do), and freeze skips them. `?nofreeze` disables it.
 - `site/fx.js`: wagara patterns, ambience sounds, `matsuri()` お囃子 festival music. `site/content.js`: halls, stories, omikuji.
 - `worker/worker.js`: also /presence, /bless, /inbox, /kenno, /kenno/light (Remind DO tables pres, inbox, lamp) and GET /ema/:hall?ids=. Admin can hide a lamp with POST /admin/:hall {key, lamp}.

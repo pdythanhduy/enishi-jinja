@@ -66,7 +66,7 @@ export function roof(parent, { w, d, h, lift = 0.35, thick = 0.22, mat = MAT.cop
 }
 
 // ------------------------------------------------------------------ 鳥居
-export function torii(parent, { x = 0, z = 0, y = 0, s = 1, ry = 0, gaku = "", mat = MAT.shu }) {
+export function torii(parent, { x = 0, z = 0, y = 0, s = 1, ry = 0, gaku = "", mat = MAT.shu, top = MAT.kuro }) {   // top：笠木の素材（石の鳥居は石）
   const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); parent.add(g); g.userData.static = true;
   const w = 3.6, h = 4.2;
   for (const xx of [-w / 2, w / 2]) { cyl(g, 0.17, 0.21, h, mat, xx, h / 2, 0, 16); cyl(g, 0.25, 0.25, 0.4, MAT.kuro, xx, 0.2, 0, 16); }
@@ -75,7 +75,7 @@ export function torii(parent, { x = 0, z = 0, y = 0, s = 1, ry = 0, gaku = "", m
   const kasagi = new THREE.Shape();                                        // 反った笠木
   const L = (w + 2.0) / 2; kasagi.moveTo(-L, 0.25); kasagi.quadraticCurveTo(0, -0.05, L, 0.25); kasagi.lineTo(L, 0.55); kasagi.quadraticCurveTo(0, 0.22, -L, 0.55); kasagi.closePath();
   const kg = new THREE.ExtrudeGeometry(kasagi, { depth: 0.46, bevelEnabled: false }); kg.translate(0, 0, -0.23);
-  const km = new THREE.Mesh(kg, MAT.kuro); km.position.y = h - 0.05; km.castShadow = true; g.add(km);
+  const km = new THREE.Mesh(kg, top); km.position.y = h - 0.05; km.castShadow = true; g.add(km);
   if (gaku !== null) { box(g, 0.14, 0.7, 0.14, mat, 0, h - 0.4, 0); const gk = box(g, 0.75, 0.95, 0.08, MAT.kuro, 0, h - 0.42, 0.16); gk.userData.gaku = gaku; }
   return g;
 }

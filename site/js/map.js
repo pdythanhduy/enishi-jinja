@@ -19,6 +19,9 @@ export const PLACES = {
   gokaku:   { n: 10, name: "合格の社",       yomi: "ごうかくのやしろ",             pos: [33, 11],   stand: [33, 19.7],  face: Math.PI },
   senbon:   { n: 11, name: "千本鳥居",       yomi: "せんぼんとりい",        pos: [21, -12],  stand: [21.5, -6.9], face: Math.PI },
   okunoin:  { n: 12, name: "奥の院",         yomi: "おくのいん",      pos: [-2, -78],  stand: [-2, -71],   face: Math.PI },
+  monzen:   { n: 14, name: "門前町",         yomi: "もんぜんまち",            pos: [0, 104],   stand: [0, 100],    face: Math.PI },
+  miharashi:{ n: 15, name: "見晴らし台",     yomi: "みはらしだい",            pos: [0, 131],   stand: [0, 129.6],  face: 0 },
+  yohai:    { n: 16, name: "縁の峰 遥拝所",  yomi: "えにしのみね ようはいじょ", pos: [-12, -70], stand: [-10.5, -68.8], face: Math.atan2(-230 + 10.5, -540 + 68.8) },   // 縁の峰（vista.js の PEAK）の方角
   pagoda:   { n: 13, name: "五重塔",         yomi: "ごじゅうのとう",           pos: [40, -22],  stand: [40, -11.9], face: Math.PI },
 };
 
@@ -46,7 +49,14 @@ function trailInfo(x, z) {
 export const OKU_Y = 30;
 export const STAGE = { x0: -15.5, x1: -6.5, z0: -66.5, z1: -58.5, y: OKU_Y + 0.35 };
 export const trailHeight = (t) => smooth(0.0, 1, t) * OKU_Y;
+// 門前町（大鳥居の南）。通りの両側に町家が四軒ずつ。南の端に一の鳥居と見晴らし台
+export const MONZEN = { z0: 85, z1: 126.5, street: 5.0, lots: [92, 100, 108, 116], front: 7.4, depth: 6.2, edge: 133.4, valley: -38 };
 export function height(x, z) {
+  if (z > 85) {
+    const ax = Math.abs(x);
+    let h = smooth(15.5, 42, ax) * 13 * smooth(84, 100, z) + smooth(46, 80, ax) * 12 + (Math.sin(x * 0.08) * 1.5 + Math.cos(z * 0.07) * 1.2) * smooth(18, 40, ax);
+    const k = smooth(MONZEN.edge, 149, z); return h * (1 - k) + MONZEN.valley * k;      // 見晴らし台の先は、谷の町へ落ちる崖
+  }
   if (z > -6 && Math.abs(x) < 46 && z < 88) {
     if (z < 2 && x > 33 && x < 44) return Math.max(0, smooth(2, -13, z) * (Math.max(0, 1 - Math.hypot(x - 40, z + 21) / 16) * 5 + smooth(-6, -80, z) * 16));
     const rp = Math.hypot((x - POND.cx) / POND.rx, (z - POND.cz) / POND.rz);   // 池はすり鉢に掘る
@@ -112,6 +122,11 @@ export const BLOCKS = [
   [35.6, -26.4, 44.4, -17.6],                                 // 五重塔（基壇）
   [38.2, -17.6, 41.8, -13.7],                                  // 五重塔の正面石段（見るだけ）
   [31.8, -21.2, 35.2, -17.8],                                 // 鐘楼
+  [-3.95, 123.5, -2.85, 124.6], [2.85, 123.5, 3.95, 124.6],    // 一の鳥居の柱
+  [-6.9, 120.9, -5.5, 122.3],                                  // 社号標
+  [-8.2, 126.2, -7.0, 127.4], [7.0, 126.2, 8.2, 127.4],        // 常夜灯
+  [-0.7, 131.0, 0.7, 132.4],                                   // 方位盤
+  [5.6, 130.3, 9.4, 131.5], [-9.4, 130.3, -5.6, 131.5],        // 見晴らし台の腰掛け
   [-7.4, -82.4, 3.4, -74.0],                                  // 奥の院（1.5倍・透塀まで）
   [-13.0, -75.4, -8.0, -70.6], [-12.2, -81.0, -6.8, -79.0],    // 磐座・夫婦杉
   [-5.3, -73.1, -4.7, -68.9], [0.7, -73.1, 1.3, -68.9],        // 奉納提灯の掛け台
@@ -120,6 +135,8 @@ export function walkable(x, z) {
   if (inHonden(x, z)) return true;
   if (x > STAGE.x0 + 0.4 && x < STAGE.x1 - 0.4 && z > STAGE.z0 && z < STAGE.z1 - 0.4) return true;   // 舞台の上
   if (z > 44 && z < 85 && Math.abs(x) < 7.2) return true;                                // 参道・大鳥居前
+  if (z >= 85 && z < MONZEN.z1 && Math.abs(x) < MONZEN.street) return true;              // 門前町の通り
+  if (z >= 119 && z < MONZEN.edge - 0.4 && Math.abs(x) < 9.5) return true;               // 一の鳥居の前と見晴らし台
   if (z > 44 && z < 64 && x > 6 && x < 30) return !inEll(x, z, POND) || (Math.abs(z - BRIDGE.z) < BRIDGE.w / 2 && x > BRIDGE.x0 && x < BRIDGE.x1);
   if (z > -6 && z <= 44 && Math.abs(x) < 24.5) return true;                              // 境内
   if (z > 2 && z < 26 && Math.abs(x) >= 24.5 && Math.abs(x) < 41.6) return true;         // 東西の社（玉垣の内側）
@@ -138,6 +155,7 @@ export function blocked(x, z) {
 export const floors = [
   { x0: STAGE.x0, x1: STAGE.x1, z0: STAGE.z0 + 1.6, z1: STAGE.z1, y: STAGE.y },              // 奥の院の舞台
   { x0: HX0, x1: HX1, z0: HZ0, z1: HZ1, y: 1.7 * HONDEN.S },                         // 本殿の中
+  { x0: 5.5, x1: 6.5, z0: 90.0, z1: 94.0, y: 0.46 },                                  // 茶屋の縁台
   { x0: YAKATA.x - 3.8, x1: YAKATA.x + 3.6, z0: YAKATA.z - 1.3, z1: YAKATA.z + 1.3, y: YAKATA.deck + 0.06 },   // 屋形船の座敷
   { x0: SHOIN.x0, x1: SHOIN.x1, z0: SHOIN.z0, z1: SHOIN.z1, y: SHOIN.y },                // 書院の畳
   { x0: -8.8, x1: 8.8, z0: 37.8, z1: 44.2, y: 0.56 },                                     // 楼門の基壇（くぐるときに足が沈まない）

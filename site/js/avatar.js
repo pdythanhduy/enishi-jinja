@@ -1,7 +1,7 @@
 // 参拝者（浴衣のちびキャラ）。和柄・髪型・狐面・提灯。正座とお辞儀のポーズ。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { wagara } from "../fx.js?v=11032314";
+import { wagara } from "../fx.js?v=11032333";
 
 const YUKATA = [[0x2c3e73, 0xe8c67a], [0xc8432f, 0x2b2b2b], [0x5c8a5a, 0xf2e2c4], [0xe7a2b4, 0x6b3a5a], [0xe0b23a, 0x3b4f7a], [0x6a4c93, 0xe8c67a], [0xf4f1ea, 0xc8432f], [0x1f5f6a, 0xf0d8a8]];
 const PATS = ["asanoha", "ichimatsu", "seigaiha", "yagasuri", "sakura"];

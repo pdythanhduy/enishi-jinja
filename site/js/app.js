@@ -5,36 +5,37 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032314";
-import { buildWorld } from "./world.js?v=11032314";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032314";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032314";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032314";
-import { deeds } from "../deeds.js?v=11032314";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032314";
-import { fireflies } from "../fx.js?v=11032314";
-import { LIGHT_SPOTS } from "./arch.js?v=11032314";
-import { freeze } from "./freeze.js?v=11032314";
-import { setupSeasonal } from "./seasonal.js?v=11032314";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032314";
-import { makeBGM } from "./bgm.js?v=11032314";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032314";
-import { setupKenno } from "./kenno.js?v=11032314";
-import { setupSocial } from "./social.js?v=11032314";
-import { setupProfile } from "./profile.js?v=11032314";
-import { setupChores } from "./chores.js?v=11032314";
-import { setupSagyo } from "./sagyo.js?v=11032314";
-import { setupWelcome } from "./welcome.js?v=11032314";
-import { setupZen } from "./zen.js?v=11032314";
-import { setupMixer } from "./mixer.js?v=11032314";
-import { setupShakyo } from "./shakyo.js?v=11032314";
-import { setupTour } from "./tour.js?v=11032314";
-import { setupChat } from "./chat.js?v=11032314";
-import { setupKito, ofudaImage } from "./kito.js?v=11032314";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032314";
-import { Lanterns, matsuri } from "../fx.js?v=11032314";
-import { connect, board } from "../net.js?v=11032314";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032314";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032333";
+import { buildWorld } from "./world.js?v=11032333";
+import { PEAK } from "./vista.js?v=11032333";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032333";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032333";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032333";
+import { deeds } from "../deeds.js?v=11032333";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032333";
+import { fireflies } from "../fx.js?v=11032333";
+import { LIGHT_SPOTS } from "./arch.js?v=11032333";
+import { freeze } from "./freeze.js?v=11032333";
+import { setupSeasonal } from "./seasonal.js?v=11032333";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032333";
+import { makeBGM } from "./bgm.js?v=11032333";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032333";
+import { setupKenno } from "./kenno.js?v=11032333";
+import { setupSocial } from "./social.js?v=11032333";
+import { setupProfile } from "./profile.js?v=11032333";
+import { setupChores } from "./chores.js?v=11032333";
+import { setupSagyo } from "./sagyo.js?v=11032333";
+import { setupWelcome } from "./welcome.js?v=11032333";
+import { setupZen } from "./zen.js?v=11032333";
+import { setupMixer } from "./mixer.js?v=11032333";
+import { setupShakyo } from "./shakyo.js?v=11032333";
+import { setupTour } from "./tour.js?v=11032333";
+import { setupChat } from "./chat.js?v=11032333";
+import { setupKito, ofudaImage } from "./kito.js?v=11032333";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032333";
+import { Lanterns, matsuri } from "../fx.js?v=11032333";
+import { connect, board } from "../net.js?v=11032333";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032333";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -56,7 +57,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 900);
+const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 1500);   // 遠くの山並み・縁の峰まで
 const fitFov = () => { const a = innerWidth / innerHeight; camera.fov = a < 0.8 ? 66 : a < 1.2 ? 58 : 52; camera.aspect = a; camera.updateProjectionMatrix(); };
 fitFov();
 const env = createEnv(scene, renderer, { mobile: MOBILE });
@@ -135,7 +136,7 @@ let camEndAt = 0;
 controls.addEventListener("end", () => { camUser = false; camEndAt = performance.now(); });
 controls.addEventListener("change", () => {
   if ((camUser || performance.now() - camEndAt < 500) && !freeCam && controls.target.distanceTo(camT0) > 0.3) { freeCam = true; homeBtn.hidden = false; }   // 指を離した直後の一コマも拾う
-  const t = controls.target, cx = Math.max(-60, Math.min(60, t.x)) - t.x, cz = Math.max(-95, Math.min(95, t.z)) - t.z;   // 境内の外へは行きすぎない
+  const t = controls.target, cx = Math.max(-60, Math.min(60, t.x)) - t.x, cz = Math.max(-95, Math.min(136, t.z)) - t.z;   // 境内の外へは行きすぎない
   if (cx || cz) { t.x += cx; t.z += cz; camera.position.x += cx; camera.position.z += cz; }
 });
 camera.position.set(0, innerWidth < innerHeight ? 8 : 6, innerWidth < innerHeight ? 93 : 90); controls.target.set(0, 1.2, 80);
@@ -322,7 +323,7 @@ let kujiHall = null;
 // ------------------------------------------------------------------ 地図（ミニマップ：絵地図の上に番号）
 const MAP_PIN = { ootorii: [260, 600], sando: [470, 610], pond: [745, 650], romon: [605, 430], temizu: [785, 465], juyosho: [950, 515], shinboku: [965, 405], honden: [840, 290], enmusubi: [480, 320], gokaku: [1135, 385], senbon: [900, 165], okunoin: [1030, 105], pagoda: [1240, 190] };
 // 境内図：3Dの境内を真上から写した絵地図。北（山）が上
-const MAPB = { x0: -48, x1: 48, z0: -34, z1: 88 }, MW = 640, MH = 813;
+const MAPB = { x0: -48, x1: 48, z0: -34, z1: 136 }, MW = 640, MH = Math.round(640 * (136 + 34) / 96);
 const mapPct = (x, z) => [Math.min(96, Math.max(4, ((x - MAPB.x0) / (MAPB.x1 - MAPB.x0)) * 100)), Math.min(97, Math.max(3, ((z - MAPB.z0) / (MAPB.z1 - MAPB.z0)) * 100))];
 $("#map-pins").innerHTML = Object.entries(PLACES).map(([k, p]) => { const [l, t] = mapPct(p.pos[0], p.pos[1]);
   const up = p.pos[1] < MAPB.z0 ? " up" : "";
@@ -403,6 +404,13 @@ const ACTIONS = [
   { id: "itotana", label: "🧵 赤い糸を結ぶ", at: [-34.6, 23.1], r: 2.0, run: () => tieIto() },
   { id: "fudezuka", label: "🖌 筆塚に祈る", at: [34.6, 23.1], r: 2.0, run: () => fudeNosame() },
   { id: "kane", label: "🔔 鐘をつく", at: [33.5, -16.4], r: 2.0, run: () => kaneTsuku() },
+  { id: "chaya", label: "🍵 茶屋で一服", at: [4.3, 92], r: 2.0, run: () => chayaIppuku() },
+  { id: "dorei", label: "🔔 土鈴をいただく", at: [4.3, 100], r: 2.0, run: () => doreiShop() },
+  { id: "sugidama", label: "🍶 軒先の杉玉", at: [4.3, 108], r: 2.0, run: () => sugidamaTalk() },
+  { id: "annai", label: "🗺 境内案内図を見る", at: [-4.3, 94.3], r: 2.0, run: () => annaiZu() },
+  { id: "ichino", label: "⛩ 一の鳥居で一礼", at: [0, 125.8], r: 1.8, run: () => ichiRei() },
+  { id: "miharashi", label: "🌄 景色を眺める", at: [0, 129.6], r: 2.2, run: () => miharasu() },
+  { id: "yohai", label: "🙏 縁の峰を遥拝する", at: PLACES.yohai.stand, r: 2.0, run: () => yohai() },
   { id: "fune", label: "🛶 屋形船の作業室に乗る", at: [18, 62.6], r: 1.8, run: () => sagyo.enter("fune") },
   { id: "shoin", label: "📖 書院の作業室に入る", at: [-6.4, 67], r: 1.8, run: () => sagyo.enter("shoin") },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
@@ -634,6 +642,76 @@ const doChore = (c) => doing(async () => {
   toast(`${c.id === "uchimizu" && env.season === "winter" ? "参道の雪をよけて、歩きやすくなりました ❄" : CHORE_MSG[c.id]}（徳 +3）`, 5000);
 });
 // 鐘楼：撞木を引いて、ゴーン。ひとつきで心の曇りをはらう（一日一回は徳+2）
+// ------------------------------------------------------------------ 門前町・一の鳥居・見晴らし台・遥拝所
+// 土鈴：素焼きの鈴。やさしい音で魔をはらうといわれ、神社の授与品や門前のおみやげとして親しまれてきた
+const DOREI = [
+  { id: "dorei_uma", icon: "🐴", name: "午の土鈴", desc: "今年の干支、午（うま）。物事が勢いよく駆けだす年といわれます" },
+  { id: "dorei_kitsune", icon: "🦊", name: "白狐の土鈴", desc: "このお社の神使、狐。願いを神さまのもとへ運ぶ使いです" },
+  { id: "dorei_neko", icon: "🐱", name: "招き猫の土鈴", desc: "人とご縁を招く猫。商売繁盛のお守りにも" },
+  { id: "dorei_hato", icon: "🕊️", name: "鳩の土鈴", desc: "平和と、家族のなかよしの印" },
+];
+const addFind = (id) => { const got = store.get("enishi_finds", {}); got[id] = (got[id] || 0) + 1; store.set("enishi_finds", got); };
+const faceTo = (x, z) => { me.rotation.y = Math.atan2(x - me.position.x, z - me.position.z); };
+const chayaIppuku = () => doing(async () => {
+  await new Promise((r) => walkTo([4.3, 92], r));
+  const [bx, bz] = W.chayaSeat; me.position.set(bx, footY(bx, bz), bz); me.rotation.y = -Math.PI / 2; setPose(me, "seiza");
+  stepText("一 服"); tone([[523, 0.2], [659, 0.15]], 0.8, 0.05); await wait(900);
+  bubbleAt(me, "🍵", 2600, 2.2); await wait(2800); bubbleAt(me, "🍡", 2400, 2.2);
+  const first = onceToday("chaya"); if (first) D.add(1);
+  toast(`縁茶屋でひと休み。抹茶と三色団子をいただきました。参拝の前後に門前の茶屋で一服するのは、昔からの楽しみです${first ? "（徳 +1）" : ""}`, 6000);
+  await wait(3600); setPose(me, null); me.position.set(4.3, 0, 92);
+});
+const doreiShop = () => doing(async () => {
+  await new Promise((r) => walkTo([4.3, 100], r)); me.rotation.y = Math.PI / 2;
+  if (!onceToday("dorei")) { toast("今日の土鈴はもういただきました。また明日、ほかの土鈴に会いにきてください 🔔"); return; }
+  const d = DOREI[hash(myName + today() + "dorei") % DOREI.length];
+  await bowTo(me, 0.6, 500); await bowTo(me, 0, 400);
+  for (let i = 0; i < 3; i++) { tone([[392 + i * 40, 0.25], [784, 0.08]], 0.7, 0.06); await wait(380); }   // からころ…と素焼きの音
+  addFind(d.id); bubbleAt(me, d.icon, 2600, 2.6);
+  toast(`${d.icon} ${d.name}をいただきました。${d.desc}。土鈴は素焼きの鈴で、やさしい音が魔をはらうといわれます（📖 御朱印帳の「宝物」に）`, 7000);
+});
+const sugidamaTalk = () => doing(async () => {
+  await new Promise((r) => walkTo([4.3, 108], r)); faceTo(W.sugidama ? 8 : 8, 108);
+  bubbleAt(me, "🍶", 2000, 2.6);
+  toast("軒先の丸い杉玉は、酒蔵に新しいお酒ができた知らせ。青い杉の葉が茶色に変わるころ、お酒も熟していきます。神社には、このお酒が御神酒として奉納されます", 8000);
+  await wait(1200);
+});
+function annaiZu() {
+  toast("境内案内所：大鳥居から楼門、本殿へ。山の上の奥の院へは千本鳥居の山道を。地図の場所を押すと、そこまで歩いて案内します", 6000);
+  drawMap(); paintMapMe(); open("#m-map");
+}
+const ichiRei = () => doing(async () => {
+  await new Promise((r) => walkTo([0.9, 125.8], r)); me.rotation.y = Math.PI;
+  stepText("一 礼"); net?.act("bow"); await bowTo(me, 1.0, 600); await wait(400); await bowTo(me, 0, 500);
+  const first = onceToday("ichino"); if (first) D.add(1);
+  toast(`一の鳥居で一礼しました。ここから先は神さまのもとへ向かう道。鳥居や参道の真ん中（正中）は神さまの通り道なので、少し端を歩きます${first ? "（徳 +1）" : ""}`, 6500);
+});
+const miharasu = () => doing(async () => {
+  await new Promise((r) => walkTo([0, 129.6], r)); me.rotation.y = 0;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), look = V(0, -20, 300), cur = camera.position.clone();
+  const shots = [
+    { pos: V(0, 3.4, 128.4), at: V(40, -38, 520), t: "南に、縁の浦。晴れた日は、海の向こうまで見わたせます" },
+    { pos: V(-3, 3.0, 129.0), at: V(10, -38, 230), t: "谷には門前の町。参拝の人は、この石段を上ってきました" },
+    { pos: V(0, 9, 140), at: V(PEAK.x * 0.6, 70, PEAK.z * 0.6), t: "北をふりかえると、奥の院のさらに奥に縁の峰。この神社の御神体の山です" },
+  ];
+  let i = 0; const lk = shots[0].at.clone().sub(camera.position).normalize().multiplyScalar(50).add(camera.position);
+  setCine((dt) => { const s = shots[i], k = 1 - Math.exp(-dt * 0.9); cur.lerp(s.pos, k); look.lerp(s.at, k * 0.8); camera.position.copy(cur); camera.lookAt(look); });
+  look.copy(lk);
+  for (i = 0; i < shots.length; i++) { stepText(""); toast(shots[i].t, 5600); await wait(6000); }
+  setCine(null);
+  const first = onceToday("miharashi"); if (first) { D.add(1); toast("いい眺めでした（徳 +1）", 2600); }
+});
+const yohai = () => doing(async () => {
+  const p = PLACES.yohai; await new Promise((r) => walkTo(p.stand, r, { route: true })); me.rotation.y = p.face;
+  const u = me.userData;
+  for (let i = 0; i < 2; i++) { stepText(i ? "二 礼" : "一 礼"); net?.act("bow"); await bowTo(me, 1.25, 650); await wait(350); await bowTo(me, 0, 500); await wait(250); }
+  stepText("二 拍 手"); net?.act("clap");
+  for (let i = 0; i < 2; i++) { u.arms.forEach((a, j) => { a.rotation.x = -1.3; a.rotation.z = (j ? -1 : 1) * 0.05; }); sfx.clap(); await wait(260); u.arms.forEach((a, j) => (a.rotation.z = (j ? -1 : 1) * 0.6)); await wait(260); }
+  stepText("遥 拝"); u.arms.forEach((a, j) => { a.rotation.x = -1.3; a.rotation.z = (j ? -1 : 1) * 0.05; }); await wait(2200);
+  stepText("一 礼"); u.arms.forEach((a, j) => { a.rotation.x = 0; a.rotation.z = (j ? -1 : 1) * 0.25; }); await bowTo(me, 1.25, 650); await wait(500); await bowTo(me, 0, 600);
+  const first = onceToday("yohai"); if (first) D.add(2);
+  toast(`縁の峰を遥拝しました。遥拝とは、遠くから神さまを拝むこと。縁の峰はこの神社の御神体の山で、前の磐座は峰の神さまが降りてこられる場所と伝えられています${first ? "（徳 +2）" : ""}`, 8000);
+});
 // 鐘楼そのものをタップしても鐘をつける
 tapHandlers.push((ray) => { const h = ray.intersectObjects(scene.children, true).find((q) => q.object.visible && !q.object.isPoints && q.point.y < 40);
   if (!h || Math.hypot(h.point.x - 33.5, h.point.z + 19.5) > 2.3 || h.point.y < footY(33.5, -19.5) + 0.6) return false; kaneTsuku(); return true; });
@@ -823,7 +901,7 @@ async function shareCanvas(cv, text, name) {
 }
 // わたしの帳（御朱印帳・御守り）
 // 御札・宝物：授かった御札と、境内で見つけたもの・いただいたもの
-const TAKARA = () => [...FINDS.filter((f) => f.id !== "none"), { id: "chitose", icon: "🍬", name: "千歳飴" }, { id: "amazake", icon: "🍶", name: "甘酒" }];
+const TAKARA = () => [...FINDS.filter((f) => f.id !== "none"), { id: "chitose", icon: "🍬", name: "千歳飴" }, { id: "amazake", icon: "🍶", name: "甘酒" }, ...DOREI];
 function renderTakara() {
   const ofuda = store.get("enishi_ofuda", []), finds = store.get("enishi_finds", {}), el = $("#book-takara");
   el.innerHTML = `<h3>御札 <small>${ofuda.length}体</small></h3>` + (ofuda.length ? `<div class="ofuda-row"></div>` : `<p class="sub">まだ御札はありません。本殿で御祈祷を受けると、あなたの名前の入った御札を授かります。</p>`)
