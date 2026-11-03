@@ -126,3 +126,41 @@ body.fest .gbar i{background:linear-gradient(90deg,#ff7ab0,#ffd36b,#7ad0ff)}
 .toku-fly{position:fixed;left:50%;top:40%;transform:translate(-50%,0);color:var(--gold);font-weight:700;font-size:1.3rem;text-shadow:0 2px 10px rgba(0,0,0,.6);pointer-events:none;z-index:25;animation:tokuFly 1.6s ease-out forwards}
 @keyframes tokuFly{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-60px)}}
 .ibtn small{display:none}
+/* ---------------- 御祈祷 ---------------- */
+body.cine #hud-top,body.cine #actions,body.cine #me-tag,body.cine .tag,body.cine #hint,body.cine #place,body.cine #note,body.cine #toast{opacity:0!important;pointer-events:none!important;transition:opacity .8s}
+#kito{position:fixed;inset:0;z-index:20;pointer-events:none}
+#kito[hidden]{display:none}
+.kt-bar{position:absolute;left:0;right:0;height:11vh;background:#050605;transition:transform 1.2s cubic-bezier(.2,.7,.2,1)}
+.kt-top{top:0;transform:translateY(-100%);animation:kt-in-top 1.2s .1s forwards}
+.kt-bot{bottom:0;transform:translateY(100%);animation:kt-in-bot 1.2s .1s forwards}
+#kito.leaving .kt-top{animation:none;transform:translateY(-100%)}#kito.leaving .kt-bot{animation:none;transform:translateY(100%)}
+@keyframes kt-in-top{to{transform:none}}@keyframes kt-in-bot{to{transform:none}}
+.kt-phase{position:absolute;left:max(20px,env(safe-area-inset-left));top:calc(11vh + 18px);display:grid;gap:.25rem;opacity:0}
+.kt-phase.on{animation:kt-phase 1.6s ease forwards}
+.kt-phase small{font:600 .7rem/1 system-ui,sans-serif;letter-spacing:.32em;color:var(--gold);opacity:.8}
+.kt-phase b{font-size:clamp(1.6rem,4.2vh,2.4rem);letter-spacing:.35em;font-weight:700;text-shadow:0 2px 20px rgba(0,0,0,.7)}
+@keyframes kt-phase{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.kt-text{position:absolute;right:max(22px,env(safe-area-inset-right));top:calc(11vh + 14px);bottom:calc(11vh + 14px);writing-mode:vertical-rl;font-size:clamp(1rem,2.4vh,1.35rem);line-height:2.1;letter-spacing:.18em;max-width:58vw;overflow:hidden;opacity:0;transition:opacity 1s;text-shadow:0 1px 12px rgba(0,0,0,.85)}
+.kt-text.on{opacity:1}
+.kt-text span{color:rgba(244,234,216,.22);transition:color .35s,text-shadow .35s}
+.kt-text span.lit{color:#f4ead8}
+.kt-text span.gold{color:rgba(232,198,122,.35)}
+.kt-text span.gold.lit{color:#ffd77a;text-shadow:0 0 14px rgba(255,190,90,.9),0 0 30px rgba(255,170,60,.55)}
+.kt-cue{position:absolute;left:50%;bottom:calc(11vh + 40px);transform:translateX(-50%);display:grid;justify-items:center;gap:.5rem;pointer-events:auto}
+.kt-cue[hidden]{display:none}
+.kt-cue button{width:128px;height:128px;white-space:nowrap;padding:0 .4rem;border-radius:50%;border:1px solid rgba(232,198,122,.7);background:radial-gradient(circle,rgba(217,65,43,.85),rgba(120,24,14,.9));color:#fff;font-size:1rem;letter-spacing:.12em;box-shadow:0 0 0 0 rgba(232,198,122,.6);animation:kt-pulse 1.6s infinite}
+.kt-cue button:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.kt-cue small{font-size:.78rem;color:var(--ink);text-shadow:0 1px 8px #000}
+@keyframes kt-pulse{0%{box-shadow:0 0 0 0 rgba(232,198,122,.55)}70%{box-shadow:0 0 0 22px rgba(232,198,122,0)}100%{box-shadow:0 0 0 0 rgba(232,198,122,0)}}
+.kt-stop{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:calc(11vh - 44px);pointer-events:auto;background:none;border:1px solid rgba(244,234,216,.25);border-radius:999px;color:var(--muted);font-size:.72rem;padding:.35rem .8rem}
+@media (prefers-reduced-motion:reduce){.kt-bar,.kt-phase.on,.kt-cue button{animation:none!important;transform:none!important;opacity:1}}
+.kicker{margin:0;font:600 .62rem/1 system-ui,sans-serif;letter-spacing:.3em;color:var(--gold);text-transform:uppercase}
+.kito-sheet input{width:100%;border-radius:12px;border:1px solid var(--line);background:#f4e6c8;color:#2b2620;padding:.6rem .7rem;font:inherit;font-size:.95rem}
+.kito-sheet h3 small{color:var(--muted);font-weight:400;font-size:.7rem}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chips button{border:1px solid var(--line);background:none;border-radius:999px;padding:.35rem .75rem;font-size:.8rem}
+.chips button.on{background:var(--gold);color:#2b2620;border-color:var(--gold)}
+.ofuda-wrap{display:grid;place-items:center;margin:.8rem 0}
+.ofuda-wrap img{height:min(52vh,460px);width:auto;max-width:100%;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.55)}
+.juyo-kito{width:100%;margin-top:.4rem}
+.kt-shade{position:absolute;top:0;bottom:0;right:0;width:min(62vw,560px);background:linear-gradient(270deg,rgba(5,6,5,.72),rgba(5,6,5,.35) 55%,transparent)}

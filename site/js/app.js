@@ -5,20 +5,21 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031015";
-import { buildWorld } from "./world.js?v=11031015";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031015";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031015";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031015";
-import { deeds } from "../deeds.js?v=11031015";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031015";
-import { fireflies } from "../fx.js?v=11031015";
-import { LIGHT_SPOTS } from "./arch.js?v=11031015";
-import { freeze } from "./freeze.js?v=11031015";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11031015";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031015";
-import { connect, board } from "../net.js?v=11031015";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031015";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031036";
+import { buildWorld } from "./world.js?v=11031036";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031036";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031036";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031036";
+import { deeds } from "../deeds.js?v=11031036";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031036";
+import { fireflies } from "../fx.js?v=11031036";
+import { LIGHT_SPOTS } from "./arch.js?v=11031036";
+import { freeze } from "./freeze.js?v=11031036";
+import { setupKito } from "./kito.js?v=11031036";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11031036";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031036";
+import { connect, board } from "../net.js?v=11031036";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031036";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -91,6 +92,7 @@ camera.position.set(0, innerWidth < innerHeight ? 8 : 6, innerWidth < innerHeigh
 // ------------------------------------------------------------------ 歩く（当たり判定つき）・道順
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
 let path = [], busy = false, onArrive = null, speedMul = 1;
+let cine = null;   // 御祈祷などの演出中は、カメラをこの関数が動かす
 let downAt = null;
 canvas.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY, performance.now()]; });
 canvas.addEventListener("pointerup", (e) => {
@@ -206,6 +208,8 @@ const ACTIONS = [
   { id: "enito", label: "💞 赤い糸に願う", at: [-28.6, 21.9], r: 2.8, run: () => akaiIto() },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
   { id: "toro", label: "🏮 灯籠を流す", at: [2, -71.5], r: 5, run: () => toroNagashi() },
+  { id: "kito", label: "🎴 御祈祷を受ける", at: [0, 0.5], r: 1.3, run: () => kito.open() },
+  { id: "kito_front", label: "🎴 御祈祷を受ける", at: [0, 9.8], r: 1.6, run: () => kito.open() },
   { id: "seiza_tosen", label: "🙇 正座して祈る", box: [-9, -4.5, 9, 8.3], run: () => seiza("tosen") },
   { id: "seiza_en", label: "🙇 正座して祈る", box: [-SMALL.X - SMALL.W / 2, SMALL.Z - SMALL.D / 2, -SMALL.X + SMALL.W / 2, SMALL.Z + SMALL.D / 2], run: () => seiza("enmusubi") },
   { id: "seiza_go", label: "🙇 正座して祈る", box: [SMALL.X - SMALL.W / 2, SMALL.Z - SMALL.D / 2, SMALL.X + SMALL.W / 2, SMALL.Z + SMALL.D / 2], run: () => seiza("gokaku") },
@@ -569,6 +573,7 @@ hooks.push((kind, d) => {
   else if (kind === "sweep") { pts = 1; q = "sweep"; }
   else if (kind === "pray") { pts = 1; q = "pray_ema"; }
   else if (["koi", "ushi", "ito", "toro"].includes(kind)) pts = onceToday(kind) ? (kind === "toro" ? 2 : 1) : 0;
+  else if (kind === "kito") pts = onceToday("kito") ? 5 : 0;
   else pts = TOKU[kind] || 0;
   if (!pts && !q) return;
   D.add(pts, q);
@@ -644,6 +649,7 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   stepMove(dt);
   if (intro) runIntro(dt);
+  else if (cine) cine(dt);
   else {
     const want = new THREE.Vector3(me.position.x, me.position.y + 1.2, me.position.z), delta = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 4));
     controls.target.add(delta); camera.position.add(delta); controls.update();
@@ -693,4 +699,27 @@ loop();
 setTimeout(() => $("#loading").classList.add("done"), 300);
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
 if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
-window.__enishi = { hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+// ------------------------------------------------------------------ 御祈祷（kito.js）
+const setCine = (fn) => {
+  cine = fn; controls.enabled = !fn;
+  if (!fn) { camera.position.set(me.position.x, me.position.y + 4.2, me.position.z + 6.5); controls.target.set(me.position.x, me.position.y + 1.2, me.position.z); controls.update(); }
+};
+const NG_WORDS = ["死ね", "殺す", "ころす", "しね", "消えろ", "ブス", "きもい", "キモい", "http", "www.", ".com", "ライン交換", "副業", "稼げる", "儲かる", "裏垢", "パパ活", "セックス", "エロ", "まんこ", "ちんこ", "fuck", "shit"];
+const ngText = (t) => NG_WORDS.some((w) => String(t || "").toLowerCase().includes(w.toLowerCase()));
+const walkP = (dest) => new Promise((r) => walkTo(dest, r));
+// 本殿の中の席へ：外にいれば本殿前まで道なりに行き、正面の階段から入る
+async function goSeat([sx, sz]) {
+  // 途中で詰まっても儀式が止まらないように：一定時間で着かなければ席へ移す
+  const arrive = (fn, ms) => Promise.race([new Promise(fn), wait(ms).then(() => "late")]);
+  const inside = () => Math.abs(me.position.x) < 9 && me.position.z < 8.3 && me.position.z > -4.5;
+  if (!inside()) {
+    if (Math.hypot(me.position.x - PLACES.honden.stand[0], me.position.z - PLACES.honden.stand[1]) > 3) await arrive((r) => walkTo(PLACES.honden.stand, r, { route: true, fast: true }), 40000);
+    await arrive((r) => { path = [[2.7, 14.0], [2.7, 11.3], [0.8, 10.2], [0, 7.6], [sx, sz]]; onArrive = r; speedMul = 1; }, 15000);
+  } else await arrive((r) => walkTo([sx, sz], r), 8000);
+  if (Math.hypot(me.position.x - sx, me.position.z - sz) > 0.4) { path = []; onArrive = null; me.position.set(sx, footY(sx, sz), sz); }
+}
+const hideOthers = (on) => { for (const o of others.values()) { o.av.visible = !on; o.tag.style.visibility = on ? "hidden" : ""; if (o.bubble) o.bubble.style.visibility = on ? "hidden" : ""; } };
+const kito = setupKito({ hideOthers, scene, camera, me, W, env, store, sfx, tone, noise, ac, muted: () => muted, wait, toast, setPose, bowTo, doing, setCine, goSeat, walkTo2: walkP,
+  deedHook, today, ng: ngText, getName: () => myName, get net() { return net; } });
+$("#juyo-kito").onclick = () => { $("#m-juyo").hidden = true; kito.open(); };
+window.__enishi = { kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };

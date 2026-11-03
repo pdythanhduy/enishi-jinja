@@ -139,8 +139,8 @@ export function honden(parent, env, { x = 0, z = 0 } = {}) {
   chochin(g, -5.2, F + 3.7, D / 2 + 1.6, env, 1.6); chochin(g, 5.2, F + 3.7, D / 2 + 1.6, env, 1.6);
   for (let i = -3; i <= 3; i++) if (i) chochin(g, i * 2.4, F + 4.7, D / 2 + 0.2, env, 0.75, 0xffe7b0);
   lightSpot(g, F + 3, 12, 18, 0xffb06a);
-  hondenInterior(g, env, W, D, F);
-  return { group: g, floorY: F + 0.3, front: z + D / 2 + 1 };
+  const mirror = hondenInterior(g, env, W, D, F);
+  return { group: g, floorY: F + 0.3, front: z + D / 2 + 1, mirror };
 }
 
 // 本殿の内陣：御簾・神鏡・御幣・鏡餅・榊・大太鼓・釣灯籠
@@ -192,6 +192,7 @@ function hondenInterior(g, env, W, D, F) {
   // 釣灯籠（青銅）：向拝の両脇の軒に
   for (const cx of [-7, -4.2, 4.2, 7]) tsuriDoro(g, cx, F + 4.75, D / 2 - 0.1);
   lightSpot(g, F + 2.5, 6, 10, 0xffc27a);
+  return mir;
 }
 
 // 御簾の素材（すだれ＋紫の帯）

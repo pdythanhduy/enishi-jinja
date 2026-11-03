@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031015";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL } from "./map.js?v=11031015";
-import { FOLIAGE } from "./env.js?v=11031015";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031036";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL } from "./map.js?v=11031036";
+import { FOLIAGE } from "./env.js?v=11031036";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -125,6 +125,7 @@ export function buildWorld(scene, env, { mobile }) {
   const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0x8b2c3a });
   for (let r = 0; r < 3; r++) for (let cI = 0; cI < 6; cI++) { const x = -6.25 + cI * 2.5, z = -1.6 + r * 2.2; box(scene, 0.95, 0.12, 0.95, zab, x, hd.floorY + 0.06, z + 1).userData.static = true; hdC.push([x, z + 1]); }
   W.cushions.tosen = hdC; W.altars.tosen = [0, -2.6];
+  W.hondenMirror = hd.mirror;
   // 縁結び・合格の賽銭箱と鈴
   W.smallSaisen = {};
   for (const [hid, hx] of [["enmusubi", -SMALL.X], ["gokaku", SMALL.X]]) {
