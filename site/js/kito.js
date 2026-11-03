@@ -122,6 +122,7 @@ export function setupKito(A) {
   const { scene, camera, me, W } = A;
   // 神職・巫女は普段から本殿に控えている
   const priest = makeNPC("priest"), miko = makeNPC("miko");
+  priest.scale.setScalar(0.86); miko.scale.setScalar(0.82);                     // 参拝者より少しだけ大きく
   priest.position.copy(PRIEST_HOME); miko.position.copy(MIKO_HOME); scene.add(priest, miko);
   const nusa = haraegushi(), suzu = kaguraSuzu(); priest.userData.arms[0].add(nusa); nusa.visible = false; nusa.position.set(0, -0.45, 0.1);
   miko.userData.arms[1].add(suzu); suzu.position.set(0, -0.45, 0.05);

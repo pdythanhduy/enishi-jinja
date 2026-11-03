@@ -5,25 +5,25 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031058";
-import { buildWorld } from "./world.js?v=11031058";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031058";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031058";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031058";
-import { deeds } from "../deeds.js?v=11031058";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031058";
-import { fireflies } from "../fx.js?v=11031058";
-import { LIGHT_SPOTS } from "./arch.js?v=11031058";
-import { freeze } from "./freeze.js?v=11031058";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031058";
-import { setupKenno } from "./kenno.js?v=11031058";
-import { setupSocial } from "./social.js?v=11031058";
-import { setupProfile } from "./profile.js?v=11031058";
-import { setupKito } from "./kito.js?v=11031058";
-import { makeAvatar, setPose, bowTo, restyle } from "./avatar.js?v=11031058";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031058";
-import { connect, board } from "../net.js?v=11031058";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031058";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031103";
+import { buildWorld } from "./world.js?v=11031103";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031103";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031103";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031103";
+import { deeds } from "../deeds.js?v=11031103";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031103";
+import { fireflies } from "../fx.js?v=11031103";
+import { LIGHT_SPOTS } from "./arch.js?v=11031103";
+import { freeze } from "./freeze.js?v=11031103";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031103";
+import { setupKenno } from "./kenno.js?v=11031103";
+import { setupSocial } from "./social.js?v=11031103";
+import { setupProfile } from "./profile.js?v=11031103";
+import { setupKito } from "./kito.js?v=11031103";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031103";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031103";
+import { connect, board } from "../net.js?v=11031103";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031103";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -78,7 +78,7 @@ setInterval(() => darkL.turnOffRandom(), 150e3);
 let myName = store.get("enishi_name", null) || `${pick(NAMES_A)}${pick(NAMES_B)}`; store.set("enishi_name", myName);
 let myLook = store.get("enishi_look", null) ?? Math.random(); store.set("enishi_look", myLook);
 const me = makeAvatar(myLook, env);
-me.position.set(0, 0, 80); me.rotation.y = Math.PI; scene.add(me);
+me.scale.setScalar(AV_SCALE); me.position.set(0, 0, 80); me.rotation.y = Math.PI; scene.add(me);
 $("#me-tag").textContent = "わたし · " + myName;
 
 // ------------------------------------------------------------------ ポストエフェクト
@@ -188,6 +188,26 @@ let kujiHall = null;
 const MAP_PIN = { ootorii: [260, 600], sando: [470, 610], pond: [745, 650], romon: [605, 430], temizu: [785, 465], juyosho: [950, 515], shinboku: [965, 405], honden: [840, 290], enmusubi: [480, 320], gokaku: [1135, 385], senbon: [900, 165], okunoin: [1030, 105], pagoda: [1240, 190] };
 $("#map-pins").innerHTML = Object.entries(PLACES).map(([k, p]) => { const [px, py] = MAP_PIN[k];
   return `<button class="pin" data-k="${k}" style="left:${(px / 1408) * 100}%;top:${(py / 768) * 100}%"><b>${p.n}</b><span>${p.name}<small>${p.vi}</small></span></button>`; }).join("");
+// 境内図の座標あわせ：場所の座標 → 絵地図のピクセル（13か所から最小二乗で一次変換を求める）
+const mapXY = (() => {
+  const rows = Object.entries(PLACES).map(([k, p]) => [p.pos[0], p.pos[1], ...MAP_PIN[k]]);
+  const fit = (col) => {
+    const S = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], t = [0, 0, 0];
+    for (const r of rows) { const v = [r[0], r[1], 1]; for (let i = 0; i < 3; i++) { t[i] += v[i] * r[col]; for (let j = 0; j < 3; j++) S[i][j] += v[i] * v[j]; } }
+    for (let i = 0; i < 3; i++) { for (let k = i + 1; k < 3; k++) { const f = S[k][i] / S[i][i]; for (let j = i; j < 3; j++) S[k][j] -= f * S[i][j]; t[k] -= f * t[i]; } }
+    const x = [0, 0, 0]; for (let i = 2; i >= 0; i--) { let s = t[i]; for (let j = i + 1; j < 3; j++) s -= S[i][j] * x[j]; x[i] = s / S[i][i]; }
+    return x;
+  };
+  const A = fit(2), B = fit(3);
+  return (x, z) => [Math.min(1400, Math.max(8, A[0] * x + A[1] * z + A[2])), Math.min(760, Math.max(8, B[0] * x + B[1] * z + B[2]))];
+})();
+const mapMe = document.createElement("div"); mapMe.className = "map-me"; mapMe.innerHTML = "<i></i><span>現在地</span>"; $("#map-pins").appendChild(mapMe);
+const mapOthers = document.createElement("div"); mapOthers.className = "map-others"; $("#map-pins").appendChild(mapOthers);
+function paintMapMe() {
+  const [px, py] = mapXY(me.position.x, me.position.z); mapMe.style.left = (px / 1408) * 100 + "%"; mapMe.style.top = (py / 768) * 100 + "%";
+  mapOthers.innerHTML = [...others.values()].map((o) => { const [x, y] = mapXY(o.av.position.x, o.av.position.z); return `<b style="left:${(x / 1408) * 100}%;top:${(y / 768) * 100}%" title="${o.name.replace(/[<>&"]/g, "")}"></b>`; }).join("");
+}
+setInterval(() => { if (!$("#m-map").hidden) paintMapMe(); }, 500);
 $("#map-pins").onclick = (e) => { const b = e.target.closest(".pin"); if (!b) return; goPlace(b.dataset.k); $("#m-map").hidden = true; };
 function goPlace(k, cb) {
   const p = PLACES[k]; if (!p || busy) return;
@@ -245,7 +265,7 @@ function refreshAction() {
   b.classList.toggle("glow", !!a);
 }
 $("#act-main").onclick = () => { if (busy) return; ac(); if (curAct) curAct.run(); else goPlace("honden"); };
-$("#act-map").onclick = () => open("#m-map");
+$("#act-map").onclick = () => { paintMapMe(); open("#m-map"); };
 $("#act-ema").onclick = () => { renderEma(); loadEma(); open("#m-ema"); };
 $("#act-report").onclick = () => report();
 $("#act-say").onclick = () => social?.toggleSay();
@@ -321,7 +341,7 @@ const omairi = (sid = "tosen") => doing(async () => {
   const coinC = await chooseCoin(); if (!coinC) return;
   toast(`${coinC.label}を納めます（${coinC.mean}）`, 2000);
   const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xd9b45a, metalness: 0.8, roughness: 0.3 }));
-  coin.position.set(me.position.x, me.position.y + 1.2, me.position.z - 0.3); scene.add(coin); const cy0 = coin.position.y;
+  coin.position.set(me.position.x, me.position.y + 1.0, me.position.z - 0.3); scene.add(coin); const cy0 = coin.position.y;
   await new Promise((r) => { const t0 = performance.now(); (function f() { const k = Math.min(1, (performance.now() - t0) / 700);
     coin.position.z = me.position.z - 0.3 - k * 0.9; coin.position.y = cy0 + Math.sin(k * Math.PI) * 0.8 - k * 0.25; coin.rotation.x += 0.4; k < 1 ? requestAnimationFrame(f) : r(); })(); });
   scene.remove(coin); sfx.coin(); await wait(400); net?.act("suzu");
@@ -628,7 +648,7 @@ async function report() {
 const others = new Map();
 function addOther(o) {
   if (others.has(o.id)) return;
-  const av = makeAvatar(o.look || Math.random(), env); av.position.set(o.x ?? 0, footY(o.x ?? 0, o.z ?? 80), o.z ?? 80); av.rotation.y = o.ry ?? Math.PI; scene.add(av);
+  const av = makeAvatar(o.look || Math.random(), env); av.scale.setScalar(AV_SCALE); av.position.set(o.x ?? 0, footY(o.x ?? 0, o.z ?? 80), o.z ?? 80); av.rotation.y = o.ry ?? Math.PI; scene.add(av);
   const tag = document.createElement("div"); tag.className = "tag"; tag.textContent = o.name || "参拝者"; document.body.appendChild(tag);
   av.userData.otherId = o.id;
   others.set(o.id, { id: o.id, name: o.name || "参拝者", pid: null, av, tag, to: new THREE.Vector3(o.x ?? 0, 0, o.z ?? 80), ry: o.ry ?? Math.PI, bubble: null });
@@ -671,7 +691,7 @@ function loop() {
   if (intro) runIntro(dt);
   else if (cine) cine(dt);
   else {
-    const want = new THREE.Vector3(me.position.x, me.position.y + 1.2, me.position.z), delta = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 4));
+    const want = new THREE.Vector3(me.position.x, me.position.y + 1.0, me.position.z), delta = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 4));
     controls.target.add(delta); camera.position.add(delta); controls.update();
     // 千本鳥居の中ではカメラを笠木より下に
     if (region(me.position.x, me.position.z) === "trail" && me.position.y + 2.6 < camera.position.y) camera.position.y += (me.position.y + 2.6 - camera.position.y) * Math.min(1, dt * 10);
@@ -689,7 +709,7 @@ function loop() {
     else { u.body.position.y = 0; u.arms.forEach((a) => (a.rotation.x = 0)); }
     o.av.position.y = footY(o.av.position.x, o.av.position.z);
     o.av.rotation.y += ((((o.ry - o.av.rotation.y) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI) * Math.min(1, dt * 8);
-    v3.copy(o.av.position); v3.y += 2.05; v3.project(camera);
+    v3.copy(o.av.position); v3.y += 2.05 * AV_SCALE; v3.project(camera);
     const vis = v3.z < 1 && Math.abs(v3.x) < 1.1 && Math.abs(v3.y) < 1.1, X = (v3.x * 0.5 + 0.5) * innerWidth + "px", Y = (-v3.y * 0.5 + 0.5) * innerHeight + "px";
     o.tag.style.display = vis ? "" : "none"; o.tag.style.left = X; o.tag.style.top = Y;
     if (o.bubble) { o.bubble.style.display = vis ? "" : "none"; o.bubble.style.left = X; o.bubble.style.top = `calc(${Y} - 22px)`; }
@@ -697,7 +717,7 @@ function loop() {
   net?.pos(me.position.x, me.position.z, me.rotation.y);
   bloom.strength = (MOBILE ? 0.42 : 0.55) * (0.12 + 0.88 * env.lamp); bloom.threshold = 0.86 + (1 - env.lamp) * 0.12; bloom.radius = 0.45;
   composer.render();
-  v3.copy(me.position); v3.y += 2.15; v3.project(camera);
+  v3.copy(me.position); v3.y += 2.15 * AV_SCALE; v3.project(camera);
   tagEl.style.display = intro ? "none" : ""; tagEl.style.left = (v3.x * 0.5 + 0.5) * innerWidth + "px"; tagEl.style.top = (-v3.y * 0.5 + 0.5) * innerHeight + "px";
   if (tick % 20 === 0) updateLightPool();
   if (++tick % 15 === 0) {
