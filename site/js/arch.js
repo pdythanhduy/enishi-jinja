@@ -468,6 +468,46 @@ export function kairo(parent, env, { cx, cz, len, ry, D = 2.6 }) {
   return g;
 }
 
+// ------------------------------------------------------------------ 舞台（懸造り）：崖にせり出した板張りの舞台。下は格子に組んだ柱が斜面まで伸びる
+export function kakezukuri(parent, env, { x0, x1, z0, z1, y, ground }) {
+  const g = new THREE.Group(); parent.add(g); g.userData.static = true;
+  const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  box(g, w, 0.18, d, MAT.woodL, cx, y - 0.09, cz);                                    // 床板
+  const posts = [];
+  for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) {
+    const px = x0 + 0.3 + (w - 0.6) * (i / 4), pz = z0 + 0.3 + (d - 0.6) * (j / 4), gy = Math.min(y - 0.2, ground(px, pz));
+    const len = y - 0.2 - gy + 0.4; if (len < 0.3) continue;
+    cyl(g, 0.17, 0.2, len, MAT.wood, px, gy - 0.4 + len / 2, pz, 8); posts.push([px, pz, gy]);
+  }
+  // 貫（横木）：段々に
+  for (let k = 1; k <= 6; k++) {
+    const yy = y - 0.5 - k * 2.2;
+    for (let j = 0; j <= 4; j++) { const pz = z0 + 0.3 + (d - 0.6) * (j / 4); if (ground(cx, pz) < yy) box(g, w - 0.4, 0.14, 0.12, MAT.woodD, cx, yy, pz); }
+    for (let i = 0; i <= 4; i++) { const px = x0 + 0.3 + (w - 0.6) * (i / 4); if (ground(px, cz) < yy) box(g, 0.12, 0.14, d - 0.4, MAT.woodD, px, yy, cz); }
+  }
+  // 高欄（三方）
+  const rail = (ax, az, bx, bz) => { const L = Math.hypot(bx - ax, bz - az), r = box(g, L, 0.1, 0.1, MAT.shu, (ax + bx) / 2, y + 0.85, (az + bz) / 2); r.rotation.y = -Math.atan2(bz - az, bx - ax);
+    const r2 = box(g, L, 0.07, 0.07, MAT.shu, (ax + bx) / 2, y + 0.45, (az + bz) / 2); r2.rotation.y = r.rotation.y;
+    const n = Math.round(L / 1.1); for (let k = 0; k <= n; k++) cyl(g, 0.06, 0.06, 0.9, MAT.shu, ax + (bx - ax) * (k / n), y + 0.45, az + (bz - az) * (k / n), 6);
+    for (let k = 0; k <= n; k += 2) { const gb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), MAT.gold); gb.position.set(ax + (bx - ax) * (k / n), y + 0.98, az + (bz - az) * (k / n)); g.add(gb); } };
+  rail(x0, z1, x1, z1); rail(x0, z0 + 1.6, x0, z1); rail(x1, z0 + 1.6, x1, z1);
+  // 舞台の四隅に灯籠、正面に扁額の立て札
+  for (const [px, pz] of [[x0 + 0.5, z1 - 0.5], [x1 - 0.5, z1 - 0.5]]) chochin(g, px, y + 1.8, pz, env, 0.75);
+  return g;
+}
+// 夫婦杉：しめ縄で結ばれた二本の大杉
+export function meotoSugi(parent, { x, z, y }) {
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); g.userData.static = true;
+  const bark = new THREE.MeshStandardMaterial({ color: 0x5a3a28, roughness: 1 }), leaf = new THREE.MeshStandardMaterial({ color: 0x1f3d26, roughness: 0.95, flatShading: true });
+  for (const s of [-1, 1]) {
+    cyl(g, 0.55, 0.85, 16, bark, s * 1.4, 8, 0, 10);
+    for (let k = 0; k < 6; k++) { const c = new THREE.Mesh(new THREE.ConeGeometry(3.4 - k * 0.45, 3.2, 8), leaf); c.position.set(s * 1.4, 9 + k * 2.1, 0); c.castShadow = true; g.add(c); }
+  }
+  const rope = cyl(g, 0.12, 0.12, 2.6, MAT.rope, 0, 3.2, 0.2, 8); rope.rotation.z = Math.PI / 2;
+  for (const xx of [-0.6, 0, 0.6]) box(g, 0.2, 0.55, 0.02, MAT.paperW, xx, 2.75, 0.3, false);
+  return g;
+}
+
 // ------------------------------------------------------------------ 五重塔
 export function pagoda(parent, env, { x, z, y = 0 }) {
   const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); g.userData.static = true;
@@ -567,8 +607,8 @@ export function shinboku(parent, { x, z }, leafMat) {
 }
 
 // ------------------------------------------------------------------ 奥の院（山頂の小さな社）
-export function okunoin(parent, env, { x, z, y }) {
-  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); g.userData.static = true;
+export function okunoin(parent, env, { x, z, y, s = 1 }) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); parent.add(g); g.userData.static = true; g.userData.static = true;
   box(g, 6, 0.5, 4.5, MAT.stoneD, 0, 0.25, 0);
   for (const xx of [-2.6, 2.6]) for (const zz of [-1.9, 1.9]) cyl(g, 0.14, 0.14, 2.8, MAT.shu, xx, 1.9, zz, 10);
   box(g, 5.6, 2.6, 0.12, MAT.woodL, 0, 1.8, -1.9);

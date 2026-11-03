@@ -42,14 +42,19 @@ function trailInfo(x, z) {
   for (let i = 0; i < TRAIL_PTS.length; i += 2) { const p = TRAIL_PTS[i], d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < best) { best = d; bi = i; } }
   return { d: Math.sqrt(best), t: bi / (TRAIL_PTS.length - 1) };
 }
-export const trailHeight = (t) => smooth(0.0, 1, t) * 15.5;
+// 奥の院は高い山の頂。舞台（懸造り）は南西の崖にせり出して、境内を見下ろす
+export const OKU_Y = 30;
+export const STAGE = { x0: -15.5, x1: -6.5, z0: -66.5, z1: -58.5, y: OKU_Y + 0.35 };
+export const trailHeight = (t) => smooth(0.0, 1, t) * OKU_Y;
 export function height(x, z) {
   if (z > -6 && Math.abs(x) < 46 && z < 88) {
     if (z < 2 && x > 33 && x < 44) return Math.max(0, smooth(2, -13, z) * (Math.max(0, 1 - Math.hypot(x - 40, z + 21) / 16) * 5 + smooth(-6, -80, z) * 16));
     return 0;
   }
   let h = rawMountain(x, z);
-  if (Math.hypot(x + 2, z + 74) < 13) h = 15.5;                                     // 奥の院の平地
+  const dOk = Math.hypot(x + 2, z + 74);
+  if (dOk < 46) h = Math.max(h, OKU_Y - Math.pow(Math.max(0, dOk - 13), 1.18) * 0.95);   // 山頂へ尖っていく
+  if (dOk < 13) h = OKU_Y;                                                        // 奥の院の平地
   if (z > -14 && z <= -6 && Math.abs(x) < 46) h *= smooth(-6, -14, z);
   if (Math.abs(x) < 25 && z > -30) h *= Math.max(smooth(-20, -30, z), smooth(17, 25, Math.abs(x)));   // 本殿の裏は平らに、なだらかに山へ
   const tr = trailInfo(x, z);
@@ -89,10 +94,12 @@ export const BLOCKS = [
   [-6.2, 17, -4.8, 19], [4.8, 17, 6.2, 19],                   // 狛狐の台
   [-30.3, 23.0, -28.7, 24.6], [28.4, 23.0, 30.6, 24.6],        // 赤い糸の木・撫で牛
   [36.2, -25.8, 43.8, -18.2],                                 // 五重塔
-  [-5.2, -80.6, 1.2, -75.4],                                  // 奥の院
+  [-6.9, -81.9, 2.9, -74.2],                                  // 奥の院（1.5倍）
+  [-13.0, -75.4, -8.0, -70.6], [-12.2, -81.0, -6.8, -79.0],    // 磐座・夫婦杉
 ];
 export function walkable(x, z) {
   if (inHonden(x, z)) return true;
+  if (x > STAGE.x0 + 0.4 && x < STAGE.x1 - 0.4 && z > STAGE.z0 && z < STAGE.z1 - 0.4) return true;   // 舞台の上
   if (z > 44 && z < 85 && Math.abs(x) < 7.2) return true;                                // 参道・大鳥居前
   if (z > 44 && z < 64 && x > 6 && x < 30) return !inEll(x, z, POND) || (Math.abs(z - BRIDGE.z) < BRIDGE.w / 2 && x > BRIDGE.x0 && x < BRIDGE.x1);
   if (z > -6 && z <= 44 && Math.abs(x) < 24.5) return true;                              // 境内
@@ -110,6 +117,7 @@ export function blocked(x, z) {
 }
 // 床：平らな床と階段（ランプ）
 export const floors = [
+  { x0: STAGE.x0, x1: STAGE.x1, z0: STAGE.z0 + 1.6, z1: STAGE.z1, y: STAGE.y },              // 奥の院の舞台
   { x0: HX0, x1: HX1, z0: HZ0, z1: HZ1, y: 1.7 * HONDEN.S },                         // 本殿の中
   { x0: -3.8 * HONDEN.S, x1: 3.8 * HONDEN.S, z0: HZ1, z1: hw(0, 10.9)[1], ramp: [1.6 * HONDEN.S, 0] },   // 本殿の大階段
   ...[-SMALL.X, SMALL.X].flatMap((cx) => { const { Z, W, D, F } = SMALL, f = Z + D / 2;

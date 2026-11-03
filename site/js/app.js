@@ -5,28 +5,28 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031404";
-import { buildWorld } from "./world.js?v=11031404";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031404";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031404";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031404";
-import { deeds } from "../deeds.js?v=11031404";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031404";
-import { fireflies } from "../fx.js?v=11031404";
-import { LIGHT_SPOTS } from "./arch.js?v=11031404";
-import { freeze } from "./freeze.js?v=11031404";
-import { setupSeasonal } from "./seasonal.js?v=11031404";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031404";
-import { makeBGM } from "./bgm.js?v=11031404";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031404";
-import { setupKenno } from "./kenno.js?v=11031404";
-import { setupSocial } from "./social.js?v=11031404";
-import { setupProfile } from "./profile.js?v=11031404";
-import { setupKito } from "./kito.js?v=11031404";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031404";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031404";
-import { connect, board } from "../net.js?v=11031404";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031404";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031413";
+import { buildWorld } from "./world.js?v=11031413";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031413";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031413";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031413";
+import { deeds } from "../deeds.js?v=11031413";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031413";
+import { fireflies } from "../fx.js?v=11031413";
+import { LIGHT_SPOTS } from "./arch.js?v=11031413";
+import { freeze } from "./freeze.js?v=11031413";
+import { setupSeasonal } from "./seasonal.js?v=11031413";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031413";
+import { makeBGM } from "./bgm.js?v=11031413";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031413";
+import { setupKenno } from "./kenno.js?v=11031413";
+import { setupSocial } from "./social.js?v=11031413";
+import { setupProfile } from "./profile.js?v=11031413";
+import { setupKito } from "./kito.js?v=11031413";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031413";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031413";
+import { connect, board } from "../net.js?v=11031413";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031413";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -285,6 +285,7 @@ const ACTIONS = [
   { id: "omairi_en", label: "⛩ お参り（縁結び）", at: PLACES.enmusubi.stand, r: 2.6, run: () => omairi("enmusubi") },
   { id: "omairi_go", label: "⛩ お参り（合格）", at: PLACES.gokaku.stand, r: 2.6, run: () => omairi("gokaku") },
   { id: "omairi_ok", label: "⛩ お参り（奥の院）", at: [-2, -73.4], r: 2.2, run: () => omairi("okunoin") },
+  { id: "ichibo", label: "🌄 境内を一望する", at: [(STAGE.x0 + STAGE.x1) / 2, STAGE.z1 - 1.6], r: 2.6, run: () => panorama() },
   { id: "temizu", label: "💧 手水をとる", at: PLACES.temizu.stand, r: 3, run: () => temizu() },
   { id: "kuji", label: "⛩ 授与所", at: PLACES.juyosho.stand, r: 3.4, run: () => openJuyo() },
   { id: "ema", label: "🪵 絵馬を奉納", at: [18.6, 13.2], r: 3.6, run: () => { renderEma(); loadEma(); open("#m-ema"); } },
@@ -367,6 +368,22 @@ const temizu = () => doing(async () => {
   const ok = await runTemizu({ me, camera, setCine, stepText, holdStep, wait, tone, noise, drip, stand: PLACES.temizu.stand, walk: (p) => new Promise((r) => walkTo(p, r)) }, TZ);
   stepText(""); if (!ok) return;
   purified = true; toast("心と手を清めました。気持ちよくお参りできます 💧"); deedHook("temizu");
+});
+
+// ------------------------------------------------------------------ 一望：奥の院の舞台から、境内をぐるりと見渡す
+const panorama = () => doing(async () => {
+  me.rotation.y = 0; document.body.classList.add("cine");
+  const P = [camera.position.toArray(), [-11, OKU_Y + 3.4, -63], [-4, OKU_Y + 2, -42], [6, 33, -14], [34, 28, 16], [16, 28, 60], [-26, 27, 36], [-14, OKU_Y + 5, -50], [-11, OKU_Y + 3.0, -65]];   // 楼門・本殿の屋根より上を飛ぶ
+  const L = [[0, 4, 10], [0, 6, 10], [0, 5, 4], [0, 6, -4], [0, 4, 10], [0, 6, 0], [0, 5, 10], [0, 5, 10], [0, 4, 12]];
+  const pc = new THREE.CatmullRomCurve3(P.map((p) => new THREE.Vector3(...p))), lc = new THREE.CatmullRomCurve3(L.map((p) => new THREE.Vector3(...p)));
+  const DUR = 22000, t0 = performance.now();
+  setCine(() => { const k = Math.min(1, (performance.now() - t0) / DUR), e = 0.5 - Math.cos(k * Math.PI) / 2; camera.position.copy(pc.getPointAt(e)); camera.lookAt(lc.getPointAt(e)); });
+  bgm.duck(false); tone([[392, 0.5], [587.33, 0.3], [784, 0.2]], 4, 0.06);
+  stepText("境 内 一 望"); setTimeout(() => stepText(""), 3200);
+  toast("えにし神社を一望しています。タップで戻ります", 3000);
+  await new Promise((r) => { const end = () => { removeEventListener("pointerdown", end); r(); }; setTimeout(end, DUR); setTimeout(() => addEventListener("pointerdown", end), 600); });
+  setCine(null); document.body.classList.remove("cine"); deedHook("ichibo");
+  toast("🌄 山の上から見る境内は、ひとつの小さな町のようでした", 3600);
 });
 
 // ------------------------------------------------------------------ お参り（賽銭→鈴→二礼二拍手一礼）
@@ -519,8 +536,8 @@ function toroNagashi() { deedHook("toro");
   const lamp = new THREE.Group(); const m = new THREE.MeshStandardMaterial({ color: 0xfff0d0, emissive: 0xffa040, emissiveIntensity: 2.6 });
   const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), m); b.position.y = 0.25; lamp.add(b);
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.55), new THREE.MeshStandardMaterial({ color: 0x6b4428 })); lamp.add(base);
-  lamp.position.set(OKPOND.cx - 3.5, 15.6, OKPOND.cz + 0.5); scene.add(lamp); W.floatLamps = (W.floatLamps || []).concat([{ lamp, a: Math.random() * 6, t: 0 }]);
-  toast("灯籠を池に流しました。遠くの大切な人に、想いが届きますように 🏮"); releaseLight(lamp.position.x, 15.5, lamp.position.z, true); net?.act("toro");
+  lamp.position.set(OKPOND.cx - 3.5, OKU_Y + 0.1, OKPOND.cz + 0.5); scene.add(lamp); W.floatLamps = (W.floatLamps || []).concat([{ lamp, a: Math.random() * 6, t: 0 }]);
+  toast("灯籠を池に流しました。遠くの大切な人に、想いが届きますように 🏮"); releaseLight(lamp.position.x, OKU_Y, lamp.position.z, true); net?.act("toro");
 }
 
 // ------------------------------------------------------------------ おみくじ（一日一回）
@@ -786,13 +803,13 @@ function loop() {
     const want = new THREE.Vector3(me.position.x, me.position.y + 1.0, me.position.z), delta = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 4));
     controls.target.add(delta); camera.position.add(delta); controls.update();
     // 千本鳥居の中ではカメラを笠木より下に
-    if (region(me.position.x, me.position.z) === "trail" && me.position.y + 2.6 < camera.position.y) camera.position.y += (me.position.y + 2.6 - camera.position.y) * Math.min(1, dt * 10);
+    if (region(me.position.x, me.position.z) === "trail" && Math.hypot(me.position.x + 2, me.position.z + 74) > 15 && !(me.position.x > STAGE.x0 - 2 && me.position.z > STAGE.z0 - 2 && me.position.z < STAGE.z1 + 2) && me.position.y + 2.6 < camera.position.y) camera.position.y += (me.position.y + 2.6 - camera.position.y) * Math.min(1, dt * 10);
     const gy = footY(camera.position.x, camera.position.z) + 0.8; if (camera.position.y < gy) camera.position.y = gy;   // 地面にめり込まない
   }
   W.treeFade?.(camera.position, controls.target);
   env.follow(me.position);
   for (const f of W.update) f(t, dt, me.position);
-  for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * 3.2; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * 1.8; fl.lamp.position.y = 15.58 + Math.sin(t * 2 + fl.a) * 0.02; }
+  for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * 3.2; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * 1.8; fl.lamp.position.y = OKU_Y + 0.08 + Math.sin(t * 2 + fl.a) * 0.02; }
   lanterns.update(dt, t); kit.update(dt, me); texTick(t); noboriTick(t); rowTick(t); cloudTick(t, env); ffTick(t);
   fireworks.update(dt, () => { tone([[60, 0.8], [90, 0.4]], 1.2, 0.25); setTimeout(() => noise(0.6, 2200, 0.12, "highpass"), 300); });
   for (const o of others.values()) {

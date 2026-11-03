@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031404";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031404";
-import { FOLIAGE } from "./env.js?v=11031404";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031413";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031413";
+import { FOLIAGE } from "./env.js?v=11031413";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -181,8 +181,20 @@ export function buildWorld(scene, env, { mobile }) {
   torii(scene, { x: 21.5, z: -6.2, s: 1.1, gaku: null });
 
   // ---------------------------------------------------------------- ⑫ 奥の院・滝・灯籠流しの池
-  const okY = 15.5;
-  okunoin(scene, env, { x: -2, y: okY, z: -78 });
+  const okY = OKU_Y;
+  okunoin(scene, env, { x: -2, y: okY, z: -78, s: 1.5 });
+  kakezukuri(scene, env, { ...STAGE, ground: (x, z) => height(x, z) });
+  meotoSugi(scene, { x: -9.5, z: -80, y: okY });
+  // 磐座：しめ縄を巻いた大岩
+  { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 0), new THREE.MeshStandardMaterial({ color: 0x77726a, roughness: 1, flatShading: true })); r.scale.set(1.2, 0.9, 1); r.position.set(-10.5, okY + 1.4, -73); r.castShadow = true; scene.add(r);
+    const sm = new THREE.Mesh(new THREE.TorusGeometry(2.45, 0.11, 8, 36), MAT.rope); sm.rotation.x = Math.PI / 2; sm.scale.set(1.2, 1, 1); sm.position.set(-10.5, okY + 1.6, -73); scene.add(sm); }
+  // 雲海：山腹をゆっくり流れる雲
+  { const cv = document.createElement("canvas"); cv.width = cv.height = 256; const c = cv.getContext("2d");
+    for (let i = 0; i < 70; i++) { const x = 40 + Math.random() * 176, y = 70 + Math.random() * 116, r = 30 + Math.random() * 50, gr = c.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, "rgba(255,255,255,.22)"); gr.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = gr; c.fillRect(0, 0, 256, 256); }
+    const t = new THREE.CanvasTexture(cv), cm = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, opacity: 0.9, fog: false }), puffs = [];
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, r = 30 + Math.random() * 26, p = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), cm); p.rotation.x = -Math.PI / 2; p.rotation.z = Math.random() * 6;
+      p.position.set(-2 + Math.cos(a) * r, okY - 9 - Math.random() * 6, -74 + Math.sin(a) * r * 0.8); if (p.position.z > -40) p.position.z = -40 - Math.random() * 8; scene.add(p); puffs.push(p); }
+    W.update.push((tt) => puffs.forEach((p, i) => { p.rotation.z += 0.0004 * (i % 2 ? 1 : -1); p.position.x += Math.sin(tt * 0.05 + i) * 0.005; })); }
   const op = new THREE.Shape(); op.absellipse(0, 0, 5.5, 3.6, 0, Math.PI * 2);
   const oWater = new THREE.Mesh(new THREE.ShapeGeometry(op, 40), MAT.water); oWater.rotation.x = -Math.PI / 2; oWater.position.set(OKPOND.cx, okY + 0.05, OKPOND.cz); scene.add(oWater);
   W.okPond = { x: 6, z: -73, y: okY, rx: 5.5, rz: 3.6 };
@@ -190,7 +202,7 @@ export function buildWorld(scene, env, { mobile }) {
     for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.5})`; x.fillRect(Math.random() * 32, Math.random() * 128, 1 + Math.random() * 2, 8 + Math.random() * 20); }
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
   const fall = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 9), new THREE.MeshBasicMaterial({ map: fallTex, transparent: true, opacity: 0.85, color: 0xd8ecff, depthWrite: false }));
-  fall.position.set(11, okY + 4.5, -76.5); fall.rotation.y = -0.6; scene.add(fall);
+  fall.position.set(11, okY + 4.5, -76.5); fall.rotation.y = -0.6; fall.scale.y = 1.3; scene.add(fall);
   { const b = box(scene, 6, 10, 3, MAT.stoneD, 12.5, okY + 4, -78.5); b.rotation.y = -0.6; b.userData.static = true; }
   W.update.push((t, dt) => { fallTex.offset.y -= dt * 1.4; });
   torii(scene, { x: 3.5, z: -70, y: okY, s: 0.8, gaku: null });
