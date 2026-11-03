@@ -2,6 +2,8 @@
 
 Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enishi-jinja). The user writes in Vietnamese; site text is Japanese.
 
+**Read `docs/TOAN_BO_ENISHI.md` first.** It is the full project history: concept, every feature, content, marketing and monetization plans, lessons learned and the to-do list (in Vietnamese).
+
 ## Stack
 - `site/`: static Three.js r0.180 via jsdelivr importmap, no build step. Deployed by GitHub Pages (`.github/workflows/pages.yml`) on push to `site/**`.
 - `site/js/`:
