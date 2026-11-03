@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030938";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030938";
-import { FOLIAGE } from "./env.js?v=11030938";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030948";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030948";
+import { FOLIAGE } from "./env.js?v=11030948";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -50,7 +50,7 @@ export function buildWorld(scene, env, { mobile }) {
   const pondShape = new THREE.Shape(); pondShape.absellipse(0, 0, POND.rx, POND.rz, 0, Math.PI * 2);
   const water = new THREE.Mesh(new THREE.ShapeGeometry(pondShape, 48), MAT.water); water.rotation.x = -Math.PI / 2; water.position.set(POND.cx, 0.05, POND.cz); scene.add(water);
   const bed = new THREE.Mesh(new THREE.ShapeGeometry(pondShape, 48), new THREE.MeshStandardMaterial({ color: 0x1d2e26 })); bed.rotation.x = -Math.PI / 2; bed.position.set(POND.cx, 0.01, POND.cz); scene.add(bed);
-  for (let i = 0; i < 46; i++) { const a = (i / 46) * Math.PI * 2; const r = box(scene, sr(0.5, 1.0), sr(0.25, 0.5), sr(0.5, 0.9), MAT.stoneD, POND.cx + Math.cos(a) * (POND.rx + 0.2), 0.15, POND.cz + Math.sin(a) * (POND.rz + 0.2)); r.rotation.y = sr(0, 3); }
+  for (let i = 0; i < 46; i++) { const a = (i / 46) * Math.PI * 2; const r = box(scene, sr(0.5, 1.0), sr(0.25, 0.5), sr(0.5, 0.9), MAT.stoneD, POND.cx + Math.cos(a) * (POND.rx + 0.2), 0.15, POND.cz + Math.sin(a) * (POND.rz + 0.2)); r.rotation.y = sr(0, 3); r.userData.static = true; }
   taikobashi(scene, BRIDGE);
   const koi = [];
   const koiCols = [0xff6a2a, 0xffffff, 0xf2c14a, 0xe83a2a, 0x222222];
@@ -124,7 +124,7 @@ export function buildWorld(scene, env, { mobile }) {
   W.cushions.enmusubi = en.cushions; W.cushions.gokaku = go.cushions; W.altars.enmusubi = en.altar; W.altars.gokaku = go.altar;
   // 本殿の中の座布団
   const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0x8b2c3a });
-  for (let r = 0; r < 3; r++) for (let cI = 0; cI < 6; cI++) { const x = -6.25 + cI * 2.5, z = -1.6 + r * 2.2; box(scene, 0.95, 0.12, 0.95, zab, x, hd.floorY + 0.06, z + 1); hdC.push([x, z + 1]); }
+  for (let r = 0; r < 3; r++) for (let cI = 0; cI < 6; cI++) { const x = -6.25 + cI * 2.5, z = -1.6 + r * 2.2; box(scene, 0.95, 0.12, 0.95, zab, x, hd.floorY + 0.06, z + 1).userData.static = true; hdC.push([x, z + 1]); }
   W.cushions.tosen = hdC; W.altars.tosen = [0, -2.6];
   // 縁結び・合格の賽銭箱と鈴
   W.smallSaisen = {};
@@ -139,10 +139,11 @@ export function buildWorld(scene, env, { mobile }) {
     W.smallSaisen[hid] = { box: sb, bell: bl, rope: rp };
   }
   // 赤い糸の結び木（縁結び）・撫で牛（合格）
-  const enTree = new THREE.Group(); enTree.position.set(-24.5 - 4, 0, 20.5); scene.add(enTree);
+  const enTree = new THREE.Group(); enTree.position.set(-24.5 - 4, 0, 20.5); enTree.userData.static = true; scene.add(enTree);
   cyl(enTree, 0.5, 0.7, 3.4, new THREE.MeshStandardMaterial({ color: 0x4a3426 }), 0, 1.7, 0, 10);
   const enRope = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.08, 8, 24), MAT.rope); enRope.rotation.x = Math.PI / 2; enRope.position.y = 1.6; enTree.add(enRope);
-  for (let i = 0; i < 18; i++) { const th = cyl(enTree, 0.012, 0.012, sr(0.5, 1.2), new THREE.MeshStandardMaterial({ color: 0xd61f3a, emissive: 0x700010, emissiveIntensity: 0.6 }), sr(-1.3, 1.3), sr(2.4, 3.1), sr(-1.3, 1.3), 4, false); }
+  const threadM = new THREE.MeshStandardMaterial({ color: 0xd61f3a, emissive: 0x700010, emissiveIntensity: 0.6 });
+  for (let i = 0; i < 18; i++) cyl(enTree, 0.012, 0.012, sr(0.5, 1.2), threadM, sr(-1.3, 1.3), sr(2.4, 3.1), sr(-1.3, 1.3), 4, false);
   W.enTree = enTree;
   const ushi = new THREE.Group(); ushi.position.set(28, 0, 21); ushi.rotation.y = -0.5; scene.add(ushi);
   box(ushi, 2.0, 0.55, 1.1, MAT.stoneD, 0, 0.27, 0);
@@ -187,7 +188,7 @@ export function buildWorld(scene, env, { mobile }) {
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
   const fall = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 9), new THREE.MeshBasicMaterial({ map: fallTex, transparent: true, opacity: 0.85, color: 0xd8ecff, depthWrite: false }));
   fall.position.set(11, okY + 4.5, -76.5); fall.rotation.y = -0.6; scene.add(fall);
-  box(scene, 6, 10, 3, MAT.stoneD, 12.5, okY + 4, -78.5).rotation.y = -0.6;
+  { const b = box(scene, 6, 10, 3, MAT.stoneD, 12.5, okY + 4, -78.5); b.rotation.y = -0.6; b.userData.static = true; }
   W.update.push((t, dt) => { fallTex.offset.y -= dt * 1.4; });
   torii(scene, { x: 3.5, z: -70, y: okY, s: 0.8, gaku: null });
   for (const x of [-6, 2]) W.lamps.push(toro(scene, x, -69, okY, env, 0.8));

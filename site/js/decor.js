@@ -1,7 +1,7 @@
 // 仕上げ：反射（環境マップ）、瓦・砂利のテクスチャ、幟、提灯の列、岩・植え込み、雲、蛍、水面のきらめき
 import * as THREE from "three";
-import { MAT, chochin } from "./arch.js?v=11030938";
-import { height, POND } from "./map.js?v=11030938";
+import { MAT, sharedLamp } from "./arch.js?v=11030948";
+import { height, POND } from "./map.js?v=11030948";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let sd = 11; const sr = (a, b) => a + ((sd = (sd * 16807) % 2147483647) / 2147483647) * (b - a);
@@ -85,14 +85,29 @@ export function nobori(scene) {
 
 // ------------------------------------------------------------------ 提灯の列（参道の上に渡す）
 export function lanternRows(scene, env) {
-  const rows = [];
+  // 揺れる提灯は InstancedMesh で（本体1・口輪1＝2ドローコール）
+  const L = [], wireM = new THREE.MeshStandardMaterial({ color: 0x222222 }), poleM = new THREE.MeshStandardMaterial({ color: 0x3a2a1a }), poleG = new THREE.CylinderGeometry(0.05, 0.06, 4, 6);
   for (let z = 68; z > 48; z -= 6.5) {
     const pts = []; for (let k = 0; k <= 20; k++) { const u = k / 20; pts.push(new THREE.Vector3(-4.8 + u * 9.6, 3.9 - Math.sin(u * Math.PI) * 0.6, z)); }
-    const wire = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.012, 4), new THREE.MeshStandardMaterial({ color: 0x222222 })); scene.add(wire);
-    for (let k = 1; k < 10; k++) { const u = k / 10, x = -4.8 + u * 9.6, y = 3.9 - Math.sin(u * Math.PI) * 0.6 - 0.45; const c = chochin(scene, x, y, z, env, 0.55, k % 2 ? 0xfff0d0 : 0xffd0c0); c.children[0].material.userData.base = 1.1; c.children[0].material.emissiveIntensity = 1.1; rows.push({ c, ph: Math.random() * 6, y }); }
-    for (const x of [-4.8, 4.8]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 4, 6), new THREE.MeshStandardMaterial({ color: 0x3a2a1a })); p.position.set(x, 2, z); scene.add(p); }
+    const wire = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.012, 4), wireM); wire.userData.static = true; scene.add(wire);
+    for (let k = 1; k < 10; k++) { const u = k / 10; L.push({ x: -4.8 + u * 9.6, y: 3.9 - Math.sin(u * Math.PI) * 0.6 - 0.45, z, ph: Math.random() * 6, col: k % 2 ? 0xfff0d0 : 0xffd0c0 }); }
+    for (const x of [-4.8, 4.8]) { const p = new THREE.Mesh(poleG, poleM); p.position.set(x, 2, z); p.userData.static = true; scene.add(p); }
   }
-  return (t) => { for (const r of rows) { r.c.rotation.z = Math.sin(t * 1.1 + r.ph) * 0.06; r.c.position.y = r.y + Math.sin(t * 0.9 + r.ph) * 0.02; } };
+  const S = 0.55, body = new THREE.InstancedMesh(new THREE.SphereGeometry(0.32, 16, 12), sharedLamp(0xffffff, 0xff9a3a, 1.1, env), L.length);
+  const rim = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.21, 0.21, 0.08, 12), MAT.kuro, L.length * 2);
+  const col = new THREE.Color(); L.forEach((l, i) => body.setColorAt(i, col.set(l.col)));
+  const G = new THREE.Matrix4(), M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3(S, S, S);
+  const bodyL = new THREE.Matrix4().makeScale(1, 1.35, 1), up = new THREE.Matrix4().makeTranslation(0, 0.45, 0), dn = new THREE.Matrix4().makeTranslation(0, -0.45, 0);
+  const tick = (t) => {
+    L.forEach((l, i) => {
+      e.set(0, 0, Math.sin(t * 1.1 + l.ph) * 0.06); q.setFromEuler(e); p.set(l.x, l.y + Math.sin(t * 0.9 + l.ph) * 0.02, l.z); G.compose(p, q, sc);
+      body.setMatrixAt(i, M.multiplyMatrices(G, bodyL)); rim.setMatrixAt(i * 2, M.multiplyMatrices(G, up)); rim.setMatrixAt(i * 2 + 1, M.multiplyMatrices(G, dn));
+    });
+    body.instanceMatrix.needsUpdate = rim.instanceMatrix.needsUpdate = true;
+  };
+  tick(0); body.computeBoundingSphere(); rim.computeBoundingSphere();
+  scene.add(body, rim);
+  return tick;
 }
 
 // ------------------------------------------------------------------ 岩・植え込み・苔（InstancedMesh）

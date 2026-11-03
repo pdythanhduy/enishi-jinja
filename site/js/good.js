@@ -1,6 +1,7 @@
 // 善行（落ち葉掃き・灯籠に火・迷子の子狐）と夜祭り（花火・祭囃子）
 import * as THREE from "three";
-import { height, footY } from "./map.js?v=11030938";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { height, footY } from "./map.js?v=11030948";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 
@@ -18,13 +19,15 @@ export class Leaves {
     if (!free.length || this.piles.length >= 8) return;
     const [x, z] = free[Math.floor(Math.random() * free.length)];
     const g = new THREE.Group(); g.position.set(x, 0, z);
-    for (let i = 0; i < 18; i++) { const l = new THREE.Mesh(this.geo, this.mats[i % this.mats.length]); l.position.set(rnd(-0.6, 0.6), rnd(0.02, 0.22), rnd(-0.5, 0.5)); l.scale.y = 0.35; l.rotation.set(rnd(0, 3), rnd(0, 3), 0); g.add(l); }
+    const parts = this.mats.map(() => []), o = new THREE.Object3D();          // 色ごとに一つのメッシュへ
+    for (let i = 0; i < 18; i++) { o.position.set(rnd(-0.6, 0.6), rnd(0.02, 0.22), rnd(-0.5, 0.5)); o.scale.set(1, 0.35, 1); o.rotation.set(rnd(0, 3), rnd(0, 3), 0); o.updateMatrix(); parts[i % this.mats.length].push(this.geo.clone().applyMatrix4(o.matrix)); }
+    parts.forEach((list, k) => { const m = new THREE.Mesh(mergeGeometries(list), this.mats[k]); list.forEach((q) => q.dispose()); g.add(m); });
     this.scene.add(g); this.piles.push({ g, x, z });
   }
   near(p, r = 1.8) { return this.piles.find((q) => Math.hypot(q.x - p.x, q.z - p.z) < r); }
   async sweep(pile) {       // 少しずつ消える
     for (let k = 1; k <= 10; k++) { pile.g.scale.setScalar(1 - k * 0.09); pile.g.position.x += 0.04; await new Promise((r) => setTimeout(r, 120)); }
-    this.scene.remove(pile.g); this.piles = this.piles.filter((q) => q !== pile);
+    this.scene.remove(pile.g); pile.g.traverse((m) => m.isMesh && m.geometry.dispose()); this.piles = this.piles.filter((q) => q !== pile);
   }
 }
 

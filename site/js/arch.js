@@ -13,6 +13,14 @@ export const MAT = {
 // 夜に灯る素材（環境から明るさを変える）
 export const LIGHT_SPOTS = [];   // {obj, y, int, dist, color}：実際の光源は app 側のプールで近いものだけ点ける
 export function lightSpot(obj, y, int, dist, color = 0xffa04a) { LIGHT_SPOTS.push({ obj, y, int, dist, color }); }
+const LAMP_CACHE = new Map();
+// 同じ色の提灯は素材を共有（まとめて描ける）。消灯させる灯籠には使わない
+export function sharedLamp(color, emissive, base, env) {
+  const k = `${color}|${emissive}|${base}`;
+  if (!LAMP_CACHE.has(k)) LAMP_CACHE.set(k, lampMat(color, emissive, base));
+  const m = LAMP_CACHE.get(k); env && env.registerLamp(m, null);      // Set なので何度登録しても一つ
+  return m;
+}
 export function lampMat(color = 0xfff0d0, emissive = 0xffa040, base = 3) { const m = std(color, { emissive, emissiveIntensity: base, roughness: 0.9 }); m.userData.base = base; return m; }
 
 export const box = (p, w, h, d, m, x, y, z, sh = true) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); if (sh) o.castShadow = o.receiveShadow = true; p.add(o); return o; };
@@ -86,12 +94,11 @@ export function toro(parent, x, z, y = 0, env, scale = 1) {
   return g;
 }
 // 提灯
-export function chochin(parent, x, y, z, env, s = 1, col = 0xfff3d6) {
+export function chochin(parent, x, y, z, env, s = 1, col = 0xfff3d6, base = 1.8) {
   const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); parent.add(g);
-  const m = lampMat(col, 0xff9a3a, 1.8);
+  const m = sharedLamp(col, 0xff9a3a, base, env);
   const b = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), m); b.scale.y = 1.35; g.add(b);
   cyl(g, 0.21, 0.21, 0.08, MAT.kuro, 0, 0.45, 0, 12, false); cyl(g, 0.21, 0.21, 0.08, MAT.kuro, 0, -0.45, 0, 12, false);
-  env && env.registerLamp(m, null);
   return g;
 }
 
@@ -201,7 +208,7 @@ function tsuriDoro(g, cx, y, z, s = 1) {
   const tg = new THREE.Group(); tg.position.set(cx, y, z); tg.scale.setScalar(s); g.add(tg);
   cyl(tg, 0.015, 0.015, 0.5, BRONZE, 0, -0.2, 0, 4, false);
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.25, 6), BRONZE); cap.position.y = -0.55; tg.add(cap);
-  cyl(tg, 0.2, 0.2, 0.42, lampMat(0xfff0c8, 0xffa040, 2.0), 0, -0.88, 0, 6, false);
+  cyl(tg, 0.2, 0.2, 0.42, sharedLamp(0xfff0c8, 0xffa040, 2.0), 0, -0.88, 0, 6, false);
   cyl(tg, 0.24, 0.16, 0.1, BRONZE, 0, -1.14, 0, 6, false);
   for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; box(tg, 0.03, 0.44, 0.03, BRONZE, Math.cos(a) * 0.21, -0.88, Math.sin(a) * 0.21, false); }
   return tg;
@@ -414,7 +421,7 @@ export function tamagaki(parent, segments, h = 1.3) {
   for (const [[ax, az], [bx, bz]] of segments) {
     const L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(L / 1.2));
     for (let i = 0; i <= n; i++) posts.push([ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n]);
-    const rail = (yy) => { const r = new THREE.Mesh(new THREE.BoxGeometry(L, 0.12, 0.12), MAT.shu); r.position.set((ax + bx) / 2, yy, (az + bz) / 2); r.rotation.y = -Math.atan2(bz - az, bx - ax); r.castShadow = true; parent.add(r); };
+    const rail = (yy) => { const r = new THREE.Mesh(new THREE.BoxGeometry(L, 0.12, 0.12), MAT.shu); r.position.set((ax + bx) / 2, yy, (az + bz) / 2); r.rotation.y = -Math.atan2(bz - az, bx - ax); r.castShadow = true; r.userData.static = true; parent.add(r); };
     rail(h - 0.1); rail(h * 0.45);
   }
   const inst = new THREE.InstancedMesh(geo, MAT.shu, posts.length); const m = new THREE.Matrix4();

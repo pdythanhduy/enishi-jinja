@@ -5,20 +5,20 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030938";
-import { buildWorld } from "./world.js?v=11030938";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030938";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030938";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030938";
-import { deeds } from "../deeds.js?v=11030938";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11030938";
-import { fireflies } from "../fx.js?v=11030938";
-import { LIGHT_SPOTS } from "./arch.js?v=11030938";
-import { freeze } from "./freeze.js?v=11030938";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030938";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11030938";
-import { connect, board } from "../net.js?v=11030938";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030938";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030948";
+import { buildWorld } from "./world.js?v=11030948";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030948";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030948";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030948";
+import { deeds } from "../deeds.js?v=11030948";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11030948";
+import { fireflies } from "../fx.js?v=11030948";
+import { LIGHT_SPOTS } from "./arch.js?v=11030948";
+import { freeze } from "./freeze.js?v=11030948";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030948";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11030948";
+import { connect, board } from "../net.js?v=11030948";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030948";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -60,6 +60,9 @@ const lanterns = new Lanterns(scene);
 const texTick = textures(W), noboriTick = nobori(scene), rowTick = lanternRows(scene, env); rocksAndBushes(scene, env.season); snowRoofs(env.season);
 // 動かない建物をまとめてドローコールを減らす（?nofreeze で無効）
 if (!QS.has("nofreeze")) { const fz = freeze(scene.children.filter((c) => c.userData.static), scene); console.info("[freeze]", fz); }
+// 灯りの素材をすべて昼夜の切り替えに登録し、今の時刻を一度反映（世界を作る前の env.set では間に合わない）
+scene.traverse((o) => { if (o.isMesh && !Array.isArray(o.material) && o.material.userData?.base !== undefined) env.registerLamp(o.material, null); });
+env.set(hourNow());
 const cloudTick = clouds(scene), ffTick = env.season === "summer" || env.season === "autumn" ? fireflies(scene, MOBILE ? 40 : 80) : () => {};
 const envUpdate = environment(renderer, scene, env); setInterval(envUpdate, 10 * 60e3);
 const leaves = new Leaves(scene, env.season), darkL = new DarkLanterns(W.lamps), kit = new LostFox(scene), fireworks = new Fireworks(scene);
