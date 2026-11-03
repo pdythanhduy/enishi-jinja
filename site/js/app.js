@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032007";
-import { buildWorld } from "./world.js?v=11032007";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032007";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032007";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032007";
-import { deeds } from "../deeds.js?v=11032007";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032007";
-import { fireflies } from "../fx.js?v=11032007";
-import { LIGHT_SPOTS } from "./arch.js?v=11032007";
-import { freeze } from "./freeze.js?v=11032007";
-import { setupSeasonal } from "./seasonal.js?v=11032007";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032007";
-import { makeBGM } from "./bgm.js?v=11032007";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032007";
-import { setupKenno } from "./kenno.js?v=11032007";
-import { setupSocial } from "./social.js?v=11032007";
-import { setupProfile } from "./profile.js?v=11032007";
-import { setupChores } from "./chores.js?v=11032007";
-import { setupSagyo } from "./sagyo.js?v=11032007";
-import { setupWelcome } from "./welcome.js?v=11032007";
-import { setupZen } from "./zen.js?v=11032007";
-import { setupMixer } from "./mixer.js?v=11032007";
-import { setupShakyo } from "./shakyo.js?v=11032007";
-import { setupTour } from "./tour.js?v=11032007";
-import { setupChat } from "./chat.js?v=11032007";
-import { setupKito, ofudaImage } from "./kito.js?v=11032007";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11032007";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032007";
-import { connect, board } from "../net.js?v=11032007";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032007";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032013";
+import { buildWorld } from "./world.js?v=11032013";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032013";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032013";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032013";
+import { deeds } from "../deeds.js?v=11032013";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032013";
+import { fireflies } from "../fx.js?v=11032013";
+import { LIGHT_SPOTS } from "./arch.js?v=11032013";
+import { freeze } from "./freeze.js?v=11032013";
+import { setupSeasonal } from "./seasonal.js?v=11032013";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032013";
+import { makeBGM } from "./bgm.js?v=11032013";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032013";
+import { setupKenno } from "./kenno.js?v=11032013";
+import { setupSocial } from "./social.js?v=11032013";
+import { setupProfile } from "./profile.js?v=11032013";
+import { setupChores } from "./chores.js?v=11032013";
+import { setupSagyo } from "./sagyo.js?v=11032013";
+import { setupWelcome } from "./welcome.js?v=11032013";
+import { setupZen } from "./zen.js?v=11032013";
+import { setupMixer } from "./mixer.js?v=11032013";
+import { setupShakyo } from "./shakyo.js?v=11032013";
+import { setupTour } from "./tour.js?v=11032013";
+import { setupChat } from "./chat.js?v=11032013";
+import { setupKito, ofudaImage } from "./kito.js?v=11032013";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11032013";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032013";
+import { connect, board } from "../net.js?v=11032013";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032013";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -110,24 +110,15 @@ controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan
 controls.minDistance = 3.5; controls.maxDistance = 22; controls.maxPolarAngle = Math.PI * 0.48; controls.minPolarAngle = Math.PI * 0.12;
 // 見渡す：地図のように、指一本（マウス左）でずらして境内を見る。二本指（マウス右・Ctrl/Shift＋左）で回す・寄る
 controls.enablePan = true; controls.screenSpacePanning = false; controls.panSpeed = 1.15;
-controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
-controls.touches = { ONE: THREE.TOUCH.PAN, TWO: -1 };   // 二本指は下の自前の処理（ひねって回す・つまんで寄る）
-// 地図アプリ（Google マップ・Mapbox）と同じ二本指：指をひねると回り、つまむと寄る・離れる
-const UP = new THREE.Vector3(0, 1, 0), tps = new Map(); let g0 = null;
-const gest = () => { const [[x1, y1], [x2, y2]] = [...tps.values()]; return { a: Math.atan2(y2 - y1, x2 - x1), d: Math.hypot(x2 - x1, y2 - y1) || 1 }; };
+// 一本指（マウス左）で見回す、二本指（マウス右）でずらして境内を見渡す・つまんで寄る
+controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+const UP = new THREE.Vector3(0, 1, 0);
 function orbitCam(yaw, zoom = 1) {
   const off = camera.position.clone().sub(controls.target); off.applyAxisAngle(UP, yaw);
   off.setLength(THREE.MathUtils.clamp(off.length() * zoom, controls.minDistance, controls.maxDistance));
   camera.position.copy(controls.target).add(off); controls.update();
 }
-canvas.addEventListener("pointerdown", (e) => { if (e.pointerType !== "touch") return; tps.set(e.pointerId, [e.clientX, e.clientY]); g0 = tps.size === 2 ? gest() : null; });
-canvas.addEventListener("pointermove", (e) => {
-  if (!tps.has(e.pointerId)) return; tps.set(e.pointerId, [e.clientX, e.clientY]);
-  if (tps.size !== 2 || !g0 || cine || !controls.enabled) return;
-  const g = gest(); let da = g.a - g0.a; da = Math.atan2(Math.sin(da), Math.cos(da));
-  orbitCam(da, g0.d / g.d); g0 = g;
-});
-for (const ev of ["pointerup", "pointercancel"]) canvas.addEventListener(ev, (e) => { tps.delete(e.pointerId); if (tps.size < 2) g0 = null; });
 let freeCam = false, camUser = false; const camT0 = new THREE.Vector3();
 const homeBtn = document.createElement("button"); homeBtn.id = "cam-home"; homeBtn.type = "button"; homeBtn.hidden = true; homeBtn.textContent = "📍 自分の場所へ"; document.body.appendChild(homeBtn);
 function camHome() { if (!freeCam) return; freeCam = false; homeBtn.hidden = true; }   // 追いかけを再開（なめらかに戻る）
@@ -1101,8 +1092,8 @@ if (matchMedia("(pointer: coarse)").matches) {
   const rot = document.createElement("div"); rot.id = "cam-rot"; rot.innerHTML = `<button type="button" data-r="1" aria-label="左に回す">⟲</button><button type="button" data-r="-1" aria-label="右に回す">⟳</button>`; document.body.appendChild(rot);
   rot.onclick = (e) => { const b = e.target.closest("[data-r]"); if (!b || cine) return; const dir = +b.dataset.r, t0 = performance.now(); let done = 0;
     (function f() { const k = Math.min(1, (performance.now() - t0) / 320), e2 = 0.5 - Math.cos(k * Math.PI) / 2; orbitCam(dir * (Math.PI / 4) * (e2 - done)); done = e2; if (k < 1) requestAnimationFrame(f); })(); };
-  $("#hint").textContent = "左下のスティックで歩く · 指でずらして見渡す · 2本指をひねって回す";
-} else $("#hint").textContent = "WASD・矢印キーで歩く · ドラッグで見渡す · 右ドラッグで回す";
+  $("#hint").textContent = "左下のスティックで歩く · 1本指で見回す · 2本指でずらして見渡す";
+} else $("#hint").textContent = "WASD・矢印キーで歩く · ドラッグで見回す · 右ドラッグでずらして見渡す";
 // 指でなぞる遊び（落ち葉・お手伝い・絵馬・人形・スティック）の上では、ページが動かないように
 document.addEventListener("touchmove", (e) => { if (e.cancelable && e.target.closest?.(".mg-stage,.mg .sheet,.ed-cv,.ht-cv,#joy")) e.preventDefault(); }, { passive: false });
 // ------------------------------------------------------------------ 静のひととき（zen.js・mixer.js・shakyo.js・tour.js）
