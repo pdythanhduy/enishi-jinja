@@ -68,11 +68,14 @@ export function makeBGM(ac, { night = () => 0 } = {}) {
     timers.push(setTimeout(bells, 22000 + Math.random() * 22000));
   }
   // 自作の曲（Suno など）があれば、そちらを流す。bgm.json は ["a.mp3", …] か { "day": [...], "night": [...] }
+  // 曲の一覧は先に読んでおく：最初のタップの中ですぐ play() しないと、ブラウザ（特に iPhone）に止められる
   let lists = null;
-  async function tryTracks() {
+  const listsP = fetch("audio/bgm.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    lists = Array.isArray(j) ? { day: j, night: j } : j && (j.day || j.night) ? { ...j, day: j.day || j.night, night: j.night || j.day } : null;
+    return lists;
+  }).catch(() => null);
+  function tryTracks() {
     try {
-      const j = await fetch("audio/bgm.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null));
-      lists = Array.isArray(j) ? { day: j, night: j } : j && (j.day || j.night) ? { ...j, day: j.day || j.night, night: j.night || j.day } : null;
       if (!lists || !lists.day.length) return false;
       track = new Audio(); track.preload = "auto"; track.volume = 0;
       const play = () => {
@@ -96,7 +99,9 @@ export function makeBGM(ac, { night = () => 0 } = {}) {
     async start() {
       if (on) return; init(); on = true;
       out.gain.setTargetAtTime(vol, a.currentTime, 1.5);
-      if (await tryTracks()) return;
+      if (!lists) await listsP;                                                     // ふつうは読みこみ済み（このときはタップの中で再生できる）
+      if (!on) return;
+      if (tryTracks()) return;
       startPad(); timers.push(setTimeout(phrase, 1200)); timers.push(setTimeout(bells, 6000));
     },
     stop() {
@@ -109,6 +114,8 @@ export function makeBGM(ac, { night = () => 0 } = {}) {
     // チャンネルを変える：いまの曲を静かに消して、新しいリストから流す
     setChannel(c) { if (c === chan) return; chan = c; if (!track || !playNow) return; fadeTo(0, 1100); setTimeout(() => { if (track) { if (chan === "nature") return; playNow(); } }, 1200); },
     get channel() { return chan; },
+    // 再生が止められていたら、次のタップでもう一度
+    kick() { if (on && track && track.paused && chan !== "nature") track.play().catch(() => {}); },
     rin: (f = 392) => { init(); rin(f, a.currentTime + 0.02, 0.06); },
   };
 }
