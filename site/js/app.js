@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031916";
-import { buildWorld } from "./world.js?v=11031916";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031916";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031916";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031916";
-import { deeds } from "../deeds.js?v=11031916";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031916";
-import { fireflies } from "../fx.js?v=11031916";
-import { LIGHT_SPOTS } from "./arch.js?v=11031916";
-import { freeze } from "./freeze.js?v=11031916";
-import { setupSeasonal } from "./seasonal.js?v=11031916";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031916";
-import { makeBGM } from "./bgm.js?v=11031916";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031916";
-import { setupKenno } from "./kenno.js?v=11031916";
-import { setupSocial } from "./social.js?v=11031916";
-import { setupProfile } from "./profile.js?v=11031916";
-import { setupChores } from "./chores.js?v=11031916";
-import { setupSagyo } from "./sagyo.js?v=11031916";
-import { setupWelcome } from "./welcome.js?v=11031916";
-import { setupZen } from "./zen.js?v=11031916";
-import { setupMixer } from "./mixer.js?v=11031916";
-import { setupShakyo } from "./shakyo.js?v=11031916";
-import { setupTour } from "./tour.js?v=11031916";
-import { setupChat } from "./chat.js?v=11031916";
-import { setupKito, ofudaImage } from "./kito.js?v=11031916";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031916";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031916";
-import { connect, board } from "../net.js?v=11031916";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031916";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031924";
+import { buildWorld } from "./world.js?v=11031924";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031924";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031924";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031924";
+import { deeds } from "../deeds.js?v=11031924";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031924";
+import { fireflies } from "../fx.js?v=11031924";
+import { LIGHT_SPOTS } from "./arch.js?v=11031924";
+import { freeze } from "./freeze.js?v=11031924";
+import { setupSeasonal } from "./seasonal.js?v=11031924";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031924";
+import { makeBGM } from "./bgm.js?v=11031924";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031924";
+import { setupKenno } from "./kenno.js?v=11031924";
+import { setupSocial } from "./social.js?v=11031924";
+import { setupProfile } from "./profile.js?v=11031924";
+import { setupChores } from "./chores.js?v=11031924";
+import { setupSagyo } from "./sagyo.js?v=11031924";
+import { setupWelcome } from "./welcome.js?v=11031924";
+import { setupZen } from "./zen.js?v=11031924";
+import { setupMixer } from "./mixer.js?v=11031924";
+import { setupShakyo } from "./shakyo.js?v=11031924";
+import { setupTour } from "./tour.js?v=11031924";
+import { setupChat } from "./chat.js?v=11031924";
+import { setupKito, ofudaImage } from "./kito.js?v=11031924";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031924";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031924";
+import { connect, board } from "../net.js?v=11031924";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031924";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -515,19 +515,6 @@ const FINDS = [
 ];
 const pickFind = () => { let r = Math.random() * FINDS.reduce((a, f) => a + f.w, 0); for (const f of FINDS) { r -= f.w; if (r <= 0) return f; } return FINDS.at(-1); };
 // 大きな丸いボタンを叩く小さな遊び（need 回たたく。しばらく触らなければ自動で進む）
-function tapGame(label, need, onTap) {
-  return new Promise((resolve) => {
-    const el = document.createElement("div"); el.className = "tapgame";
-    el.innerHTML = `<button type="button"><span>${label}</span></button><small>タップして掃いてください</small>`;
-    document.body.appendChild(el);
-    const btn = el.querySelector("button"); let n = 0, last = performance.now();
-    const set = () => btn.style.setProperty("--p", `${(n / need) * 360}deg`);
-    const hit = () => { if (n >= need) return; n++; last = performance.now(); set(); onTap(n); btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop"); if (n >= need) done(); };
-    btn.onclick = hit; set();
-    const iv = setInterval(() => { if (performance.now() - last > 2600) hit(); }, 400);
-    function done() { clearInterval(iv); setTimeout(() => { el.remove(); resolve(); }, 350); }
-  });
-}
 const sweep = (pile) => doing(async () => {
   await new Promise((r) => walkTo([pile.x - 0.9, pile.z + 0.4], r)); me.rotation.y = Math.atan2(pile.x - me.position.x, pile.z - me.position.z);
   const u = me.userData; u.pose = "act";
