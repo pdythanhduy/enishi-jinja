@@ -551,3 +551,10 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 #room-hud.mini .rh-row:first-child{gap:.6rem}#room-hud.mini .rh-name{font-size:.78rem}
 #room-hud.mini::after{content:"▾ ひらく";font-size:.6rem;color:var(--muted);text-align:center}
 #room-hud:not(.mini) .rh-row:first-child{cursor:pointer}
+
+/* 写経：なぞり書き */
+.sk-paper{height:min(30vh,240px)!important}
+.sk-pad{display:flex;gap:.7rem;align-items:center;justify-content:center;margin:.6rem 0 .3rem}
+.sk-pad canvas{width:min(260px,58vw);height:auto;aspect-ratio:1;border-radius:8px;box-shadow:inset 0 0 20px rgba(120,90,40,.25),0 4px 14px rgba(0,0,0,.35);touch-action:none;cursor:crosshair}
+.sk-padside{display:flex;flex-direction:column;gap:.5rem;max-width:120px}.sk-next{font-size:.8rem;color:var(--gold)}.sk-tip{font-size:.7rem;color:var(--muted);line-height:1.4}
+.sk-tip.warn{color:#ffb4a4;animation:skw .4s}@keyframes skw{0%,100%{transform:none}30%{transform:translateX(-4px)}60%{transform:translateX(4px)}}

@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032045";
-import { buildWorld } from "./world.js?v=11032045";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032045";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032045";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032045";
-import { deeds } from "../deeds.js?v=11032045";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032045";
-import { fireflies } from "../fx.js?v=11032045";
-import { LIGHT_SPOTS } from "./arch.js?v=11032045";
-import { freeze } from "./freeze.js?v=11032045";
-import { setupSeasonal } from "./seasonal.js?v=11032045";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032045";
-import { makeBGM } from "./bgm.js?v=11032045";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032045";
-import { setupKenno } from "./kenno.js?v=11032045";
-import { setupSocial } from "./social.js?v=11032045";
-import { setupProfile } from "./profile.js?v=11032045";
-import { setupChores } from "./chores.js?v=11032045";
-import { setupSagyo } from "./sagyo.js?v=11032045";
-import { setupWelcome } from "./welcome.js?v=11032045";
-import { setupZen } from "./zen.js?v=11032045";
-import { setupMixer } from "./mixer.js?v=11032045";
-import { setupShakyo } from "./shakyo.js?v=11032045";
-import { setupTour } from "./tour.js?v=11032045";
-import { setupChat } from "./chat.js?v=11032045";
-import { setupKito, ofudaImage } from "./kito.js?v=11032045";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032045";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032045";
-import { connect, board } from "../net.js?v=11032045";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032045";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032047";
+import { buildWorld } from "./world.js?v=11032047";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032047";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032047";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032047";
+import { deeds } from "../deeds.js?v=11032047";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032047";
+import { fireflies } from "../fx.js?v=11032047";
+import { LIGHT_SPOTS } from "./arch.js?v=11032047";
+import { freeze } from "./freeze.js?v=11032047";
+import { setupSeasonal } from "./seasonal.js?v=11032047";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032047";
+import { makeBGM } from "./bgm.js?v=11032047";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032047";
+import { setupKenno } from "./kenno.js?v=11032047";
+import { setupSocial } from "./social.js?v=11032047";
+import { setupProfile } from "./profile.js?v=11032047";
+import { setupChores } from "./chores.js?v=11032047";
+import { setupSagyo } from "./sagyo.js?v=11032047";
+import { setupWelcome } from "./welcome.js?v=11032047";
+import { setupZen } from "./zen.js?v=11032047";
+import { setupMixer } from "./mixer.js?v=11032047";
+import { setupShakyo } from "./shakyo.js?v=11032047";
+import { setupTour } from "./tour.js?v=11032047";
+import { setupChat } from "./chat.js?v=11032047";
+import { setupKito, ofudaImage } from "./kito.js?v=11032047";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032047";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032047";
+import { connect, board } from "../net.js?v=11032047";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032047";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -1128,9 +1128,15 @@ const notify = (title, body) => {
   (navigator.serviceWorker ? navigator.serviceWorker.ready : Promise.reject()).then((r) => r.showNotification(title, { body, icon: "img/icon-192.png", badge: "img/icon-192.png", tag: "enishi-pomo", renotify: true }))
     .catch(() => { try { new Notification(title, { body, icon: "img/icon-192.png" }); } catch {} });
 };
-const askNotify = async () => { if (!("Notification" in window)) { toast("この端末では通知が使えません"); return false; } if (Notification.permission === "default") await Notification.requestPermission();
+// 通知の許可：iPhone の Safari は、ホーム画面に追加して開いたときだけ通知が使える（その案内を出す）
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+const askNotify = async () => {
+  if (isIOS && !standalone) { toast("📱 iPhone では、Safari の共有ボタン（□↑）→「ホーム画面に追加」から開くと、通知が届くようになります。それまでは、時間になると鐘の音でお知らせします", 8000); return false; }
+  if (!("Notification" in window)) { toast("このブラウザでは通知が使えません。時間になると、鐘の音でお知らせします", 5000); return false; }
+  if (Notification.permission === "default") await Notification.requestPermission();
   if (Notification.permission === "granted") { toast("🔔 ほかの画面を見ていても、集中と休憩の切りかわりをお知らせします", 4000); return true; }
-  toast("通知がオフになっています。ブラウザの設定から許可できます", 4000); return false; };
+  toast("通知が「ブロック」になっています。アドレスバーの左の 🔒（またはⓘ）→「通知」→「許可」にすると届きます", 7000); return false; };
 const sagyo = setupSagyo({ purr: () => tone([[55, 0.6], [57, 0.4]], 1.2, 0.12), notify, askNotify, scene, env, W, me, camera, others, store, toast, today, deedHook, bgm, mixer, setCine, setPose, bowTo, warpTo, doing, isBusy: () => busy,
   getStatus: () => myStatus, setStatus: setStatusAll, addToku: (n) => { D.add(n); refreshToku(); }, gong: () => sfx.gong(), suzu: () => sfx.suzu(), soft: () => tone([[784, 0.3], [1175, 0.2]], 1.6, 0.04),
   ensureMusic: () => { if (!bgmOn) { bgmOn = true; store.set("enishi_bgm", true); paintSnd(); } if (gestured && !bgm.on) bgm.start(); }, title: document.title });

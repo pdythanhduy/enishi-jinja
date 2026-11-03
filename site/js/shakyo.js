@@ -19,55 +19,90 @@ export function setupShakyo(A) {
   const m = document.createElement("section"); m.className = "modal"; m.id = "m-shakyo"; m.hidden = true;
   m.innerHTML = `<div class="sheet wide-sheet"><button class="x" type="button" data-x>✕</button>
     <div class="sk-pick"><p class="kicker">SHAKYO</p><h2>🖌 写経・写歌</h2>
-      <p class="sub">一字ずつ、ていねいに書き写します。日本語で打っても、「なぞる」を押し続けても進みます。書き終えると奉納の印が押されます。</p>
+      <p class="sub">うすく見える字を、指（マウス）でなぞって一字ずつ書き写します。同じ字を日本語で打っても進みます。書き終えると奉納の印が押されます。</p>
       <div class="sk-list">${TEXTS.map((t, i) => `<button type="button" data-t="${i}"><b>${t.title}</b><small>${t.by}・${[...t.text.replace(/\s/g, "")].length}字</small></button>`).join("")}</div>
       <p class="sub sk-count"></p></div>
     <div class="sk-write" hidden>
       <div class="sk-paper"><div class="sk-text" lang="ja"></div><div class="sk-seal" hidden><b>奉納</b><small></small></div></div>
-      <div class="sk-ctl"><input class="sk-in" placeholder="ここに書き写す（日本語入力）" autocomplete="off" autocapitalize="off" lang="ja">
-        <button type="button" class="btn sk-trace">🖌 なぞる</button></div>
+      <div class="sk-pad"><canvas width="300" height="300" aria-label="なぞり書きの紙"></canvas><div class="sk-padside"><b class="sk-next"></b><small class="sk-tip">うすい字を、なぞって書きましょう</small><button type="button" class="btn sk-clear">書き直す</button></div></div>
+      <div class="sk-ctl"><input class="sk-in" placeholder="または、同じ字を打つ（日本語入力）" autocomplete="off" autocapitalize="off" lang="ja"></div>
       <div class="row"><span class="sub sk-prog"></span><button type="button" class="btn" data-back>ほかの文へ</button></div></div></div>`;
   document.body.appendChild(m);
   const $ = (s) => m.querySelector(s);
-  let cur = null, chars = [], pos = 0, exact = 0, holdIv = 0, composing = false;
+  let cur = null, chars = [], pos = 0, exact = 0, composing = false;
   const listCount = () => { const l = A.store.get("enishi_shakyo", []); $(".sk-count").textContent = l.length ? `これまでに ${l.length}巻 書き写しました。` : ""; };
   function choose(i) {
     cur = TEXTS[i]; pos = 0; exact = 0;
     const el = $(".sk-text"); el.innerHTML = ""; chars = [];
     for (const ch of cur.text) { if (/\s/.test(ch)) { el.appendChild(Object.assign(document.createElement("i"), { className: "gap" })); continue; } const s = document.createElement("span"); s.textContent = ch; el.appendChild(s); chars.push(s); }
     el.insertAdjacentHTML("beforeend", `<em class="sk-by">${cur.by}</em>`);
-    $(".sk-seal").hidden = true; $(".sk-pick").hidden = true; $(".sk-write").hidden = false; $(".sk-in").value = ""; prog();
+    $(".sk-seal").hidden = true; $(".sk-pick").hidden = true; $(".sk-write").hidden = false; $(".sk-in").value = ""; prog(); padChar();
     if (!matchMedia("(pointer: coarse)").matches) $(".sk-in").focus();
   }
   const prog = () => { $(".sk-prog").textContent = `${pos} / ${chars.length}字`; };
   function write(typed) {
     if (!cur || pos >= chars.length) return;
-    const s = chars[pos]; s.classList.add("ink"); if (typed && typed === s.textContent) { exact++; s.classList.add("ok"); }
-    pos++; prog(); A.brush?.();
+    const s = chars[pos]; s.classList.add("ink", "ok"); exact++;
+    pos++; prog(); A.brush?.(); padChar();
     s.scrollIntoView({ block: "nearest", inline: "nearest" });
     if (pos >= chars.length) finish();
   }
   function finish() {
-    clearInterval(holdIv);
     const day = A.today(), list = A.store.get("enishi_shakyo", []), todayN = list.filter((x) => x.day === day).length;
     list.unshift({ id: cur.id, title: cur.title, date: reiwa(), day, exact, n: chars.length }); A.store.set("enishi_shakyo", list.slice(0, 100));
     $(".sk-seal small").textContent = reiwa(); $(".sk-seal").hidden = false; A.chime?.();
     const toku = todayN < 3 ? 10 : 0; if (toku) A.addToku(toku);
     A.deedHook("shakyo", { id: cur.id });
-    A.toast(`「${cur.title}」を書き写し、奉納しました。${toku ? "徳 +10。" : ""}同じ字で打てたのは ${exact}/${chars.length}字`, 6000);
+    A.toast(`「${cur.title}」${chars.length}字を書き写し、奉納しました。${toku ? "徳 +10" : ""}`, 6000);
   }
   const input = $(".sk-in");
   input.addEventListener("compositionstart", () => (composing = true));
   input.addEventListener("compositionend", () => { composing = false; consume(); });
   input.addEventListener("input", () => { if (!composing) consume(); });
   input.addEventListener("keydown", (e) => e.stopPropagation());
-  function consume() { const v = input.value.replace(/\s/g, ""); input.value = ""; for (const ch of v) write(ch); }
-  const tr = $(".sk-trace");
-  const hold = (on) => { clearInterval(holdIv); if (on) { write(null); holdIv = setInterval(() => write(null), 260); } };
-  tr.addEventListener("pointerdown", (e) => { e.preventDefault(); hold(true); });
-  for (const ev of ["pointerup", "pointerleave", "pointercancel"]) tr.addEventListener(ev, () => hold(false));
+  function consume() {
+    const v = input.value.replace(/\s/g, ""); input.value = "";
+    for (const ch of v) { if (pos >= chars.length) break; if (ch === chars[pos].textContent) write(ch); else { tip(`次の字は「${chars[pos].textContent}」です`); break; } }
+  }
+  const tip = (t) => { const el = $(".sk-tip"); el.textContent = t; el.classList.remove("warn"); void el.offsetWidth; el.classList.add("warn"); };
+  // なぞり書き：うすい手本の字の上を筆でなぞり、字の形の半分以上をおおえたら一字できあがる
+  const pad = $(".sk-pad canvas"), pc = pad.getContext("2d"), P = 300, R = 60;
+  const ink = document.createElement("canvas"); ink.width = ink.height = P; const ic = ink.getContext("2d");
+  const small = document.createElement("canvas"); small.width = small.height = R; const sc = small.getContext("2d", { willReadFrequently: true });
+  let glyph = null, glyphN = 1, stroke = null;
+  const FONT = (px) => `${px}px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`;
+  function padChar() {
+    ic.clearRect(0, 0, P, P);
+    if (!cur || pos >= chars.length) { glyph = null; drawPad(); $(".sk-next").textContent = ""; return; }
+    const ch = chars[pos].textContent; $(".sk-next").textContent = `${pos + 1} / ${chars.length}`; $(".sk-tip").textContent = "うすい字を、なぞって書きましょう"; $(".sk-tip").classList.remove("warn");
+    sc.clearRect(0, 0, R, R); sc.fillStyle = "#000"; sc.font = FONT(R * 0.86); sc.textAlign = "center"; sc.textBaseline = "middle"; sc.fillText(ch, R / 2, R / 2 + R * 0.04);
+    const d = sc.getImageData(0, 0, R, R).data; glyph = new Uint8Array(R * R); glyphN = 0; for (let i = 0; i < R * R; i++) if (d[i * 4 + 3] > 90) { glyph[i] = 1; glyphN++; }
+    drawPad();
+  }
+  function drawPad() {
+    pc.fillStyle = "#f6eedb"; pc.fillRect(0, 0, P, P);
+    pc.strokeStyle = "rgba(180,60,40,.25)"; pc.lineWidth = 1; pc.setLineDash([6, 6]); pc.beginPath(); pc.moveTo(P / 2, 0); pc.lineTo(P / 2, P); pc.moveTo(0, P / 2); pc.lineTo(P, P / 2); pc.stroke(); pc.setLineDash([]);
+    if (cur && pos < chars.length) { pc.fillStyle = "rgba(60,45,30,.2)"; pc.font = FONT(P * 0.86); pc.textAlign = "center"; pc.textBaseline = "middle"; pc.fillText(chars[pos].textContent, P / 2, P / 2 + P * 0.04); }
+    pc.drawImage(ink, 0, 0);
+  }
+  function score() {
+    sc.clearRect(0, 0, R, R); sc.drawImage(ink, 0, 0, R, R); const d = sc.getImageData(0, 0, R, R).data; let hit = 0, inkN = 0;
+    for (let i = 0; i < R * R; i++) if (d[i * 4 + 3] > 40) { inkN++; if (glyph[i]) hit++; }
+    return { cover: hit / glyphN, stray: inkN ? 1 - hit / inkN : 0 };
+  }
+  const padPt = (e) => { const r = pad.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * P, ((e.clientY - r.top) / r.height) * P]; };
+  for (const ev of ["touchstart", "touchmove"]) pad.addEventListener(ev, (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  pad.addEventListener("pointerdown", (e) => { if (!glyph) return; e.preventDefault(); pad.setPointerCapture(e.pointerId); stroke = padPt(e); });
+  pad.addEventListener("pointermove", (e) => { if (!stroke) return; e.preventDefault(); const p = padPt(e);
+    ic.strokeStyle = "#17120d"; ic.lineCap = ic.lineJoin = "round"; ic.lineWidth = 22; ic.beginPath(); ic.moveTo(stroke[0], stroke[1]); ic.lineTo(p[0], p[1]); ic.stroke(); stroke = p; drawPad();
+    if (Math.random() < 0.15) A.brush?.(); });
+  const up = () => { if (!stroke) return; stroke = null; const { cover, stray } = score();
+    if (cover >= 0.5 && stray < 0.55) { A.tone?.([[784, 0.25]], 0.4, 0.04); write(chars[pos].textContent); }
+    else if (stray >= 0.55 && cover < 0.3) tip("字の形にそって、なぞってみましょう"); };
+  pad.addEventListener("pointerup", up); pad.addEventListener("pointercancel", up);
+  $(".sk-clear").onclick = () => { ic.clearRect(0, 0, P, P); drawPad(); };
   m.onclick = (e) => {
-    if (e.target.closest("[data-x]") || e.target === m) { m.hidden = true; hold(false); return; }
+    if (e.target.closest("[data-x]") || e.target === m) { m.hidden = true; return; }
     const t = e.target.closest("[data-t]"); if (t) { choose(+t.dataset.t); return; }
     if (e.target.closest("[data-back]")) { $(".sk-pick").hidden = false; $(".sk-write").hidden = true; listCount(); }
   };

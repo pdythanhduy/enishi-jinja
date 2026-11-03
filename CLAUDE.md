@@ -35,7 +35,7 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
       - +5 徳 every 5 minutes. The status tag shows `🧘 集中中 N分`, which other players see and `focusing()` counts. Optional quiet mode hides the HUD.
       - Stats are kept in `enishi_zen`.
     - `mixer.js`: synthesized ambient layers (rain, stream, wind, mushi, birds, furin, suzu, 拍子木 every 5/10/20 s) plus the music volume, and presets. Rain also draws falling lines around the camera.
-    - `shakyo.js`: 写経・写歌 of PD texts (祓詞, 大祓詞, 百人一首, 芭蕉, 一茶). Every typed character, or holding 「なぞる」, inks the next one.
+    - `shakyo.js`: 写経・写歌 of PD texts (祓詞, 大祓詞, 百人一首, 芭蕉, 一茶). Each character is traced over a faint model on a pad; ≥50% glyph cover with little stray ink inks it. Typing only advances on the exact character.
       - Finishing adds a 奉納 seal and +10 徳 (up to 3 a day) and is saved in `enishi_shakyo`.
       - 絵馬を描く is a brush canvas. The drawing is kept only on the device (`enishi_myema`, max 6) and is hung on `W.emaRack`.
     - `tour.js`: 境内めぐり, a 40 s slow arc per PLACES entry with fades and captions, and 奥の院の池, a fixed view with floating lanterns. Tap or Esc exits.

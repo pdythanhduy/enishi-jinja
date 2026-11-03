@@ -1,6 +1,6 @@
 // 献灯所：みんなの名前と願いの灯りが並ぶ棚。毎日お参りすると自分の灯りが少しずつ明るくなる。
 import * as THREE from "three";
-import { HONDEN } from "./map.js?v=11032045";
+import { HONDEN } from "./map.js?v=11032047";
 
 export const KENNO = { x: -20.6, z: 22, ry: Math.PI / 2, stand: [-18.2, 22] };
 const COLS = 16, ROWS = 4, GANS = ["当選", "縁結び", "合格", "健康", "家内安全", "心願成就"];
