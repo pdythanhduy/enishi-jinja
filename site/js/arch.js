@@ -103,8 +103,8 @@ export function chochin(parent, x, y, z, env, s = 1, col = 0xfff3d6, base = 1.8)
 }
 
 // ------------------------------------------------------------------ 本殿（大きな拝殿＋本殿、向拝、金の飾り）
-export function honden(parent, env, { x = 0, z = 0 } = {}) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
+export function honden(parent, env, { x = 0, z = 0, s = 1 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); parent.add(g); g.userData.static = true;
   const W = 18, D = 12, F = 1.4;                                   // 幅・奥行き・床の高さ
   box(g, W + 2, F, D + 2, MAT.stoneD, 0, F / 2, 0);                 // 基壇
   box(g, W + 2.4, 0.15, D + 2.4, MAT.stoneL, 0, F + 0.05, 0);
@@ -140,12 +140,15 @@ export function honden(parent, env, { x = 0, z = 0 } = {}) {
   for (let i = -3; i <= 3; i++) if (i) chochin(g, i * 2.4, F + 4.7, D / 2 + 0.2, env, 0.75, 0xffe7b0);
   lightSpot(g, F + 3, 12, 18, 0xffb06a);
   const mirror = hondenInterior(g, env, W, D, F);
-  return { group: g, floorY: F + 0.3, front: z + D / 2 + 1, mirror };
+  return { group: g, floorY: (F + 0.3) * s, front: z + (D / 2 + 1) * s, mirror };
 }
 
 // 本殿の内陣：御簾・神鏡・御幣・鏡餅・榊・大太鼓・釣灯籠
 function hondenInterior(g, env, W, D, F) {
   const y0 = F + 0.3, zb = -D / 2 + 1.0;
+  // 格天井の天井画と、奥の壁の老松
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W - 1, D - 1), artMat("tenjo", [3, 2])); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, F + 4.93, 0); g.add(ceil);
+  const pine = new THREE.Mesh(new THREE.PlaneGeometry(13.8, 4.55), artMat("matsu")); pine.position.set(0, F + 2.6, -D / 2 + 0.7); g.add(pine);
   // 内陣の壇（二段）と金の縁
   box(g, W - 5, 0.45, 2.6, MAT.woodD, 0, y0 + 0.22, zb + 0.9);
   box(g, W - 8, 0.45, 1.6, MAT.wood, 0, y0 + 0.67, zb + 0.5);
@@ -195,6 +198,17 @@ function hondenInterior(g, env, W, D, F) {
   return mir;
 }
 
+// 襖絵・天井画（AI で描いた絵。img/gen/）：金箔が少し光るように
+const ART = new Map();
+export function artMat(name, rep = [1, 1]) {
+  const k = name + rep.join("x");
+  if (!ART.has(k)) {
+    const t = new THREE.TextureLoader().load(`img/gen/${name}.jpg`); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    if (rep[0] !== 1 || rep[1] !== 1) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); }
+    ART.set(k, new THREE.MeshStandardMaterial({ map: t, roughness: 0.55, metalness: 0.18 }));
+  }
+  return ART.get(k);
+}
 // 御簾の素材（すだれ＋紫の帯）
 function misuMat(rep) {
   const cv = document.createElement("canvas"); cv.width = 64; cv.height = 128; const x = cv.getContext("2d");
@@ -313,6 +327,8 @@ export function smallHall(parent, env, { x, z, W = 13, D = 10, F = 0.6, roofMat 
 // 小さな社の内装：共通（御簾・御幣・釣灯籠・絵馬掛け）＋社ごとの飾り
 function smallHallInterior(g, theme, W, D, F) {
   const zb = -D / 2, xw = W / 2 - 0.13;
+  // 奥の壁の襖絵（縁結び：鶴と桜／合格：梅に月）
+  if (theme) { const art = new THREE.Mesh(new THREE.PlaneGeometry(10.3, 3.4), artMat(theme === "en" ? "tsuru" : "ume")); art.position.set(0, F + 1.72, zb + 0.2); g.add(art); }
   // 御簾（祭壇の上）
   const misu = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 0.5), misuMat(5)); misu.position.set(0, F + 2.95, zb + 1.9); g.add(misu);
   box(g, 5.3, 0.1, 0.1, MAT.kuro, 0, F + 3.22, zb + 1.9, false);
@@ -332,9 +348,9 @@ function smallHallInterior(g, theme, W, D, F) {
     }
     // 猪目（ハート）の板：祭壇の上
     const hs = new THREE.Shape(); hs.moveTo(0, -0.22); hs.bezierCurveTo(-0.3, 0, -0.26, 0.24, 0, 0.12); hs.bezierCurveTo(0.26, 0.24, 0.3, 0, 0, -0.22);
-    box(g, 0.9, 0.62, 0.06, MAT.woodL, 0, F + 2.4, zb + 0.2);
+    box(g, 0.9, 0.62, 0.06, MAT.woodL, 0, F + 2.4, zb + 0.32);
     const heart = new THREE.Mesh(new THREE.ExtrudeGeometry(hs, { depth: 0.03, bevelEnabled: false }), std(0xd8436a, { emissive: 0x5a0a20, emissiveIntensity: 0.4 }));
-    heart.position.set(0, F + 2.4, zb + 0.24); g.add(heart);
+    heart.position.set(0, F + 2.4, zb + 0.36); g.add(heart);
     // 千羽鶴（右の奥）
     const craneG = new THREE.OctahedronGeometry(0.06, 0), cols = [0xe64a6a, 0xf3a6b8, 0xf6d36b, 0x8ac6e8, 0xb48ae0, 0xffffff, 0x6fc28a];
     for (let k = 0; k < 7; k++) {

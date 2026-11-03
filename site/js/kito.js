@@ -3,6 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { HONDEN, inHonden } from "./map.js?v=11031118";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -120,17 +121,21 @@ const reiwa = () => { const d = new Date(Date.now() + 9 * 3600e3); return `令�
 // ------------------------------------------------------------------ 本体
 export function setupKito(A) {
   const { scene, camera, me, W } = A;
+  // 本殿の中のものは H に入れる（座標は以前の本殿のまま。H が今の大きさと位置に合わせる）
+  const H = new THREE.Group(); H.position.set(0, 0, HONDEN.Z - HONDEN.S); H.scale.setScalar(HONDEN.S); scene.add(H); H.updateMatrixWorld(true);
+  const toW = (x, y, z) => H.localToWorld(new THREE.Vector3(x, y, z));
+  const toXZ = (v) => { const p = toW(v.x, v.y, v.z); return [p.x, p.z]; };
   // 神職・巫女は普段から本殿に控えている
   const priest = makeNPC("priest"), miko = makeNPC("miko");
-  priest.scale.setScalar(0.86); miko.scale.setScalar(0.82);                     // 参拝者より少しだけ大きく
-  priest.position.copy(PRIEST_HOME); miko.position.copy(MIKO_HOME); scene.add(priest, miko);
+  priest.scale.setScalar(0.86 / HONDEN.S); miko.scale.setScalar(0.82 / HONDEN.S);   // 参拝者より少しだけ大きく
+  priest.position.copy(PRIEST_HOME); miko.position.copy(MIKO_HOME); H.add(priest, miko);
   const nusa = haraegushi(), suzu = kaguraSuzu(); priest.userData.arms[0].add(nusa); nusa.visible = false; nusa.position.set(0, -0.45, 0.1);
   miko.userData.arms[1].add(suzu); suzu.position.set(0, -0.45, 0.05);
   // 祈祷の座（紫の座布団）と案（玉串を置く台）
-  const seat = new THREE.Group(); seat.position.set(SEAT.x, FLOOR, SEAT.z); scene.add(seat);
+  const seat = new THREE.Group(); seat.position.set(SEAT.x, FLOOR, SEAT.z); H.add(seat);
   const seatM = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.13, 1.0), std(0x5a2a7a)); seatM.position.y = 0.065; seat.add(seatM);
   const seatR = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.03, 1.04), std(0xe3b54a, { metalness: 0.7, roughness: 0.3 })); seatR.position.y = 0.13; seat.add(seatR);
-  const an = new THREE.Group(); an.position.set(0, FLOOR, TABLE_Z); scene.add(an);
+  const an = new THREE.Group(); an.position.set(0, FLOOR, TABLE_Z); H.add(an);
   const wood = std(0xd9c49a, { roughness: 0.7 });
   const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 0.45), wood); top.position.y = 0.62; an.add(top);
   for (const s of [-1, 1]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 0.4), wood); l.position.set(s * 0.58, 0.3, 0); an.add(l); }
@@ -138,9 +143,9 @@ export function setupKito(A) {
   // 燭台：祭壇の両脇で揺れる火
   const flames = [], flameM = [0, 1].map(() => { const m = new THREE.MeshStandardMaterial({ color: 0xffe2a0, emissive: 0xffa040, emissiveIntensity: 3 }); m.userData.base = 3; return m; });
   for (const [x, z] of [[-4.6, -1.7], [-3.4, -1.7], [3.4, -1.7], [4.6, -1.7]]) {
-    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.14, 1.1, 8), std(0x6f6a3a, { metalness: 0.7, roughness: 0.4 })); st.position.set(x, FLOOR + 0.55, z); scene.add(st);
-    const cd = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 8), std(0xfbf7ec)); cd.position.set(x, FLOOR + 1.21, z); scene.add(cd);
-    const f = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.12, 8), flameM[flames.length % 2]); f.position.set(x, FLOOR + 1.38, z); scene.add(f); flames.push(f);
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.14, 1.1, 8), std(0x6f6a3a, { metalness: 0.7, roughness: 0.4 })); st.position.set(x, FLOOR + 0.55, z); H.add(st);
+    const cd = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 8), std(0xfbf7ec)); cd.position.set(x, FLOOR + 1.21, z); H.add(cd);
+    const f = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.12, 8), flameM[flames.length % 2]); f.position.set(x, FLOOR + 1.38, z); H.add(f); flames.push(f);
   }
   A.env.registerLamp(flameM[0], null); A.env.registerLamp(flameM[1], null);
   // 光の柱（普段はかすか、祝詞で強くなる）と、光の中の塵
@@ -148,12 +153,12 @@ export function setupKito(A) {
   const beamM = new THREE.ShaderMaterial({ uniforms: beamU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
     vertexShader: "varying float vY; varying vec3 vN, vV; void main(){ vY = position.y / 6.0 + 0.5; vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }",
     fragmentShader: "uniform float op; uniform vec3 col; varying float vY; varying vec3 vN, vV; void main(){ float edge = pow(abs(dot(vN, vV)), 1.6); float a = op * edge * smoothstep(0.0, 0.35, vY) * (1.0 - 0.45 * vY); gl_FragColor = vec4(col * a, a); }" });
-  const beam = new THREE.Mesh(new THREE.ConeGeometry(1.5, 6, 32, 1, true), beamM); beam.position.set(MIRROR.x, FLOOR + 3, MIRROR.z + 0.6); beam.rotation.x = Math.PI; scene.add(beam);
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(1.5, 6, 32, 1, true), beamM); beam.position.set(MIRROR.x, FLOOR + 3, MIRROR.z + 0.6); beam.rotation.x = Math.PI; H.add(beam);
   const dustN = 70, dustG = new THREE.BufferGeometry(), dp = new Float32Array(dustN * 3);
   for (let i = 0; i < dustN; i++) { dp[i * 3] = MIRROR.x + (Math.random() - 0.5) * 2; dp[i * 3 + 1] = FLOOR + Math.random() * 5; dp[i * 3 + 2] = MIRROR.z + 0.6 + (Math.random() - 0.5) * 2; }
   dustG.setAttribute("position", new THREE.BufferAttribute(dp, 3));
   const dustM = new THREE.PointsMaterial({ color: 0xffe9c0, size: 0.04, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
-  scene.add(new THREE.Points(dustG, dustM));
+  H.add(new THREE.Points(dustG, dustM));
   const mirror = W.hondenMirror; if (mirror) { mirror.material = mirror.material.clone(); mirror.material.emissive = new THREE.Color(0xfff0d0); mirror.material.emissiveIntensity = 0; }
   let glow = 0, glowTo = 0, idleT = 0;
   // 毎フレーム：火の揺らぎ・塵・光・控えの所作
@@ -211,7 +216,7 @@ export function setupKito(A) {
   const camFrom = new THREE.Vector3(), camTo = new THREE.Vector3(), lookFrom = new THREE.Vector3(), lookTo = new THREE.Vector3(), lookNow = new THREE.Vector3();
   // 実時間で進める（端末が重くても、太鼓や祝詞の文字とずれない）
   let shotAt = 0, shotDur = 1;
-  function shot(pos, look, sec = 2.2) { camFrom.copy(camera.position); lookFrom.copy(lookNow); camTo.set(...pos); lookTo.set(...look); shotAt = performance.now(); shotDur = sec * 1000; }
+  function shot(pos, look, sec = 2.2) { camFrom.copy(camera.position); lookFrom.copy(lookNow); camTo.copy(toW(...pos)); lookTo.copy(toW(...look)); shotAt = performance.now(); shotDur = sec * 1000; }
   function cineTick() {
     const now = performance.now(), k = easeIO((now - shotAt) / shotDur), drift = now / 1000;
     camera.position.lerpVectors(camFrom, camTo, k); camera.position.y += Math.sin(drift * 0.4) * 0.03; camera.position.x += Math.sin(drift * 0.23) * 0.04;
@@ -260,10 +265,10 @@ export function setupKito(A) {
       try {
         // 着座
         A.toast("本殿の祈祷の座へ向かいます", 2000);
-        await A.goSeat(group ? A.freeCushion() : [SEAT.x, SEAT.z]);
+        await A.goSeat(group ? A.freeCushion() : toXZ(SEAT));
         me.rotation.y = Math.PI; A.setPose(me, "seiza");
         ov.hidden = false; ov.classList.remove("leaving"); document.body.classList.add("cine"); if (!group) A.hideOthers(true);
-        lookNow.set(0, 2.6, -0.5); A.setCine(cineTick);
+        lookNow.copy(toW(0, 2.6, -0.5)); A.setCine(cineTick);
         shot([3.4, 4.0, 4.4], [0, 2.6, -0.6], 3.0);
         priest.rotation.y = 0; await glide(priest, new THREE.Vector3(-0.9, FLOOR, -0.5), 2200, Math.PI * 0.15);
         await glide(miko, new THREE.Vector3(2.7, FLOOR, -1.5), 1200, -Math.PI * 0.3);
@@ -326,12 +331,12 @@ export function setupKito(A) {
         A.setPose(me, null); shot([-3.7, 3.5, 0.6], [0.5, 2.4, -0.9], 2.2);
         await glide(priest, new THREE.Vector3(1.15, FLOOR, -0.45), 1100, -Math.PI * 0.5);
         const tg = tamagushi(); pu.arms[1].add(tg); tg.position.set(0, -0.5, 0.15); await armTo(pu.arms[1], -1.2, -0.2, 600);
-        await A.walkTo2([0, -0.7]); me.rotation.y = Math.PI;
+        await A.walkTo2(toXZ(new THREE.Vector3(0, FLOOR, -0.7))); me.rotation.y = Math.PI;
         u.pose = "act"; u.arms.forEach((a) => (a.rotation.x = -1.1)); pu.arms[1].remove(tg); u.arms[1].add(tg); tg.position.set(0.2, -0.5, 0.15);
         await armTo(pu.arms[1], 0, -0.22, 500);
         await cue("玉串を捧げる", "枝先を神前へ向けて、案の上に");
         for (let i = 0; i < 12; i++) { tg.rotation.y += Math.PI / 12; await w(40); }
-        u.arms[1].remove(tg); tg.position.set(0, FLOOR + 0.68, TABLE_Z); tg.rotation.set(0, Math.PI, 0); scene.add(tg);
+        u.arms[1].remove(tg); tg.position.set(0, FLOOR + 0.68, TABLE_Z); tg.rotation.set(0, Math.PI, 0); tg.scale.setScalar(1 / HONDEN.S * 0.8); H.add(tg);
         u.arms.forEach((a, i) => { a.rotation.x = 0; a.rotation.z = (i ? -1 : 1) * 0.25; }); u.pose = null; A.sfx.suzu();
         // 二礼二拍手一礼（自分の手で）
         for (const [label, kind] of [["一 礼", "bow"], ["二 礼", "bow"], ["拍 手", "clap"], ["拍 手", "clap"], ["一 礼", "bow"]]) {
@@ -339,7 +344,7 @@ export function setupKito(A) {
           if (kind === "bow") { A.net?.act("bow"); await A.bowTo(me, 1.25, 550); await w(250); await A.bowTo(me, 0, 450); }
           else { A.net?.act("clap"); A.sfx.clap(); u.arms.forEach((a) => (a.rotation.x = -1.2)); await w(220); u.arms.forEach((a) => (a.rotation.x = 0)); }
         }
-        scene.remove(tg);
+        H.remove(tg);
 
         // 撤饌・授与
         phase("JUYO", "御 札 授 与"); glowTo = 0.25;
@@ -396,7 +401,7 @@ export function setupKito(A) {
   bar.innerHTML = `<span class="gk-t"></span><button class="btn primary gk-go" type="button">参列する</button>`;
   document.body.appendChild(bar);
   let joined = false, joinedAt = 0, lastLeft = 1e9;
-  const inHonden = () => Math.abs(me.position.x) < 9 && me.position.z < 8.3 && me.position.z > -4.5;
+  const inHondenMe = () => inHonden(me.position.x, me.position.z);
   const secsLeft = () => { const d = new Date(Date.now() + 9 * 3600e3), m = d.getUTCMinutes(), s = d.getUTCSeconds(); return ((m < 30 ? 30 : 60) - m) * 60 - s; };
   bar.querySelector(".gk-go").onclick = () => {
     if (A.isBusy() || joined) return;
@@ -409,14 +414,14 @@ export function setupKito(A) {
     bar.hidden = !show; if (!show) return;
     const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
     bar.querySelector(".gk-t").innerHTML = `<small>本殿 · 毎時0分と30分</small>⛩ 合同祈祷まで ${mm}:${ss}`;
-    const b = bar.querySelector(".gk-go"); b.textContent = joined || inHonden() ? "参列しています" : "参列する"; b.disabled = joined || inHonden();
+    const b = bar.querySelector(".gk-go"); b.textContent = joined || inHondenMe() ? "参列しています" : "参列する"; b.disabled = joined || inHondenMe();
   }
   setInterval(() => {
     const left = secsLeft();
-    if (joined && !inHonden() && Date.now() - joinedAt > 25e3 && !A.isBusy()) joined = false;     // 本殿を離れたら取り消し
+    if (joined && !inHondenMe() && Date.now() - joinedAt > 25e3 && !A.isBusy()) joined = false;     // 本殿を離れたら取り消し
     // 0分・30分になった瞬間（残りが急に増える）
     if (left > lastLeft + 60) {
-      if ((joined || inHonden()) && !running && !A.isBusy()) {
+      if ((joined || inHondenMe()) && !running && !A.isBusy()) {
         const names = A.othersInHonden();
         A.net?.act("kito"); run({ name: A.getName(), gan: "心願成就", wish: "", group: true, names });
       } else if (!running) A.toast("⛩ 本殿で合同祈祷が始まりました。次は30分後です", 3200);

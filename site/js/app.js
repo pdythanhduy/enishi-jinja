@@ -5,25 +5,25 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031103";
-import { buildWorld } from "./world.js?v=11031103";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031103";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031103";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031103";
-import { deeds } from "../deeds.js?v=11031103";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031103";
-import { fireflies } from "../fx.js?v=11031103";
-import { LIGHT_SPOTS } from "./arch.js?v=11031103";
-import { freeze } from "./freeze.js?v=11031103";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031103";
-import { setupKenno } from "./kenno.js?v=11031103";
-import { setupSocial } from "./social.js?v=11031103";
-import { setupProfile } from "./profile.js?v=11031103";
-import { setupKito } from "./kito.js?v=11031103";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031103";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031103";
-import { connect, board } from "../net.js?v=11031103";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031103";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031118";
+import { buildWorld } from "./world.js?v=11031118";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031118";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031118";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031118";
+import { deeds } from "../deeds.js?v=11031118";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031118";
+import { fireflies } from "../fx.js?v=11031118";
+import { LIGHT_SPOTS } from "./arch.js?v=11031118";
+import { freeze } from "./freeze.js?v=11031118";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031118";
+import { setupKenno } from "./kenno.js?v=11031118";
+import { setupSocial } from "./social.js?v=11031118";
+import { setupProfile } from "./profile.js?v=11031118";
+import { setupKito } from "./kito.js?v=11031118";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031118";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031118";
+import { connect, board } from "../net.js?v=11031118";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031118";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -55,7 +55,7 @@ setInterval(() => env.set(hourNow()), 60e3);
 const W = buildWorld(scene, env, { mobile: MOBILE });
 // 光源プール：近くの灯籠・社殿だけ本物の光で照らす（遠くは発光だけ）
 const POOL = Array.from({ length: MOBILE ? 5 : 8 }, () => { const l = new THREE.PointLight(0xffa04a, 0, 9, 1.7); scene.add(l); return l; });
-const spotPos = LIGHT_SPOTS.map((s) => { const v = new THREE.Vector3(); s.obj.updateWorldMatrix(true, false); s.obj.getWorldPosition(v); v.y += s.y; return { ...s, v }; });
+const spotPos = LIGHT_SPOTS.map((s) => { const v = new THREE.Vector3(); s.obj.updateWorldMatrix(true, false); s.obj.getWorldPosition(v); const sc = new THREE.Vector3(); s.obj.getWorldScale(sc); v.y += s.y * sc.y; return { ...s, v }; });
 function updateLightPool() {
   const p = me.position; const near = spotPos.map((s) => [s, s.v.distanceToSquared(p)]).sort((a, b) => a[1] - b[1]).slice(0, POOL.length);
   POOL.forEach((l, i) => { const s = near[i]?.[0]; if (!s) { l.intensity = 0; return; } l.position.copy(s.v); l.color.setHex(s.color); l.distance = s.dist; l.intensity = s.int * env.lamp; });
@@ -96,6 +96,8 @@ camera.position.set(0, innerWidth < innerHeight ? 8 : 6, innerWidth < innerHeigh
 // ------------------------------------------------------------------ 歩く（当たり判定つき）・道順
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
 let path = [], busy = false, onArrive = null, speedMul = 1;
+// 本殿の前から中へ：賽銭箱をよけて大階段を上がる
+const HONDEN_IN = [[2.7, 12.6], [2.7, 10.0], [0.8, 9.1], hw(0, 7.6)];
 let cine = null;   // 御祈祷などの演出中は、カメラをこの関数が動かす
 let social = null, kenno = null; const tapHandlers = [];   // 人や献灯をタップしたとき
 let downAt = null;
@@ -225,13 +227,13 @@ function nearestPlace() {
 // ------------------------------------------------------------------ その場でできること（近づくとボタンが変わる）
 const fox = (i) => W.foxes[i];
 const ACTIONS = [
-  { id: "omairi", label: "⛩ お参り", at: [0, 13.6], r: 3.2, run: () => omairi("tosen") },
+  { id: "omairi", label: "⛩ お参り", at: [0, 12.2], r: 3.0, run: () => omairi("tosen") },
   { id: "omairi_en", label: "⛩ お参り（縁結び）", at: PLACES.enmusubi.stand, r: 2.6, run: () => omairi("enmusubi") },
   { id: "omairi_go", label: "⛩ お参り（合格）", at: PLACES.gokaku.stand, r: 2.6, run: () => omairi("gokaku") },
   { id: "omairi_ok", label: "⛩ お参り（奥の院）", at: [-2, -73.4], r: 2.2, run: () => omairi("okunoin") },
   { id: "temizu", label: "💧 手水をとる", at: PLACES.temizu.stand, r: 3, run: () => temizu() },
   { id: "kuji", label: "⛩ 授与所", at: PLACES.juyosho.stand, r: 3.4, run: () => openJuyo() },
-  { id: "ema", label: "🪵 絵馬を奉納", at: [15.5, 10.5], r: 4, run: () => { renderEma(); loadEma(); open("#m-ema"); } },
+  { id: "ema", label: "🪵 絵馬を奉納", at: [16.4, 12.8], r: 3.6, run: () => { renderEma(); loadEma(); open("#m-ema"); } },
   { id: "musubi", label: "🎋 おみくじを結ぶ", at: [21, 27.6], r: 2.8, run: () => musubi() },
   { id: "fox", label: "🦊 狐を撫でる", at: [-5.5, 19.6], r: 2.4, run: () => petFox(0) },
   { id: "fox2", label: "🦊 狐を撫でる", at: [5.5, 19.6], r: 2.4, run: () => petFox(1) },
@@ -239,10 +241,10 @@ const ACTIONS = [
   { id: "enito", label: "💞 赤い糸に願う", at: [-28.6, 21.9], r: 2.8, run: () => akaiIto() },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
   { id: "toro", label: "🏮 灯籠を流す", at: [2, -71.5], r: 5, run: () => toroNagashi() },
-  { id: "kito", label: "🎴 御祈祷を受ける", at: [0, 0.5], r: 1.3, run: () => kito.open() },
-  { id: "kito_front", label: "🎴 御祈祷を受ける", at: [0, 9.8], r: 1.6, run: () => kito.open() },
-  { id: "kenno", label: "🏮 献灯する", at: [-15, 11.2], r: 2.4, run: () => kenno?.open() },
-  { id: "seiza_tosen", label: "🙇 正座して祈る", box: [-9, -4.5, 9, 8.3], run: () => seiza("tosen") },
+  { id: "kito", label: "🎴 御祈祷を受ける", at: hw(0, 0.5), r: 1.5, run: () => kito.open() },
+  { id: "kito_front", label: "🎴 御祈祷を受ける", at: [0, 9.9], r: 1.4, run: () => kito.open() },
+  { id: "kenno", label: "🏮 献灯する", at: [-18.2, 22], r: 2.4, run: () => kenno?.open() },
+  { id: "seiza_tosen", label: "🙇 正座して祈る", box: [...hw(-9, -4.5), ...hw(9, 8.3)], run: () => seiza("tosen") },
   { id: "seiza_en", label: "🙇 正座して祈る", box: [-SMALL.X - SMALL.W / 2, SMALL.Z - SMALL.D / 2, -SMALL.X + SMALL.W / 2, SMALL.Z + SMALL.D / 2], run: () => seiza("enmusubi") },
   { id: "seiza_go", label: "🙇 正座して祈る", box: [SMALL.X - SMALL.W / 2, SMALL.Z - SMALL.D / 2, SMALL.X + SMALL.W / 2, SMALL.Z + SMALL.D / 2], run: () => seiza("gokaku") },
 ];
@@ -315,7 +317,7 @@ const temizu = () => doing(async () => {
 
 // ------------------------------------------------------------------ お参り（賽銭→鈴→二礼二拍手一礼）
 const SHRINES = {
-  tosen: { stand: [0, 13.6], bell: () => W.suzu, place: "honden" },
+  tosen: { stand: [0, 12.2], bell: () => W.suzu, place: "honden" },
   enmusubi: { stand: PLACES.enmusubi.stand, bell: () => W.smallSaisen.enmusubi, place: "enmusubi" },
   gokaku: { stand: PLACES.gokaku.stand, bell: () => W.smallSaisen.gokaku, place: "gokaku" },
   okunoin: { stand: [-2, -73.4], bell: () => null, place: "okunoin" },
@@ -366,9 +368,9 @@ const seiza = (hid) => doing(async () => {
   const cs = W.cushions[hid], taken = new Set([...others.values()].map((o) => `${Math.round(o.to.x)},${Math.round(o.to.z)}`));
   const free = cs.filter(([x, z]) => !taken.has(`${Math.round(x)},${Math.round(z)}`)); const [cx, cz] = pick(free.length ? free : cs);
   await new Promise((r) => {
-    const x = me.position.x, z = me.position.z, inside = hid === "tosen" ? z < 8.3 : z < SMALL.Z + SMALL.D / 2;
+    const x = me.position.x, z = me.position.z, inside = hid === "tosen" ? inHonden(x, z) : z < SMALL.Z + SMALL.D / 2;
     if (inside) return walkTo([cx, cz], r);
-    if (hid === "tosen") { path = [[2.7, 14.0], [2.7, 11.3], [0.8, 10.2], [0, 7.6], [cx * 0.4, 6.0], [cx, cz]]; onArrive = r; speedMul = 1; }
+    if (hid === "tosen") { path = [...HONDEN_IN, [cx * 0.4, hw(0, 6)[1]], [cx, cz]]; onArrive = r; speedMul = 1; }
     else { const hx = hid === "enmusubi" ? -SMALL.X : SMALL.X, sz = SMALL.standZ, fz = SMALL.Z + SMALL.D / 2; path = [[hx, sz], [hx + 1.65, sz], [hx + 1.65, fz + 1.2], [hx, fz - 1.4], [cx, cz]]; onArrive = r; speedMul = 1; }
   });
   me.rotation.y = Math.PI;
@@ -517,8 +519,8 @@ const kujiGeo = new THREE.BoxGeometry(0.05, 0.17, 0.03), kujiMat = new THREE.Mes
 function addKuji(n) { for (let i = 0; i < n && kujiN < 110; i++, kujiN++) { const k = new THREE.Mesh(kujiGeo, kujiMat); k.position.set(rand(-1.7, 1.7), (Math.random() < 0.5 ? 1.15 : 1.65) - 0.07, 0.02); k.rotation.z = rand(-0.4, 0.4); W.musubi.add(k); } }
 
 // ------------------------------------------------------------------ 授与所：おみくじ・御朱印・御守り
-const visited = () => { const v = store.get("enishi_visited", {}); return Object.keys(v).filter((k) => v[k] === today()); };
-hooks.push((kind, d) => { if (kind === "omairi") { const v = store.get("enishi_visited", {}); v[d.sid] = today(); store.set("enishi_visited", v); } });
+const visited = () => { const v = store.get("enishi_visited", {}); return Object.keys(v).filter((k) => v[k] === today() && SHUIN[k]); };
+hooks.push((kind, d) => { if (kind === "omairi" && d.sid) { const v = store.get("enishi_visited", {}); v[d.sid] = today(); store.set("enishi_visited", v); } });
 function openJuyo() {
   const got = book.goshuin().filter((e) => e.day === today()).map((e) => e.hall), can = visited().filter((h) => !got.includes(h));
   $("#juyo-shuin").innerHTML = can.length ? can.map((h) => `<button data-h="${h}">🖌 ${SHUIN[h].title}の御朱印</button>`).join("")
@@ -753,10 +755,10 @@ const walkP = (dest) => new Promise((r) => walkTo(dest, r));
 async function goSeat([sx, sz]) {
   // 途中で詰まっても儀式が止まらないように：一定時間で着かなければ席へ移す
   const arrive = (fn, ms) => Promise.race([new Promise(fn), wait(ms).then(() => "late")]);
-  const inside = () => Math.abs(me.position.x) < 9 && me.position.z < 8.3 && me.position.z > -4.5;
+  const inside = () => inHonden(me.position.x, me.position.z);
   if (!inside()) {
     if (Math.hypot(me.position.x - PLACES.honden.stand[0], me.position.z - PLACES.honden.stand[1]) > 3) await arrive((r) => walkTo(PLACES.honden.stand, r, { route: true, fast: true }), 40000);
-    await arrive((r) => { path = [[2.7, 14.0], [2.7, 11.3], [0.8, 10.2], [0, 7.6], [sx, sz]]; onArrive = r; speedMul = 1; }, 15000);
+    await arrive((r) => { path = [...HONDEN_IN, [sx, sz]]; onArrive = r; speedMul = 1; }, 18000);
   } else await arrive((r) => walkTo([sx, sz], r), 8000);
   if (Math.hypot(me.position.x - sx, me.position.z - sz) > 0.4) { path = []; onArrive = null; me.position.set(sx, footY(sx, sz), sz); }
 }
@@ -764,7 +766,7 @@ const hideOthers = (on) => { for (const o of others.values()) { o.av.visible = !
 // 本殿の空いている座布団（前列の真ん中から）・本殿にいる人の名前
 const freeCushion = () => { const taken = [...others.values()].map((o) => o.to); const cs = [...W.cushions.tosen].sort((a, b) => Math.hypot(a[0], a[1] + 0.6) - Math.hypot(b[0], b[1] + 0.6));
   return cs.find(([x, z]) => !taken.some((t) => Math.hypot(t.x - x, t.z - z) < 0.6)) || cs[0]; };
-const othersInHonden = () => [...others.values()].filter((o) => Math.abs(o.av.position.x) < 9 && o.av.position.z < 8.3 && o.av.position.z > -4.5).map((o) => o.name);
+const othersInHonden = () => [...others.values()].filter((o) => inHonden(o.av.position.x, o.av.position.z)).map((o) => o.name);
 const kito = setupKito({ hideOthers, freeCushion, othersInHonden, isBusy: () => busy, inCine: () => !!cine || !!intro, scene, camera, me, W, env, store, sfx, tone, noise, ac, muted: () => muted, wait, toast, setPose, bowTo, doing, setCine, goSeat, walkTo2: walkP,
   deedHook, today, ng: ngText, getName: () => myName, get net() { return net; } });
 // ------------------------------------------------------------------ 身支度（profile.js）

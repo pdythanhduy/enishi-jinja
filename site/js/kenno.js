@@ -1,7 +1,7 @@
 // 献灯所：みんなの名前と願いの灯りが並ぶ棚。毎日お参りすると自分の灯りが少しずつ明るくなる。
 import * as THREE from "three";
 
-export const KENNO = { x: -15, z: 8.6, stand: [-15, 11.2] };
+export const KENNO = { x: -20.6, z: 22, ry: Math.PI / 2, stand: [-18.2, 22] };
 const COLS = 16, ROWS = 4, GANS = ["当選", "縁結び", "合格", "健康", "家内安全", "心願成就"];
 const TINT = { 当選: 0xffe7b8, 縁結び: 0xffc6d4, 合格: 0xcfe0ff, 健康: 0xd8f5d0, 家内安全: 0xfff1d6, 心願成就: 0xf2dcff };
 const esc = (t) => String(t || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -11,7 +11,7 @@ export function setupKenno(A) {
   const { scene, env, store, API } = A;
   const key = store.get("enishi_key", "");
   // ---------------------------------------------------------------- 棚（朱の柱・四段の棚・銅の屋根・扁額）
-  const g = new THREE.Group(); g.position.set(KENNO.x, 0, KENNO.z); scene.add(g);
+  const g = new THREE.Group(); g.position.set(KENNO.x, 0, KENNO.z); g.rotation.y = KENNO.ry; scene.add(g);
   const shu = std(0xd23a26, { roughness: 0.5 }), wood = std(0x6b4428), copper = std(0x3f7a68, { roughness: 0.5, metalness: 0.25 });
   const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
   for (const s of [-1, 1]) add(new THREE.CylinderGeometry(0.14, 0.16, 3.9, 12), shu, s * 3.75, 1.95, 0);
