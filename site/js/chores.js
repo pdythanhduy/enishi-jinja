@@ -27,6 +27,9 @@ export function setupChores(A) {
     <div class="mg-bar"><i></i></div><div class="row"><span class="sub mg-n"></span><button type="button" class="btn mg-x">やめる</button></div></div>`;
   document.body.appendChild(ov);
   const cv = ov.querySelector("canvas"), cx = cv.getContext("2d"), fx = ov.querySelector(".mg-fx"), bar = ov.querySelector(".mg-bar i");
+  // スマホ：なぞっても画面がスクロール・拡大しないように（iPhone の Safari は touch-action だけでは止まらないことがある）
+  for (const ev of ["touchstart", "touchmove"]) cv.addEventListener(ev, (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  ov.addEventListener("touchmove", (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   const W = 400, H = 400;
   const pt = (e) => { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H]; };
   function pop(x, y, text, cls = "") {   // 浮かぶ文字・きらきら

@@ -57,6 +57,11 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
     - Leaf sweeping is now a broom game: push leaves into the 塵取り. A find is hidden under the leaves, and the game gives +2 徳.
     - `chores.near(p)` feeds `currentAction`. Debug with `__enishi.chores.run(spec)`.
   - Stairs: ramp floors in map.js get a `table` of real step heights. `measureStairs()` in app.js raycasts them at startup, so feet land on each tread instead of sliding along a slope.
+  - Controls work like a map.
+    - Mouse: left-drag or one finger pans along the ground, right-drag or two fingers rotate and zoom.
+    - Panning sets `freeCam`, which stops the follow camera and shows 「📍 自分の場所へ」. Walking, the joystick or `setCine(null)` turn it back off.
+    - Movement comes from the joystick `#joy` (touch only) or WASD/arrow keys (`steer()`). Map trips over 38 m warp.
+  - Minigame canvases block touch scrolling with non-passive `touchmove`/`touchstart` `preventDefault`, because iOS needs more than `touch-action`.
   - Bows pivot at the hip (HIP 0.6 in avatar.js `bowTo`).
   - Effects go through `AC.fxBus`, which has its own volume (`enishi_fxvol`, default 0.4). Tapping a blocked spot walks to the nearest free point, and walking gives up after 1.4 s without progress.
   - `chat.js`: room chat (💬 button at bottom left). Lines are up to 60 characters, filtered by the NG list on both client and server.

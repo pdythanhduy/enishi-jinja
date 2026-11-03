@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031949";
-import { buildWorld } from "./world.js?v=11031949";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031949";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031949";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031949";
-import { deeds } from "../deeds.js?v=11031949";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031949";
-import { fireflies } from "../fx.js?v=11031949";
-import { LIGHT_SPOTS } from "./arch.js?v=11031949";
-import { freeze } from "./freeze.js?v=11031949";
-import { setupSeasonal } from "./seasonal.js?v=11031949";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031949";
-import { makeBGM } from "./bgm.js?v=11031949";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031949";
-import { setupKenno } from "./kenno.js?v=11031949";
-import { setupSocial } from "./social.js?v=11031949";
-import { setupProfile } from "./profile.js?v=11031949";
-import { setupChores } from "./chores.js?v=11031949";
-import { setupSagyo } from "./sagyo.js?v=11031949";
-import { setupWelcome } from "./welcome.js?v=11031949";
-import { setupZen } from "./zen.js?v=11031949";
-import { setupMixer } from "./mixer.js?v=11031949";
-import { setupShakyo } from "./shakyo.js?v=11031949";
-import { setupTour } from "./tour.js?v=11031949";
-import { setupChat } from "./chat.js?v=11031949";
-import { setupKito, ofudaImage } from "./kito.js?v=11031949";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031949";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031949";
-import { connect, board } from "../net.js?v=11031949";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031949";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032001";
+import { buildWorld } from "./world.js?v=11032001";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032001";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032001";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032001";
+import { deeds } from "../deeds.js?v=11032001";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032001";
+import { fireflies } from "../fx.js?v=11032001";
+import { LIGHT_SPOTS } from "./arch.js?v=11032001";
+import { freeze } from "./freeze.js?v=11032001";
+import { setupSeasonal } from "./seasonal.js?v=11032001";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032001";
+import { makeBGM } from "./bgm.js?v=11032001";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032001";
+import { setupKenno } from "./kenno.js?v=11032001";
+import { setupSocial } from "./social.js?v=11032001";
+import { setupProfile } from "./profile.js?v=11032001";
+import { setupChores } from "./chores.js?v=11032001";
+import { setupSagyo } from "./sagyo.js?v=11032001";
+import { setupWelcome } from "./welcome.js?v=11032001";
+import { setupZen } from "./zen.js?v=11032001";
+import { setupMixer } from "./mixer.js?v=11032001";
+import { setupShakyo } from "./shakyo.js?v=11032001";
+import { setupTour } from "./tour.js?v=11032001";
+import { setupChat } from "./chat.js?v=11032001";
+import { setupKito, ofudaImage } from "./kito.js?v=11032001";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11032001";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032001";
+import { connect, board } from "../net.js?v=11032001";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032001";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -108,6 +108,22 @@ composer.addPass(bloom); composer.addPass(new OutputPass());
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
 controls.minDistance = 3.5; controls.maxDistance = 22; controls.maxPolarAngle = Math.PI * 0.48; controls.minPolarAngle = Math.PI * 0.12;
+// 見渡す：地図のように、指一本（マウス左）でずらして境内を見る。二本指（マウス右・Ctrl/Shift＋左）で回す・寄る
+controls.enablePan = true; controls.screenSpacePanning = false; controls.panSpeed = 1.15;
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
+let freeCam = false, camUser = false; const camT0 = new THREE.Vector3();
+const homeBtn = document.createElement("button"); homeBtn.id = "cam-home"; homeBtn.type = "button"; homeBtn.hidden = true; homeBtn.textContent = "📍 自分の場所へ"; document.body.appendChild(homeBtn);
+function camHome() { if (!freeCam) return; freeCam = false; homeBtn.hidden = true; }   // 追いかけを再開（なめらかに戻る）
+homeBtn.onclick = camHome;
+controls.addEventListener("start", () => { camUser = true; camT0.copy(controls.target); });
+let camEndAt = 0;
+controls.addEventListener("end", () => { camUser = false; camEndAt = performance.now(); });
+controls.addEventListener("change", () => {
+  if ((camUser || performance.now() - camEndAt < 500) && !freeCam && controls.target.distanceTo(camT0) > 0.3) { freeCam = true; homeBtn.hidden = false; }   // 指を離した直後の一コマも拾う
+  const t = controls.target, cx = Math.max(-60, Math.min(60, t.x)) - t.x, cz = Math.max(-95, Math.min(95, t.z)) - t.z;   // 境内の外へは行きすぎない
+  if (cx || cz) { t.x += cx; t.z += cz; camera.position.x += cx; camera.position.z += cz; }
+});
 camera.position.set(0, innerWidth < innerHeight ? 8 : 6, innerWidth < innerHeight ? 93 : 90); controls.target.set(0, 1.2, 80);
 
 // ------------------------------------------------------------------ 歩く（当たり判定つき）・道順
@@ -168,6 +184,7 @@ function measureStairs() {
   }
 }
 function walkTo(dest, cb = null, { route = false, fast = false } = {}) {
+  camHome();
   prog.best = 1e9; prog.t = 0;
   if (me.userData.pose === "seiza" && !busy) setPose(me, null);      // 座って待っていたら立ち上がる
   path = route ? routeTo([me.position.x, me.position.z], dest) : [dest];
@@ -190,6 +207,7 @@ function steer(dt) {
   const [ix, iy, m] = moveInput(); const u = me.userData;
   if (m < 0.15 || busy || cine || intro) return false;
   if (path.length) { path = []; onArrive = null; speedMul = 1; }
+  camHome();
   if (u.pose === "seiza") setPose(me, null);
   camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
   const dx = fwd.x * -iy + -fwd.z * ix, dz = fwd.z * -iy + fwd.x * ix, dl = Math.hypot(dx, dz) || 1, s = SPEED * Math.min(1, m) * dt;
@@ -927,7 +945,7 @@ function loop() {
   if (intro) runIntro(dt);
   else if (cine) cine(dt);
   else {
-    const want = new THREE.Vector3(me.position.x, me.position.y + 1.0, me.position.z), delta = want.sub(controls.target).multiplyScalar(Math.min(1, dt * 4));
+    const want = new THREE.Vector3(me.position.x, me.position.y + 1.0, me.position.z), delta = want.sub(controls.target).multiplyScalar(freeCam ? 0 : Math.min(1, dt * 4));
     controls.target.add(delta); camera.position.add(delta); controls.update();
     // 千本鳥居の中ではカメラを笠木より下に
     if (region(me.position.x, me.position.z) === "trail" && Math.hypot(me.position.x + 2, me.position.z + 74) > 15 && !(me.position.x > STAGE.x0 - 2 && me.position.z > STAGE.z0 - 2 && me.position.z < STAGE.z1 + 2) && me.position.y + 2.6 < camera.position.y) camera.position.y += (me.position.y + 2.6 - camera.position.y) * Math.min(1, dt * 10);
@@ -983,6 +1001,7 @@ setTimeout(() => ($("#hint").style.opacity = 0), 10000);
 if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
 // ------------------------------------------------------------------ 御祈祷（kito.js）
 const setCine = (fn) => {
+  if (!fn) { freeCam = false; homeBtn.hidden = true; }
   cine = fn; controls.enabled = !fn; bgm.duck(!!fn);
   if (!fn) { camera.position.set(me.position.x, me.position.y + 4.2, me.position.z + 6.5); controls.target.set(me.position.x, me.position.y + 1.2, me.position.z); controls.update(); }
 };
@@ -1063,8 +1082,10 @@ if (matchMedia("(pointer: coarse)").matches) {
   pad.addEventListener("pointermove", (e) => { if (e.pointerId !== id) return; e.preventDefault(); set(e.clientX - cx, e.clientY - cy); });
   const end = (e) => { if (e.pointerId !== id) return; id = null; set(0, 0); pad.classList.remove("on"); };
   pad.addEventListener("pointerup", end); pad.addEventListener("pointercancel", end);
-  $("#hint").textContent = "左下のスティックで歩く · ドラッグで見回す · 地面をタップでもOK";
-} else $("#hint").textContent = "WASD・矢印キーで歩く · ドラッグで見回す · 地面をクリックでもOK";
+  $("#hint").textContent = "左下のスティックで歩く · 指でずらして見渡す · 2本指で回す・寄る";
+} else $("#hint").textContent = "WASD・矢印キーで歩く · ドラッグで見渡す · 右ドラッグで回す";
+// 指でなぞる遊び（落ち葉・お手伝い・絵馬・人形・スティック）の上では、ページが動かないように
+document.addEventListener("touchmove", (e) => { if (e.cancelable && e.target.closest?.(".mg-stage,.mg .sheet,.ed-cv,.ht-cv,#joy")) e.preventDefault(); }, { passive: false });
 // ------------------------------------------------------------------ 静のひととき（zen.js・mixer.js・shakyo.js・tour.js）
 let stResend = 0;
 const setStatusAll = (t) => { myStatus = t; store.set("enishi_status", t); refreshToku(); net?.st(t, "st"); clearTimeout(stResend); stResend = setTimeout(() => net?.st(myStatus, "st"), 9000); };

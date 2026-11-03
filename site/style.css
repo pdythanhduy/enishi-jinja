@@ -522,3 +522,9 @@ body:has(.mg:not([hidden])){overscroll-behavior:none}
 #joy.on{border-color:var(--gold)}#joy.on i{transition:none}
 body.cine #joy,body.focus-quiet #joy,body.touring #joy{opacity:0;pointer-events:none}
 @media (pointer:coarse){#chat-btn{left:auto;right:12px}#chat-tick{left:auto;right:66px}}
+
+/* 見渡しから自分の場所へ戻る */
+#cam-home{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(136px + env(safe-area-inset-bottom));z-index:11;border:1px solid rgba(232,198,122,.5);background:rgba(14,19,33,.86);color:var(--ink);border-radius:999px;padding:.45rem 1rem;font-size:.82rem;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+#cam-home[hidden]{display:none}
+body.cine #cam-home{display:none}
+.mg,.mg *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
