@@ -5,6 +5,12 @@
 //  POST /ema/:hall          {cat,text}            絵馬を奉納
 //  POST /pray/:hall         {id,on}               一緒に祈る
 //  POST /report/:hall       {}                    当選報告（お礼参り）
+//  GET  /ema/:hall?ids=a,b  自分の絵馬に集まった「一緒に祈る」の数
+//  POST /presence {key,name,hall}  縁のある人に「境内にいる」と知らせる（key は端末の秘密。公開されるのは pid だけ）
+//  GET  /presence?ids=pid,…        縁のある人がいまいるか
+//  POST /bless {key,name,to}       縁のある人へ祈りを送る（一日一回）
+//  POST /inbox {key}               届いた祈りを受け取る
+//  GET  /kenno · POST /kenno {key,name,gan,text} · POST /kenno/light {key}   献灯（みんなの灯りの壁）
 const MAX = 100, ROOMS = 30;
 const ALLOW = ["https://enishi-jinja.pages.dev", "https://pdythanhduy.github.io", "http://localhost:8766"];
 const NG = ["死ね", "殺す", "ころす", "しね", "消えろ", "ブス", "きもい", "キモい", "http", "www.", ".com", "ライン交換", "副業", "稼げる", "儲かる", "裏垢", "パパ活", "セックス", "エロ", "まんこ", "ちんこ", "fuck", "shit"];
@@ -38,19 +44,20 @@ export default {
     if (p[0] === "admin" && req.method === "POST") {
       let b = {}; try { b = await req.json(); } catch {}
       if (!env.ADMIN_KEY || b.key !== env.ADMIN_KEY) return json(req, { error: "forbidden" }, 403);
+      if (b.lamp) { const rm = env.REMIND.get(env.REMIND.idFromName("all")); const r = await rm.fetch(new Request("https://x/lamphide", { method: "POST", body: JSON.stringify({ id: b.lamp, admin: env.ADMIN_KEY }) })); return json(req, await r.json(), r.status); }
       const board = env.BOARD.get(env.BOARD.idFromName(hall));
       const r = await board.fetch(new Request("https://x/hide", { method: "POST", body: JSON.stringify({ id: b.id }) }));
       return json(req, await r.json(), r.status);
     }
-    if (p[0] === "remind" || p[0] === "msg" || p[0] === "toku" || p[0] === "festival") {   // 通知・徳（全体で一つ）
+    if (["remind", "msg", "toku", "festival", "presence", "bless", "inbox", "kenno"].includes(p[0])) {   // 通知・徳（全体で一つ）
       const rm = env.REMIND.get(env.REMIND.idFromName("all"));
-      const r = await rm.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}`,
+      const r = await rm.fetch(new Request(`https://x/${p.join("/")}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}&${u.searchParams}`,
         { method: req.method, body: req.method === "POST" ? await req.text() : undefined }));
       return json(req, await r.json(), r.status);
     }
     if (["ema", "pray", "report", "light"].includes(p[0])) {
       const board = env.BOARD.get(env.BOARD.idFromName(hall));
-      const r = await board.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}`,
+      const r = await board.fetch(new Request(`https://x/${p[0]}?ip=${encodeURIComponent(req.headers.get("CF-Connecting-IP") || "")}&${u.searchParams}`,
         { method: req.method, body: req.method === "POST" ? await req.text() : undefined }));
       return json(req, await r.json(), r.status);
     }
@@ -98,8 +105,14 @@ export class Room {
       me.x = +m.x || 0; me.z = +m.z || 0; me.ry = +m.ry || 0; me.at = now;
       ws.serializeAttachment(me);
       this.broadcast({ t: "pos", id: me.id, x: me.x, z: me.z, ry: me.ry }, ws);
-    } else if (m.t === "act" && ["bow", "clap", "suzu", "kuji", "ema", "report", "pray", "musubi", "omokaru", "goldfox"].includes(m.a)) {
+    } else if (m.t === "act" && ["bow", "clap", "suzu", "kuji", "ema", "report", "pray", "musubi", "omokaru", "goldfox", "ito", "toro", "say", "emo", "kito", "kenno"].includes(m.a)) {
+      if ((m.a === "say" || m.a === "emo") && now - (me.said || 0) < 1500) return;          // 言葉は少し間をあけて
+      if (m.a === "say" || m.a === "emo") { me.said = now; ws.serializeAttachment(me); }
       this.broadcast({ t: "act", id: me.id, a: m.a, r: String(m.r || "").slice(0, 4) }, ws);
+    } else if (m.t === "en") {                                                             // 縁：特定の一人へのお辞儀
+      if (now - (me.en || 0) < 3000) return; me.en = now; ws.serializeAttachment(me);
+      const pid = String(m.pid || "").replace(/[^0-9a-f]/g, "").slice(0, 16);
+      for (const w of this.socks()) { const o = w.deserializeAttachment(); if (o && o.id === m.to && w !== ws) { try { w.send(JSON.stringify({ t: "en", from: me.id, name: me.name, look: me.look, pid })); } catch {} } }
     }
   }
   prune(now) {  // 70秒応答のない接続（閉じ忘れ・スリープ）を片付ける
@@ -122,6 +135,8 @@ export class Board {
   async fetch(req) {
     const u = new URL(req.url), what = u.pathname.slice(1), ip = u.searchParams.get("ip") || "";
     if (req.method === "GET") {
+      const ids = (u.searchParams.get("ids") || "").split(",").map((x) => x.replace(/[^0-9a-f-]/g, "")).filter(Boolean).slice(0, 30);
+      if (ids.length) return Response.json({ mine: this.sql.exec(`SELECT id,n FROM ema WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids).toArray() });
       const rows = this.sql.exec(`SELECT id,cat,text,n,ts FROM ema WHERE hidden=0 ORDER BY ts DESC LIMIT 60`).toArray();
       return Response.json({ ema: rows, report: this.get("report:" + jst()), lights: this.get("light:" + jst()), total: this.get("ema") });
     }
@@ -182,6 +197,9 @@ export class Remind {
     this.sql.exec(`CREATE TABLE IF NOT EXISTS rem (id TEXT PRIMARY KEY, ep TEXT, day TEXT, kind TEXT, text TEXT, sent INTEGER DEFAULT 0)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS msg (ep TEXT PRIMARY KEY, title TEXT, body TEXT, url TEXT, ts INTEGER)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS stat (k TEXT PRIMARY KEY, v INTEGER)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS pres (pid TEXT PRIMARY KEY, name TEXT, hall TEXT, ts INTEGER)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS inbox (id INTEGER PRIMARY KEY AUTOINCREMENT, pid TEXT, frm TEXT, name TEXT, kind TEXT, day TEXT, ts INTEGER)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS lamp (id TEXT PRIMARY KEY, pid TEXT, name TEXT, gan TEXT, text TEXT, days INTEGER DEFAULT 1, last TEXT, ts INTEGER, hidden INTEGER DEFAULT 0)`);
   }
   inc(k, n = 1) { this.sql.exec(`INSERT INTO stat (k,v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=v+?`, k, n, n); }
   get(k) { const r = this.sql.exec(`SELECT v FROM stat WHERE k=?`, k).toArray()[0]; return r ? r.v : 0; }
@@ -204,7 +222,7 @@ export class Remind {
   }
   async fetch(req) {
     const u = new URL(req.url), what = u.pathname.slice(1), ip = u.searchParams.get("ip") || "";
-    let b = {}; if (req.method === "POST") { try { b = await req.json(); } catch {} }
+    let b = {}; if (req.method === "POST") { try { b = await req.json(); } catch {} }   // ip は将来の制限用
     if (what === "remind") {
       const ep = String(b.endpoint || ""), day = String(b.day || ""), text = String(b.text || "").slice(0, 60);
       if (!/^https:\/\//.test(ep) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return Response.json({ error: "bad" }, { status: 400 });
@@ -225,6 +243,57 @@ export class Remind {
       return Response.json({ toku: this.get(k), goal: FEST_GOAL });
     }
     if (what === "festival") return Response.json({ toku: this.get("toku:" + jst()), goal: FEST_GOAL });
+    if (what === "lamphide") { if (!this.env.ADMIN_KEY || b.admin !== this.env.ADMIN_KEY) return Response.json({ error: "forbidden" }, { status: 403 }); this.sql.exec(`UPDATE lamp SET hidden=1 WHERE id=?`, String(b.id || "")); return Response.json({ ok: true }); }
+    // ---- 縁・献灯：端末の秘密 key から公開用の pid をつくる（key 自体は保存しない）
+    const key = String(b.key || "").replace(/[^0-9a-f]/g, "");
+    const pidOf = async (k) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("enishi:" + k)))].slice(0, 8).map((x) => x.toString(16).padStart(2, "0")).join("");
+    const cleanName = (t, n) => { let x = String(t || "").replace(/[<>&"'`\\]/g, "").replace(/\s+/g, " ").trim().slice(0, n); return NG.some((w) => x.toLowerCase().includes(w.toLowerCase())) ? "" : x; };
+    const slow = (k, ms) => { const now = Date.now(), t = this.last.get(k) || 0; if (now - t < ms) return true; this.last.set(k, now); return false; };
+    if (what === "presence" && req.method === "GET") {
+      const ids = (u.searchParams.get("ids") || "").split(",").map((x) => x.replace(/[^0-9a-f]/g, "")).filter(Boolean).slice(0, 60);
+      if (!ids.length) return Response.json({ people: [] });
+      const rows = this.sql.exec(`SELECT pid,name,hall,ts FROM pres WHERE pid IN (${ids.map(() => "?").join(",")})`, ...ids).toArray();
+      const now = Date.now();
+      return Response.json({ people: rows.map((r) => ({ pid: r.pid, name: r.name, hall: r.hall, on: now - r.ts < 150e3, ago: Math.round((now - r.ts) / 60e3) })) });
+    }
+    if (what === "kenno" && req.method === "GET") {
+      const rows = this.sql.exec(`SELECT id,pid,name,gan,text,days,ts FROM lamp WHERE hidden=0 ORDER BY ts DESC LIMIT 240`).toArray();
+      return Response.json({ lamps: rows, total: this.sql.exec(`SELECT COUNT(*) AS c FROM lamp WHERE hidden=0`).toArray()[0].c });
+    }
+    if (key.length < 24) return Response.json({ error: "key" }, { status: 400 });
+    const pid = await pidOf(key);
+    if (what === "presence") {
+      if (!slow("p" + pid, 20e3)) this.sql.exec(`INSERT INTO pres (pid,name,hall,ts) VALUES (?,?,?,?) ON CONFLICT(pid) DO UPDATE SET name=excluded.name, hall=excluded.hall, ts=excluded.ts`, pid, cleanName(b.name, 12) || "参拝者", String(b.hall || "").replace(/[^a-z]/g, "").slice(0, 12), Date.now());
+      return Response.json({ pid });
+    }
+    if (what === "bless") {
+      const to = String(b.to || "").replace(/[^0-9a-f]/g, "").slice(0, 16), day = jst();
+      if (!to || to === pid) return Response.json({ error: "bad" }, { status: 400 });
+      if (this.sql.exec(`SELECT COUNT(*) AS c FROM inbox WHERE pid=? AND frm=? AND day=?`, to, pid, day).toArray()[0].c) return Response.json({ ok: true, already: true });
+      if (this.sql.exec(`SELECT COUNT(*) AS c FROM inbox WHERE pid=?`, to).toArray()[0].c >= 60) return Response.json({ ok: true, full: true });
+      this.sql.exec(`INSERT INTO inbox (pid,frm,name,kind,day,ts) VALUES (?,?,?,?,?,?)`, to, pid, cleanName(b.name, 12) || "参拝者", "pray", day, Date.now());
+      return Response.json({ ok: true });
+    }
+    if (what === "inbox") {
+      const rows = this.sql.exec(`SELECT frm,name,kind,day,ts FROM inbox WHERE pid=? ORDER BY ts`, pid).toArray();
+      this.sql.exec(`DELETE FROM inbox WHERE pid=?`, pid);
+      return Response.json({ pid, msgs: rows });
+    }
+    if (what === "kenno/light") {                                                    // 今日も自分の灯りに火を足す
+      const day = jst(), rows = this.sql.exec(`SELECT id FROM lamp WHERE pid=? AND hidden=0 AND (last IS NULL OR last<?)`, pid, day).toArray();
+      for (const r of rows) this.sql.exec(`UPDATE lamp SET days=days+1, last=? WHERE id=?`, day, r.id);
+      return Response.json({ ok: true, lit: rows.length });
+    }
+    if (what === "kenno" && req.method === "POST") {
+      if (slow("k" + pid, 10e3)) return Response.json({ error: "少し時間をおいてください" }, { status: 429 });
+      const day = jst();
+      if (this.sql.exec(`SELECT COUNT(*) AS c FROM lamp WHERE pid=? AND ts>?`, pid, Date.now() - 86400e3).toArray()[0].c >= 1) return Response.json({ error: "献灯は一日にひとつです。明日また灯してください" }, { status: 429 });
+      const text = cleanName(b.text, 16), name = cleanName(b.name, 12) || "参拝者", gan = cleanName(b.gan, 8);
+      if (String(b.text || "").trim() && !text) return Response.json({ error: "その言葉は書けません" }, { status: 400 });
+      const id = crypto.randomUUID().slice(0, 10);
+      this.sql.exec(`INSERT INTO lamp (id,pid,name,gan,text,days,last,ts) VALUES (?,?,?,?,?,1,?,?)`, id, pid, name, gan, text, day, Date.now());
+      return Response.json({ ok: true, id, pid });
+    }
     return Response.json({ error: "?" }, { status: 404 });
   }
 }

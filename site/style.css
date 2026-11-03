@@ -178,3 +178,31 @@ body.cine #hud-top,body.cine #actions,body.cine #me-tag,body.cine .tag,body.cine
 .chips button.lock{opacity:.6;display:inline-flex;flex-direction:column;align-items:center;line-height:1.2}
 .chips button.lock small{font-size:.6rem;color:var(--muted)}
 .pf-err{color:#f0a08a;min-height:1.2em}
+/* ---------------- ことば・縁 ---------------- */
+#actions button{width:66px}
+.streak{color:#ffb070;font-weight:600;letter-spacing:.02em}
+.ibtn.dot{position:relative}.ibtn.dot::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px rgba(18,24,22,.8)}
+#say-pop{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:12;width:min(420px,calc(100% - 24px));background:rgba(24,30,27,.96);border:1px solid var(--line);border-radius:18px;padding:.7rem;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+#say-pop[hidden]{display:none}
+.say-emo{display:flex;justify-content:space-between;gap:.2rem;padding-bottom:.55rem;border-bottom:1px solid var(--line);margin-bottom:.55rem}
+.say-emo button{background:none;border:0;font-size:1.35rem;width:40px;height:40px;border-radius:12px}.say-emo button:hover{background:rgba(255,255,255,.08)}
+.say-list{display:flex;flex-wrap:wrap;gap:.35rem;max-height:32vh;overflow:auto}
+.say-list button{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;padding:.35rem .7rem;font-size:.8rem}
+.say-list button:hover{background:rgba(232,198,122,.18)}
+.tag.bub.mine{background:rgba(250,246,234,.95);color:#2b2620}
+#en-card{position:fixed;left:50%;top:max(84px,calc(env(safe-area-inset-top) + 72px));transform:translateX(-50%);z-index:12;width:min(340px,calc(100% - 24px));background:rgba(24,30,27,.96);border:1px solid rgba(232,198,122,.35);border-radius:16px;padding:.9rem 1rem;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.45);animation:en-in .35s ease}
+#en-card[hidden]{display:none}
+@keyframes en-in{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translateX(-50%)}}
+.en-name{margin:0 0 .6rem;font-size:1.05rem;line-height:1.5}.en-name small{display:block;font-size:.7rem;color:var(--gold)}
+.en-btns{display:flex;justify-content:center;gap:.5rem}
+.en-list{display:grid;gap:.5rem;margin-top:.8rem}
+.en-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.6rem .7rem;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.en-row div{min-width:0;display:grid}.en-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.en-row small{color:var(--muted);font-size:.7rem}
+.en-row .btn{flex:none;font-size:.78rem;padding:.45rem .7rem}
+.en-empty{text-align:center;padding:1rem 0}.en-empty p{margin:.3rem 0}
+.en-inbox{list-style:none;margin:0;padding:0;display:grid;gap:.3rem;font-size:.85rem}.en-inbox small{color:var(--muted);margin-left:.3rem}
+@media (prefers-reduced-motion:reduce){#en-card{animation:none}}
+#lamp-card{position:fixed;left:50%;top:max(84px,calc(env(safe-area-inset-top) + 72px));transform:translateX(-50%);z-index:12;width:min(300px,calc(100% - 24px));background:rgba(24,30,27,.96);border:1px solid rgba(255,198,90,.4);border-radius:16px;padding:.9rem 1rem;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+#lamp-card[hidden]{display:none}
+.lamp-name{margin:.35rem 0 .2rem;font-size:1.1rem}.lamp-name small{display:block;font-size:.68rem;color:#ffc65a}
+.lamp-gan{margin:0;color:var(--gold);font-size:.8rem;letter-spacing:.15em}.lamp-text{margin:.35rem 0;font-size:.95rem}
