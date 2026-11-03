@@ -80,7 +80,7 @@ export class Room {
     server.serializeAttachment({ id, name: "", look: 0, x: 0, z: 29, ry: Math.PI, a: "", at: 0, seen: Date.now() });
     // 今いる人を送る
     const others = this.socks().filter((s) => s !== server && s.readyState === 1).map((s) => s.deserializeAttachment()).filter((o) => o && o.name);
-    server.send(JSON.stringify({ t: "welcome", id, n: this.socks().length, max: MAX, others }));
+    server.send(JSON.stringify({ t: "welcome", id, n: this.socks().length, max: MAX, others, now: Date.now() }));
     return new Response(null, { status: 101, webSocket: client });
   }
   broadcast(msg, except) { const s = JSON.stringify(msg); for (const w of this.socks()) if (w !== except) { try { w.send(s); } catch {} } }

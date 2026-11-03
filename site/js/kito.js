@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden, PLACES } from "./map.js?v=11032312";
+import { HONDEN, inHonden, PLACES } from "./map.js?v=11032313";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -495,7 +495,7 @@ export function setupKito(A) {
   document.body.appendChild(bar);
   let joined = false, joinedAt = 0, lastLeft = 1e9, seating = false;   // seating：席へ向かっている途中
   const inHondenMe = () => inHonden(me.position.x, me.position.z);
-  const secsLeft = () => { const d = new Date(Date.now() + 9 * 3600e3), m = d.getUTCMinutes(), s = d.getUTCSeconds(); return ((m < 30 ? 30 : 60) - m) * 60 - s; };
+  const secsLeft = () => { const d = new Date(Date.now() + (globalThis.enishiSkew || 0) + 9 * 3600e3), m = d.getUTCMinutes(), s = d.getUTCSeconds(); return ((m < 30 ? 30 : 60) - m) * 60 - s; };
   bar.querySelector(".gk-go").onclick = () => {
     if (A.isBusy() || joined) return;
     joined = true; joinedAt = Date.now(); A.toast("本殿で合同祈祷を待ちます。始まるまで座ってお待ちください", 3200);

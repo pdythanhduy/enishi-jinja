@@ -199,7 +199,7 @@ export function setupSeasonal(A) {
   // ---------------- 除夜の鐘と年越し（12月31日22時〜1月1日1時）：遠くのお寺の鐘、みんなで同じ数を数える
   {
     const shift = joyaForce ? Date.UTC(d.getUTCFullYear(), 11, 31, 23, 57, 40) - d.getTime() : 0;
-    const now = () => new Date(Date.now() + 9 * 3600e3 + shift);
+    const now = () => new Date(Date.now() + (globalThis.enishiSkew || 0) + 9 * 3600e3 + shift);
     const inJoya = (t) => (t.getUTCMonth() === 11 && t.getUTCDate() === 31 && t.getUTCHours() >= 22) || (t.getUTCMonth() === 0 && t.getUTCDate() === 1 && t.getUTCHours() < 1);
     if (inJoya(now())) {
       events.push("joya");

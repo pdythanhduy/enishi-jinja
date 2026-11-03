@@ -23,7 +23,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
     clearInterval(open._p); open._p = setInterval(() => ws && ws.readyState === 1 && ws.send('{"t":"ping"}'), 25e3);
     ws.onmessage = (e) => {
       let m; try { m = JSON.parse(e.data); } catch { return; }
-      if (m.t === "welcome") { onWelcome(m, room); onCount(m.n); }
+      if (m.t === "welcome") { if (m.now) globalThis.enishiSkew = m.now - Date.now(); onWelcome(m, room); onCount(m.n); }   // 端末の時計のずれを、サーバーの時刻で直す（合同祈祷・作業室の時間をみんなでそろえる）
       else if (m.t === "join") { onJoin(m); onCount(m.n); }
       else if (m.t === "pos") onPos(m);
       else if (m.t === "act") onAct(m);
