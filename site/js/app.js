@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032027";
-import { buildWorld } from "./world.js?v=11032027";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032027";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032027";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032027";
-import { deeds } from "../deeds.js?v=11032027";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032027";
-import { fireflies } from "../fx.js?v=11032027";
-import { LIGHT_SPOTS } from "./arch.js?v=11032027";
-import { freeze } from "./freeze.js?v=11032027";
-import { setupSeasonal } from "./seasonal.js?v=11032027";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032027";
-import { makeBGM } from "./bgm.js?v=11032027";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032027";
-import { setupKenno } from "./kenno.js?v=11032027";
-import { setupSocial } from "./social.js?v=11032027";
-import { setupProfile } from "./profile.js?v=11032027";
-import { setupChores } from "./chores.js?v=11032027";
-import { setupSagyo } from "./sagyo.js?v=11032027";
-import { setupWelcome } from "./welcome.js?v=11032027";
-import { setupZen } from "./zen.js?v=11032027";
-import { setupMixer } from "./mixer.js?v=11032027";
-import { setupShakyo } from "./shakyo.js?v=11032027";
-import { setupTour } from "./tour.js?v=11032027";
-import { setupChat } from "./chat.js?v=11032027";
-import { setupKito, ofudaImage } from "./kito.js?v=11032027";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11032027";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032027";
-import { connect, board } from "../net.js?v=11032027";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032027";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032045";
+import { buildWorld } from "./world.js?v=11032045";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032045";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032045";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032045";
+import { deeds } from "../deeds.js?v=11032045";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032045";
+import { fireflies } from "../fx.js?v=11032045";
+import { LIGHT_SPOTS } from "./arch.js?v=11032045";
+import { freeze } from "./freeze.js?v=11032045";
+import { setupSeasonal } from "./seasonal.js?v=11032045";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032045";
+import { makeBGM } from "./bgm.js?v=11032045";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032045";
+import { setupKenno } from "./kenno.js?v=11032045";
+import { setupSocial } from "./social.js?v=11032045";
+import { setupProfile } from "./profile.js?v=11032045";
+import { setupChores } from "./chores.js?v=11032045";
+import { setupSagyo } from "./sagyo.js?v=11032045";
+import { setupWelcome } from "./welcome.js?v=11032045";
+import { setupZen } from "./zen.js?v=11032045";
+import { setupMixer } from "./mixer.js?v=11032045";
+import { setupShakyo } from "./shakyo.js?v=11032045";
+import { setupTour } from "./tour.js?v=11032045";
+import { setupChat } from "./chat.js?v=11032045";
+import { setupKito, ofudaImage } from "./kito.js?v=11032045";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032045";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032045";
+import { connect, board } from "../net.js?v=11032045";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032045";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -223,7 +223,7 @@ function steer(dt) {
   if (!blocked(nx, nz)) { me.position.x = nx; me.position.z = nz; }
   else if (!blocked(nx, me.position.z)) me.position.x = nx;                                  // 壁に沿ってすべる
   else if (!blocked(me.position.x, nz)) me.position.z = nz;
-  u.walk += dt * 11 * Math.min(1, m); u.body.position.y = Math.abs(Math.sin(u.walk)) * 0.08; u.arms.forEach((a, i) => (a.rotation.x = Math.sin(u.walk + i * Math.PI) * 0.5));
+  gait(me, Math.min(1, m), dt, clock.elapsedTime);
   me.position.y += (footY(me.position.x, me.position.z) - me.position.y) * Math.min(1, dt * 14);
   $("#hint").style.opacity = 0;
   return true;
@@ -239,7 +239,8 @@ function stepMove(dt) {
     else {
       const ang = Math.atan2(dx, dz);
       me.rotation.y += ((((ang - me.rotation.y) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI) * Math.min(1, dt * 10);
-      const s = Math.min(dist, SPEED * speedMul * dt), nx = me.position.x + (dx / dist) * s, nz = me.position.z + (dz / dist) * s;
+      const ease = path.length === 1 ? Math.min(1, 0.35 + dist / 0.9) : 1;                       // 着く前にゆるめる
+      const s = Math.min(dist, SPEED * speedMul * ease * dt), nx = me.position.x + (dx / dist) * s, nz = me.position.z + (dz / dist) * s;
       if (!blocked(nx, nz)) { me.position.x = nx; me.position.z = nz; stuck = 0; }
       else {   // 障害物：少しずつ向きを変えて回り込む
         let moved = false;
@@ -250,12 +251,11 @@ function stepMove(dt) {
         stuck = moved ? 0 : stuck + dt;
         if (stuck > 1.5) { path = []; const cb = onArrive; onArrive = null; speedMul = 1; stuck = 0; cb && cb(); }   // 詰まったらそこで続ける（待っている所作を止めない）
       }
-      u.walk += dt * 11 * Math.min(2, speedMul);
     }
   }
   const moving = path.length > 0;
   me.position.y += (footY(me.position.x, me.position.z) - me.position.y) * Math.min(1, dt * 14);
-  if (!u.pose) { u.body.position.y = moving ? Math.abs(Math.sin(u.walk)) * 0.08 : 0; u.arms.forEach((a, i) => (a.rotation.x = moving ? Math.sin(u.walk + i * Math.PI) * 0.5 : 0)); }
+  gait(me, moving ? speedMul : 0, dt, clock.elapsedTime);
 }
 
 // ------------------------------------------------------------------ 音
@@ -395,6 +395,7 @@ const ACTIONS = [
   { id: "enito", label: "💞 赤い糸に願う", at: [-28.6, 21.9], r: 2.8, run: () => akaiIto() },
   { id: "itotana", label: "🧵 赤い糸を結ぶ", at: [-34.6, 23.1], r: 2.0, run: () => tieIto() },
   { id: "fudezuka", label: "🖌 筆塚に祈る", at: [34.6, 23.1], r: 2.0, run: () => fudeNosame() },
+  { id: "kane", label: "🔔 鐘をつく", at: [33.5, -16.4], r: 2.0, run: () => kaneTsuku() },
   { id: "fune", label: "🛶 屋形船の作業室に乗る", at: [18, 62.6], r: 1.8, run: () => sagyo.enter("fune") },
   { id: "shoin", label: "📖 書院の作業室に入る", at: [-6.4, 67], r: 1.8, run: () => sagyo.enter("shoin") },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
@@ -624,6 +625,22 @@ const doChore = (c) => doing(async () => {
   deedHook("chore", { id: c.id }); releaseLight(c.at[0], footY(c.at[0], c.at[1]), c.at[1], true);
   if (c.id.startsWith("fox")) { bubbleAt(W.foxes[c.id === "fox0" ? 0 : 1], "コン♪", 1800); sfx.suzu(); }
   toast(`${c.id === "uchimizu" && env.season === "winter" ? "参道の雪をよけて、歩きやすくなりました ❄" : CHORE_MSG[c.id]}（徳 +3）`, 5000);
+});
+// 鐘楼：撞木を引いて、ゴーン。ひとつきで心の曇りをはらう（一日一回は徳+2）
+const kaneTsuku = () => doing(async () => {
+  await new Promise((r) => walkTo([33.5, -16.4], r)); me.rotation.y = Math.PI;
+  const u = me.userData, S = W.shoro; u.pose = "act"; u.arms.forEach((a) => (a.rotation.x = -1.3));
+  stepText("撞木を引く"); const t0 = performance.now();
+  await new Promise((r) => (function f() { const k = Math.min(1, (performance.now() - t0) / 1300); S.log.position.z = S.log.userData.z0 + Math.sin(k * Math.PI / 2) * 0.55; me.position.z = -16.4 + Math.sin(k * Math.PI / 2) * 0.25; k < 1 ? requestAnimationFrame(f) : r(); })());
+  const t1 = performance.now();
+  await new Promise((r) => (function f() { const k = Math.min(1, (performance.now() - t1) / 260); S.log.position.z = S.log.userData.z0 + 0.55 * (1 - k * 1.25); me.position.z = -16.4 + 0.25 * (1 - k); k < 1 ? requestAnimationFrame(f) : r(); })());
+  stepText(""); tone([[73.4, 0.9], [146.8, 0.5], [220, 0.28], [294, 0.15], [74.4, 0.6], [440, 0.05]], 11, 0.32); noise(0.08, 400, 0.3, "lowpass");
+  const t2 = performance.now();
+  (function f() { const k = (performance.now() - t2) / 1000; S.bell.rotation.x = Math.sin(k * 5) * 0.05 * Math.exp(-k * 0.8); S.log.position.z = S.log.userData.z0 + Math.sin(k * 4) * 0.12 * Math.exp(-k * 1.5); if (k < 6) requestAnimationFrame(f); })();
+  u.arms.forEach((a, i) => { a.rotation.x = 0; a.rotation.z = (i ? -1 : 1) * 0.25; }); await wait(1200);
+  await bowTo(me, 1.0, 700); await wait(400); await bowTo(me, 0, 600);
+  deedHook("kane"); const first = onceToday("kane"); if (first) { D.add(2); refreshToku(); }
+  net?.act("suzu"); toast(`🔔 ゴーン…と、鐘の音が境内に広がりました。${first ? "（徳 +2）" : ""}`, 4500);
 });
 function petFox(i) {
   const f = fox(i); bubbleAt(f, "コン♪"); tone([[880, 0.4], [1320, 0.2]], 0.4, 0.12);
@@ -964,8 +981,9 @@ function loop() {
   fireworks.update(dt, () => { tone([[60, 0.8], [90, 0.4]], 1.2, 0.25); setTimeout(() => noise(0.6, 2200, 0.12, "highpass"), 300); });
   for (const o of others.values()) {
     const d = o.to.clone().sub(o.av.position); d.y = 0; const dist = d.length(), u = o.av.userData;
-    if (dist > 0.05) { o.av.position.add(d.multiplyScalar(Math.min(1, dt * 5))); if (!u.pose) { u.walk += dt * 11; u.body.position.y = Math.abs(Math.sin(u.walk)) * 0.08; u.arms.forEach((a, i) => (a.rotation.x = Math.sin(u.walk + i * Math.PI) * 0.5)); } }
-    else if (!u.pose) { u.body.position.y = 0; u.arms.forEach((a) => (a.rotation.x = 0)); }   // 正座の人はそのまま
+    let ov = 0;
+    if (dist > 0.04) { const v = Math.min(9, Math.max(1.6, dist * 2.2)), st = Math.min(dist, v * dt); o.av.position.add(d.multiplyScalar(st / dist)); ov = v / SPEED; if (dist > 12) o.av.position.copy(o.to); }   // 一定の速さで（遠すぎたら瞬時に）
+    gait(o.av, ov, dt, clock.elapsedTime);   // 正座の人は gait の中でそのまま
     o.av.position.y = footY(o.av.position.x, o.av.position.z);
     o.av.rotation.y += ((((o.ry - o.av.rotation.y) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI) * Math.min(1, dt * 8);
     v3.copy(o.av.position); v3.y += 2.05 * AV_SCALE; v3.project(camera);

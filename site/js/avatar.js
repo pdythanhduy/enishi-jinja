@@ -1,7 +1,7 @@
 // 参拝者（浴衣のちびキャラ）。和柄・髪型・狐面・提灯。正座とお辞儀のポーズ。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { wagara } from "../fx.js?v=11032027";
+import { wagara } from "../fx.js?v=11032045";
 
 const YUKATA = [[0x2c3e73, 0xe8c67a], [0xc8432f, 0x2b2b2b], [0x5c8a5a, 0xf2e2c4], [0xe7a2b4, 0x6b3a5a], [0xe0b23a, 0x3b4f7a], [0x6a4c93, 0xe8c67a], [0xf4f1ea, 0xc8432f], [0x1f5f6a, 0xf0d8a8]];
 const PATS = ["asanoha", "ichimatsu", "seigaiha", "yagasuri", "sakura"];
@@ -81,14 +81,31 @@ export function makeAvatar(look = Math.random(), env) {
     const lm = new THREE.MeshStandardMaterial({ color: 0xfff3d6, emissive: 0xffa94d, emissiveIntensity: 2.4 }); lm.userData.base = 2.4; env?.registerLamp(lm, null);
     const lamp = add(arms[1], new THREE.SphereGeometry(0.11, 12, 10), lm, 0, -0.62, 0.05, false); lamp.scale.y = 1.3;
   }
-  for (const s of [-1, 1]) add(lower, new THREE.BoxGeometry(0.16, 0.06, 0.28), M.wood, s * 0.13, 0.03, 0.04);
-  g.userData = { body, lower, arms, walk: 0, pose: null };
+  const feet = [-1, 1].map((s) => add(lower, new THREE.BoxGeometry(0.16, 0.06, 0.28), M.wood, s * 0.13, 0.03, 0.04));   // 下駄（歩くと交互に前へ）
+  g.userData = { body, lower, arms, feet, walk: 0, pose: null, sp: 0 };
   return g;
+}
+
+// 歩き方：速さ v（1＝ふつうの歩き）に合わせて、足を交互に運び（下駄が少し浮く）、袴と上半身がゆれ、腕を振る。
+// 歩きはじめと止まりはなめらかに。立ち止まると、ゆっくり息をする。
+export function gait(av, v, dt, t) {
+  const u = av.userData;
+  if (u.pose) { if (u.sp) { u.sp = 0; u.body.rotation.z = 0; u.lower.rotation.z = 0; u.feet?.forEach((f, i) => f.position.set(i ? 0.13 : -0.13, 0.03, 0.04)); } return; }
+  u.sp = (u.sp || 0) + (Math.min(1.5, v) - (u.sp || 0)) * Math.min(1, dt * 7);
+  const s = u.sp, k = Math.min(1, s / 0.6);
+  if (s > 0.02) u.walk += dt * (6.5 + 4.5 * Math.min(1.5, s));
+  const ph = u.walk;
+  u.body.position.y = Math.abs(Math.sin(ph)) * 0.05 * k + (1 - k) * Math.sin(t * 1.7) * 0.007;
+  u.body.position.z = 0;
+  u.body.rotation.x = 0.06 * k; u.body.rotation.z = Math.sin(ph) * 0.03 * k;
+  u.lower.rotation.z = -Math.sin(ph) * 0.045 * k;
+  u.arms.forEach((a, i) => { const sw = Math.sin(ph + (i ? 0 : Math.PI)); a.rotation.x = sw * 0.5 * k + (1 - k) * Math.sin(t * 1.7 + i) * 0.025; a.rotation.z = (i ? -1 : 1) * (0.25 - 0.07 * k); });
+  u.feet?.forEach((f, i) => { const c = ph + (i ? Math.PI : 0); f.position.z = 0.04 + Math.sin(c) * 0.13 * k; f.position.y = 0.03 + Math.max(0, Math.cos(c)) * 0.05 * k; f.rotation.x = -Math.max(0, Math.cos(c)) * 0.25 * k; });
 }
 
 // ポーズ：stand / seiza（正座）
 export function setPose(av, pose) {
-  const u = av.userData; u.pose = pose;
+  const u = av.userData; u.pose = pose; u.body.rotation.z = 0; u.lower.rotation.z = 0;
   if (pose === "seiza") { u.lower.scale.y = 0.45; u.lower.position.y = 0; u.body.position.y = -0.32; u.arms.forEach((a, i) => { a.rotation.x = -0.5; a.rotation.z = (i ? -1 : 1) * 0.15; }); }
   else { u.lower.scale.y = 1; u.body.position.y = 0; u.arms.forEach((a, i) => { a.rotation.x = 0; a.rotation.z = (i ? -1 : 1) * 0.25; }); }
 }
@@ -98,6 +115,10 @@ const HIP = 0.6;
 export function bowTo(av, ang, ms) {
   const b = av.userData.body, s = b.rotation.x, t0 = performance.now();
   const baseY = b.position.y - HIP * (1 - Math.cos(s)), baseZ = b.position.z + HIP * Math.sin(s);   // いまの傾きを戻した位置
-  const set = (th) => { b.rotation.x = th; b.position.y = baseY + HIP * (1 - Math.cos(th)); b.position.z = baseZ - HIP * Math.sin(th); };
+  // 腕：立って礼をするときは手を腿の前へ、正座の礼では手を床へ（からだの傾きに合わせて）
+  const arms = av.userData.arms, seiza = av.userData.pose === "seiza", off = (th) => (seiza ? -0.6 : -0.38) * Math.min(1, Math.max(0, th) / 1.2);
+  const armBase = arms ? arms.map((a) => a.rotation.x - off(s)) : null;
+  const set = (th) => { b.rotation.x = th; b.position.y = baseY + HIP * (1 - Math.cos(th)); b.position.z = baseZ - HIP * Math.sin(th);
+    if (arms && !av.userData.keepArms) arms.forEach((a, i) => (a.rotation.x = armBase[i] + off(th))); };
   return new Promise((r) => (function f() { const k = Math.min(1, (performance.now() - t0) / ms); set(s + (ang - s) * (0.5 - Math.cos(k * Math.PI) / 2)); k < 1 ? requestAnimationFrame(f) : r(); })());
 }

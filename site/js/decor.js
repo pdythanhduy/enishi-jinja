@@ -1,7 +1,7 @@
 // 仕上げ：反射（環境マップ）、瓦・砂利のテクスチャ、幟、提灯の列、岩・植え込み、雲、蛍、水面のきらめき
 import * as THREE from "three";
-import { MAT, sharedLamp } from "./arch.js?v=11032027";
-import { height, POND, noDecor } from "./map.js?v=11032027";
+import { MAT, sharedLamp } from "./arch.js?v=11032045";
+import { height, POND, noDecor } from "./map.js?v=11032045";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let sd = 11; const sr = (a, b) => a + ((sd = (sd * 16807) % 2147483647) / 2147483647) * (b - a);

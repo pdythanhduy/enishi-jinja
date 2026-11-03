@@ -1,10 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032027";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032027";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032027";
-import { koiSchool } from "./koi.js?v=11032027";
-import { FOLIAGE } from "./env.js?v=11032027";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032045";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032045";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032045";
+import { koiSchool } from "./koi.js?v=11032045";
+import { FOLIAGE } from "./env.js?v=11032045";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -297,7 +297,17 @@ export function buildWorld(scene, env, { mobile }) {
   for (const x of [-6, 2]) W.lamps.push(toro(scene, x, -69, okY, env, 0.8));
 
   // ---------------------------------------------------------------- ⑬ 五重塔
-  pagoda(scene, env, { x: 40, z: -22, y: height(40, -22) });
+  const pg = pagoda(scene, env, { x: 40, z: -22, y: height(40, -22) }); W.update.push((t) => pg.userData.tick(t));
+  // 鐘楼：塔の西に。正面の石畳と、由緒の立て札、灯籠
+  const sh = shoro(scene, env, { x: 33.5, z: -19.5, y: height(33.5, -19.5), ry: 0 }); sh.log.userData.z0 = sh.log.position.z; W.shoro = sh;
+  for (const [lx, lz] of [[37.6, -16.2], [42.4, -16.2]]) W.lamps.push(toro(scene, lx, lz, height(lx, lz), env, 0.85));
+  { const c = document.createElement("canvas"); c.width = 256; c.height = 320; const q = c.getContext("2d"); q.fillStyle = "#efe6d0"; q.fillRect(0, 0, 256, 320); q.strokeStyle = "#5a3a22"; q.lineWidth = 8; q.strokeRect(4, 4, 248, 312);
+    q.fillStyle = "#2a1d14"; q.font = 'bold 34px "Hiragino Mincho ProN","Yu Mincho",serif'; q.textAlign = "center"; q.fillText("五重塔", 128, 54); q.font = '20px "Hiragino Mincho ProN","Yu Mincho",serif';
+    ["五つの屋根は、地・水・火・風・空。", "天へとのびる相輪に、", "えにしの願いを託します。", "", "鐘楼の鐘は、ひとつきごとに", "心の曇りをはらうといわれます。"].forEach((l, i) => q.fillText(l, 128, 100 + i * 34));
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const bd = new THREE.Group(); bd.position.set(36.6, height(36.6, -14.8), -14.8); bd.rotation.y = 0.5; scene.add(bd);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.4), new THREE.MeshStandardMaterial({ map: t })); p.position.y = 1.3; bd.add(p);
+    box(bd, 1.25, 0.08, 0.08, MAT.woodD, 0, 2.05, 0); for (const s of [-1, 1]) cyl(bd, 0.05, 0.05, 2.1, MAT.woodD, s * 0.6, 1.05, -0.03, 6); }
 
   // ---------------------------------------------------------------- 木々（InstancedMesh：幹＋葉）
   const trees = { momiji: [], sakura: [], ume: [], sugi: [] };
