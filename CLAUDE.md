@@ -77,7 +77,7 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 - The honden is scaled ×1.3 and moved back (`HONDEN`, `hw()` in map.js convert the old honden coordinates). kito.js puts its props in a group `H` that follows the honden, so it still uses the old local numbers.
 - AI art lives in `site/img/gen/` (tenjo ceiling, matsu pine, tsuru cranes, ume moon, washi UI paper). `artMat(name, repeat)` in arch.js loads one as a material.
 
-- Music: `site/audio/bgm.json` lists Suno tracks for day and night (keidai.mp3 = 境内の調べ, tsukiyo.mp3 = 月夜の調べ, both 112 kbps). Made on the owner's Suno Pro account, so commercial use is allowed. If the files are missing, js/bgm.js falls back to generated koto/orin music.
+- Music: `site/audio/bgm.json` lists Suno tracks for day and night (keidai.mp3 = 境内の調べ, tsukiyo.mp3 = 月夜の調べ, both 112 kbps). Made on the owner's Suno Pro account, so commercial use is allowed. The `lofi` key holds four 和風 lo-fi tracks (lofi1–4.mp3, えにし作業室 lo-fi, 112 kbps) used by the work rooms' 🎧 channel. If the files are missing, js/bgm.js falls back to generated koto/orin music.
 
 - The map (地図) is a top-down render of the live scene (`drawMap` in app.js, bounds `MAPB`), so pins always match the real layout.
 - `site/about.html` is the 運営者情報・privacy page. Contact is via GitHub Issues. Keep it accurate when data handling changes.
