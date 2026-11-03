@@ -144,6 +144,23 @@ export function honden(parent, env, { x = 0, z = 0, s = 1 } = {}) {
   return { group: g, floorY: (F + 0.3) * s, front: z + (D / 2 + 1) * s, mirror };
 }
 
+// 唐破風：中央が盛り上がり両端が反る波形の破風（黒い板・銅の屋根・金の縁・懸魚）
+export function karahafu(g, { hw, yb, zf, h = 1.3, depth = 2.6, roofMat = MAT.copper }) {
+  const prof = (x) => { const u = Math.min(1, Math.abs(x) / hw); return h * Math.pow(1 - u * u, 1.6) + h * 0.46 * Math.pow(u, 5); };
+  const band = (th) => { const sh = new THREE.Shape(), N = 36; for (let i = 0; i <= N; i++) { const x = -hw + (2 * hw * i) / N; i ? sh.lineTo(x, prof(x) + th) : sh.moveTo(x, prof(x) + th); }
+    for (let i = N; i >= 0; i--) { const x = -hw + (2 * hw * i) / N; sh.lineTo(x, prof(x) - th); } sh.closePath(); return sh; };
+  const t = hw * 0.05;
+  const board = new THREE.Mesh(new THREE.ExtrudeGeometry(band(t), { depth: t * 0.9, bevelEnabled: false }), MAT.kuro); board.position.set(0, yb, zf - t * 0.9); board.castShadow = true; g.add(board);
+  const slab = new THREE.Mesh(new THREE.ExtrudeGeometry(band(t * 0.4), { depth, bevelEnabled: false }), roofMat); slab.position.set(0, yb + t * 1.2, zf - depth - 0.1); slab.castShadow = true; g.add(slab);
+  const edge = []; for (let i = 0; i <= 36; i++) { const x = -hw + (2 * hw * i) / 36; edge.push(new THREE.Vector3(x, yb + prof(x) + t * 1.05, zf + 0.01)); }
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(edge), 48, t * 0.2, 5, false), MAT.gold));
+  const gg = new THREE.Group(); gg.position.set(0, yb + h * 0.8, zf + 0.03); gg.scale.setScalar(hw / 4.9); g.add(gg);
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2, p = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 16), MAT.gold); p.rotation.x = Math.PI / 2; p.position.set(Math.cos(a) * 0.22, Math.sin(a) * 0.22 - 0.25, 0); gg.add(p); }
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 10), MAT.gold); core.position.y = -0.25; gg.add(core);
+}
+const GOLD_RING = new THREE.TorusGeometry(1, 0.15, 6, 20);
+export function goldRings(g, cols, ys, r = 0.2) { for (const [cx, cz] of cols) for (const yy of ys) { const m = new THREE.Mesh(GOLD_RING, MAT.gold); m.scale.setScalar(r * 1.1); m.rotation.x = Math.PI / 2; m.position.set(cx, yy, cz); g.add(m); } }
+
 // 本殿の華やかさ：唐破風・蟇股の彫刻・飾り金具
 let KAERU = null;
 function hondenGlory(g, env, W, D, F) {
@@ -385,6 +402,10 @@ export function smallHall(parent, env, { x, z, W = 13, D = 10, F = 0.6, roofMat 
   box(g, 5.0, 0.26, 0.3, MAT.shuD, 0, F + 3.15, fz + 2.6);
   roof(g, { w: 6.2, d: 3.4, h: 1.0, lift: 0.4, y: F + 3.25, z: fz + 2.2, mat: roofMat, ridgeGold: false });
   box(g, 1.1, 0.75, 0.08, MAT.kuro, 0, F + 2.8, fz + 2.78);                       // 扁額
+  karahafu(g, { hw: 3.1, yb: F + 3.3, zf: fz + 3.95, h: 0.95, depth: 1.6, roofMat });
+  if (KAERU) for (const cx of [-4.6, -2.2, 2.2, 4.6]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.5), KAERU); p.position.set(cx, F + 3.45, fz + 0.29); g.add(p); }
+  goldRings(g, [-W / 2, -W / 4, -2.2, 2.2, W / 4, W / 2].map((cx) => [cx, fz]), [F + 0.35, F + 3.4]);
+  goldRings(g, [[-2.2, fz + 2.6], [2.2, fz + 2.6]], [F / 2 + 0.3, F + 2.95]);
   // しめ縄と紙垂
   const rope = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.13, 8, 32, Math.PI), MAT.rope); rope.rotation.z = Math.PI; rope.scale.y = 0.18; rope.position.set(0, F + 3.0, fz + 2.75); g.add(rope);
   for (const xx of [-1.3, -0.45, 0.45, 1.3]) box(g, 0.18, 0.46, 0.02, MAT.paperW, xx, F + 2.5, fz + 2.8, false);

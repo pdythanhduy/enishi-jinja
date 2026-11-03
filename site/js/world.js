@@ -1,10 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031442";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031442";
-import { makePond, pondPlants, tickWater } from "./water.js?v=11031442";
-import { koiSchool } from "./koi.js?v=11031442";
-import { FOLIAGE } from "./env.js?v=11031442";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031444";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031444";
+import { makePond, pondPlants, tickWater } from "./water.js?v=11031444";
+import { koiSchool } from "./koi.js?v=11031444";
+import { FOLIAGE } from "./env.js?v=11031444";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -193,6 +193,14 @@ export function buildWorld(scene, env, { mobile }) {
   okunoin(scene, env, { x: -2, y: okY, z: -78, s: 1.5 });
   kakezukuri(scene, env, { ...STAGE, ground: (x, z) => height(x, z) });
   meotoSugi(scene, { x: -9.5, z: -80, y: okY });
+  // 奉納提灯：参道の両脇に、屋根つきの提灯掛け（二段）
+  for (const sx of [-5.0, 1.0]) {
+    const rk = new THREE.Group(); rk.position.set(sx, okY, -71); rk.rotation.y = Math.PI / 2; scene.add(rk); rk.userData.static = true;
+    for (const zz of [-1.9, 1.9]) cyl(rk, 0.1, 0.1, 3.2, MAT.woodD, zz, 1.6, 0, 8);
+    for (const yy of [1.55, 2.55]) box(rk, 4.0, 0.08, 0.1, MAT.woodD, 0, yy + 0.38, 0);
+    roof(rk, { w: 4.6, d: 1.2, h: 0.45, lift: 0.12, y: 3.2, mat: MAT.copper, gable: false, ridgeGold: false });
+    for (const yy of [1.55, 2.55]) for (let k = 0; k < 5; k++) chochin(rk, -1.6 + k * 0.8, yy, 0, env, 0.55, k % 2 ? 0xfff0d0 : 0xffe0c0);
+  }
   // 磐座：しめ縄を巻いた大岩
   { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 0), new THREE.MeshStandardMaterial({ color: 0x77726a, roughness: 1, flatShading: true })); r.scale.set(1.2, 0.9, 1); r.position.set(-10.5, okY + 1.4, -73); r.castShadow = true; scene.add(r);
     const sm = new THREE.Mesh(new THREE.TorusGeometry(2.45, 0.11, 8, 36), MAT.rope); sm.rotation.x = Math.PI / 2; sm.scale.set(1.2, 1, 1); sm.position.set(-10.5, okY + 1.6, -73); scene.add(sm); }
