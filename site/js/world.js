@@ -1,16 +1,17 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032047";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032047";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032047";
-import { koiSchool } from "./koi.js?v=11032047";
-import { FOLIAGE } from "./env.js?v=11032047";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032054";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032054";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032054";
+import { koiSchool } from "./koi.js?v=11032054";
+import { FOLIAGE } from "./env.js?v=11032054";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
 const sr = (a, b) => a + srnd() * (b - a);
 
-export function buildWorld(scene, env, { mobile }) {
+export function buildWorld(scene, env, opts = {}) {
+  const { mobile } = opts;
   const W = { lamps: [], cushions: {}, altars: {}, foxes: [], spots: {}, update: [] };
   const pal = FOLIAGE[env.season];
 
@@ -325,7 +326,7 @@ export function buildWorld(scene, env, { mobile }) {
   for (let i = 0; i < 14; i++) add("momiji", sr(-23, -13), sr(28, 39), sr(0.9, 1.2));
   for (let i = 0; i < 18; i++) add("sakura", sr(-41, -26), sr(3, 25), sr(0.9, 1.3));                                                   // 縁結びの桜
   for (let i = 0; i < 16; i++) { const x = sr(26, 41), z = sr(3, 25); if (Math.hypot(x - 28, z - 21) > 2.5) add("ume", x, z, sr(0.7, 1)); } // 合格の梅
-  for (let i = 0; i < (mobile ? 420 : 760); i++) {                                                                                     // 山の杉林
+  for (let i = 0; i < (opts.lite ? 200 : mobile ? 420 : 760); i++) {                                                                                     // 山の杉林
     const x = sr(-130, 130), z = sr(-140, 120);
     if (z > -8 && Math.abs(x) < 46 && z < 86) continue;
     if (Math.abs(x) < 26 && z > -24) continue;                                             // 本殿の裏

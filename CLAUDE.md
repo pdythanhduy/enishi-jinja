@@ -66,7 +66,9 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
   - Controls work like a map.
     - One finger or left-drag rotates (the original feel). Two fingers or right-drag pan along the ground, and pinch zooms. There are also ⟲⟳ buttons (`#cam-rot`) on touch devices.
     - Walk speed (`SPEED`) is 2.5 m/s.
-    - sw.js fetches navigations with `cache: no-cache`, because GitHub Pages caches HTML for 10 minutes.
+    - sw.js has no fetch handler. A navigation handler once seemed to make reloads hang on iPhone, so it was removed.
+    - The loading watchdog in index.html prints errors on the loading screen. After 25 s it offers reload and 「軽量モード」.
+    - `?lite` (remembered in `enishi_lite`, cleared by `?full`) sets pixel ratio 1, turns bloom off and plants fewer trees.
     - Panning sets `freeCam`, which stops the follow camera and shows 「📍 自分の場所へ」. Walking, the joystick or `setCine(null)` turn it back off.
     - Movement comes from the joystick `#joy` (touch only) or WASD/arrow keys (`steer()`). Map trips over 38 m warp.
   - Minigame canvases block touch scrolling with non-passive `touchmove`/`touchstart` `preventDefault`, because iOS needs more than `touch-action`.

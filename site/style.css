@@ -558,3 +558,9 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 .sk-pad canvas{width:min(260px,58vw);height:auto;aspect-ratio:1;border-radius:8px;box-shadow:inset 0 0 20px rgba(120,90,40,.25),0 4px 14px rgba(0,0,0,.35);touch-action:none;cursor:crosshair}
 .sk-padside{display:flex;flex-direction:column;gap:.5rem;max-width:120px}.sk-next{font-size:.8rem;color:var(--gold)}.sk-tip{font-size:.7rem;color:var(--muted);line-height:1.4}
 .sk-tip.warn{color:#ffb4a4;animation:skw .4s}@keyframes skw{0%,100%{transform:none}30%{transform:translateX(-4px)}60%{transform:translateX(4px)}}
+
+/* 読みこみの見守り */
+#lg-help{margin-top:1rem;text-align:center}
+.lg-err{font-size:.8rem;color:#ffd9c8;max-width:80vw;margin:.4rem auto;word-break:break-all}
+.lg-btns{display:flex;gap:.6rem;justify-content:center;margin-top:.5rem}
+.lg-btns button{border:1px solid rgba(232,198,122,.5);background:rgba(0,0,0,.35);color:#f4ead8;border-radius:999px;padding:.5rem 1rem;font-size:.85rem}

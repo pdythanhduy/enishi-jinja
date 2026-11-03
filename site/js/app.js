@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032047";
-import { buildWorld } from "./world.js?v=11032047";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032047";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032047";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032047";
-import { deeds } from "../deeds.js?v=11032047";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032047";
-import { fireflies } from "../fx.js?v=11032047";
-import { LIGHT_SPOTS } from "./arch.js?v=11032047";
-import { freeze } from "./freeze.js?v=11032047";
-import { setupSeasonal } from "./seasonal.js?v=11032047";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032047";
-import { makeBGM } from "./bgm.js?v=11032047";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032047";
-import { setupKenno } from "./kenno.js?v=11032047";
-import { setupSocial } from "./social.js?v=11032047";
-import { setupProfile } from "./profile.js?v=11032047";
-import { setupChores } from "./chores.js?v=11032047";
-import { setupSagyo } from "./sagyo.js?v=11032047";
-import { setupWelcome } from "./welcome.js?v=11032047";
-import { setupZen } from "./zen.js?v=11032047";
-import { setupMixer } from "./mixer.js?v=11032047";
-import { setupShakyo } from "./shakyo.js?v=11032047";
-import { setupTour } from "./tour.js?v=11032047";
-import { setupChat } from "./chat.js?v=11032047";
-import { setupKito, ofudaImage } from "./kito.js?v=11032047";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032047";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032047";
-import { connect, board } from "../net.js?v=11032047";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032047";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032054";
+import { buildWorld } from "./world.js?v=11032054";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032054";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032054";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032054";
+import { deeds } from "../deeds.js?v=11032054";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032054";
+import { fireflies } from "../fx.js?v=11032054";
+import { LIGHT_SPOTS } from "./arch.js?v=11032054";
+import { freeze } from "./freeze.js?v=11032054";
+import { setupSeasonal } from "./seasonal.js?v=11032054";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032054";
+import { makeBGM } from "./bgm.js?v=11032054";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032054";
+import { setupKenno } from "./kenno.js?v=11032054";
+import { setupSocial } from "./social.js?v=11032054";
+import { setupProfile } from "./profile.js?v=11032054";
+import { setupChores } from "./chores.js?v=11032054";
+import { setupSagyo } from "./sagyo.js?v=11032054";
+import { setupWelcome } from "./welcome.js?v=11032054";
+import { setupZen } from "./zen.js?v=11032054";
+import { setupMixer } from "./mixer.js?v=11032054";
+import { setupShakyo } from "./shakyo.js?v=11032054";
+import { setupTour } from "./tour.js?v=11032054";
+import { setupChat } from "./chat.js?v=11032054";
+import { setupKito, ofudaImage } from "./kito.js?v=11032054";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032054";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032054";
+import { connect, board } from "../net.js?v=11032054";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032054";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -44,11 +44,13 @@ const today = () => jstNow().toISOString().slice(0, 10);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const QS = new URLSearchParams(location.search);
 const MOBILE = matchMedia("(pointer:coarse)").matches || innerWidth < 700;
+const LITE = new URLSearchParams(location.search).has("lite") || localStorage.getItem("enishi_lite") === "1";   // 軽量モード（重い端末向け）
+try { if (new URLSearchParams(location.search).has("lite")) localStorage.setItem("enishi_lite", "1"); if (new URLSearchParams(location.search).has("full")) localStorage.removeItem("enishi_lite"); } catch {}
 
 // ------------------------------------------------------------------ renderer / scene / env
 const canvas = $("#c");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !MOBILE, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, MOBILE ? 1.4 : 2));
+renderer.setPixelRatio(LITE ? 1 : Math.min(devicePixelRatio, MOBILE ? 1.4 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -63,7 +65,7 @@ const hourNow = () => (QS.get("hour") ? +QS.get("hour") : jstNow().getUTCHours()
 env.set(hourNow());
 setInterval(() => env.set(hourNow()), 60e3);
 
-const W = buildWorld(scene, env, { mobile: MOBILE });
+const W = buildWorld(scene, env, { mobile: MOBILE || LITE, lite: LITE });
 const TZ = buildTemizuya(scene, env, PLACES.temizu.pos); W.update.push((t) => TZ.tick(t));
 // 光源プール：近くの灯籠・社殿だけ本物の光で照らす（遠くは発光だけ）
 const POOL = Array.from({ length: MOBILE ? 5 : 8 }, () => { const l = new THREE.PointLight(0xffa04a, 0, 9, 1.7); scene.add(l); return l; });
@@ -103,6 +105,7 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), MOBILE ? 0.55 : 0.8, 0.55, 0.78);
 composer.addPass(bloom); composer.addPass(new OutputPass());
+if (LITE) bloom.enabled = false;
 
 // ------------------------------------------------------------------ カメラ
 const controls = new OrbitControls(camera, canvas);
