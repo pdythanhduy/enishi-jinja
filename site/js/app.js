@@ -5,20 +5,20 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11030948";
-import { buildWorld } from "./world.js?v=11030948";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND } from "./map.js?v=11030948";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11030948";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11030948";
-import { deeds } from "../deeds.js?v=11030948";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11030948";
-import { fireflies } from "../fx.js?v=11030948";
-import { LIGHT_SPOTS } from "./arch.js?v=11030948";
-import { freeze } from "./freeze.js?v=11030948";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11030948";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11030948";
-import { connect, board } from "../net.js?v=11030948";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11030948";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031015";
+import { buildWorld } from "./world.js?v=11031015";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031015";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031015";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031015";
+import { deeds } from "../deeds.js?v=11031015";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031015";
+import { fireflies } from "../fx.js?v=11031015";
+import { LIGHT_SPOTS } from "./arch.js?v=11031015";
+import { freeze } from "./freeze.js?v=11031015";
+import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11031015";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031015";
+import { connect, board } from "../net.js?v=11031015";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031015";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -193,8 +193,8 @@ function nearestPlace() {
 const fox = (i) => W.foxes[i];
 const ACTIONS = [
   { id: "omairi", label: "⛩ お参り", at: [0, 13.6], r: 3.2, run: () => omairi("tosen") },
-  { id: "omairi_en", label: "⛩ お参り（縁結び）", at: [-31, 19.1], r: 2.6, run: () => omairi("enmusubi") },
-  { id: "omairi_go", label: "⛩ お参り（合格）", at: [31, 19.1], r: 2.6, run: () => omairi("gokaku") },
+  { id: "omairi_en", label: "⛩ お参り（縁結び）", at: PLACES.enmusubi.stand, r: 2.6, run: () => omairi("enmusubi") },
+  { id: "omairi_go", label: "⛩ お参り（合格）", at: PLACES.gokaku.stand, r: 2.6, run: () => omairi("gokaku") },
   { id: "omairi_ok", label: "⛩ お参り（奥の院）", at: [-2, -73.4], r: 2.2, run: () => omairi("okunoin") },
   { id: "temizu", label: "💧 手水をとる", at: PLACES.temizu.stand, r: 3, run: () => temizu() },
   { id: "kuji", label: "⛩ 授与所", at: PLACES.juyosho.stand, r: 3.4, run: () => openJuyo() },
@@ -202,13 +202,13 @@ const ACTIONS = [
   { id: "musubi", label: "🎋 おみくじを結ぶ", at: [21, 27.6], r: 2.8, run: () => musubi() },
   { id: "fox", label: "🦊 狐を撫でる", at: [-5.5, 19.6], r: 2.4, run: () => petFox(0) },
   { id: "fox2", label: "🦊 狐を撫でる", at: [5.5, 19.6], r: 2.4, run: () => petFox(1) },
-  { id: "ushi", label: "🐂 撫で牛を撫でる", at: [27, 22.4], r: 2.8, run: () => nadeUshi() },
-  { id: "enito", label: "💞 赤い糸に願う", at: [-27, 21.6], r: 2.8, run: () => akaiIto() },
+  { id: "ushi", label: "🐂 撫で牛を撫でる", at: [28.6, 21.9], r: 2.8, run: () => nadeUshi() },
+  { id: "enito", label: "💞 赤い糸に願う", at: [-28.6, 21.9], r: 2.8, run: () => akaiIto() },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
   { id: "toro", label: "🏮 灯籠を流す", at: [2, -71.5], r: 5, run: () => toroNagashi() },
   { id: "seiza_tosen", label: "🙇 正座して祈る", box: [-9, -4.5, 9, 8.3], run: () => seiza("tosen") },
-  { id: "seiza_en", label: "🙇 正座して祈る", box: [-35.7, 9.4, -26.3, 15.9], run: () => seiza("enmusubi") },
-  { id: "seiza_go", label: "🙇 正座して祈る", box: [26.3, 9.4, 35.7, 15.9], run: () => seiza("gokaku") },
+  { id: "seiza_en", label: "🙇 正座して祈る", box: [-SMALL.X - SMALL.W / 2, SMALL.Z - SMALL.D / 2, -SMALL.X + SMALL.W / 2, SMALL.Z + SMALL.D / 2], run: () => seiza("enmusubi") },
+  { id: "seiza_go", label: "🙇 正座して祈る", box: [SMALL.X - SMALL.W / 2, SMALL.Z - SMALL.D / 2, SMALL.X + SMALL.W / 2, SMALL.Z + SMALL.D / 2], run: () => seiza("gokaku") },
 ];
 let curAct = null;
 function currentAction() {
@@ -279,8 +279,8 @@ const temizu = () => doing(async () => {
 // ------------------------------------------------------------------ お参り（賽銭→鈴→二礼二拍手一礼）
 const SHRINES = {
   tosen: { stand: [0, 13.6], bell: () => W.suzu, place: "honden" },
-  enmusubi: { stand: [-31, 19.1], bell: () => W.smallSaisen.enmusubi, place: "enmusubi" },
-  gokaku: { stand: [31, 19.1], bell: () => W.smallSaisen.gokaku, place: "gokaku" },
+  enmusubi: { stand: PLACES.enmusubi.stand, bell: () => W.smallSaisen.enmusubi, place: "enmusubi" },
+  gokaku: { stand: PLACES.gokaku.stand, bell: () => W.smallSaisen.gokaku, place: "gokaku" },
   okunoin: { stand: [-2, -73.4], bell: () => null, place: "okunoin" },
 };
 const COINS = [
@@ -329,10 +329,10 @@ const seiza = (hid) => doing(async () => {
   const cs = W.cushions[hid], taken = new Set([...others.values()].map((o) => `${Math.round(o.to.x)},${Math.round(o.to.z)}`));
   const free = cs.filter(([x, z]) => !taken.has(`${Math.round(x)},${Math.round(z)}`)); const [cx, cz] = pick(free.length ? free : cs);
   await new Promise((r) => {
-    const x = me.position.x, z = me.position.z, inside = hid === "tosen" ? z < 8.3 : z < 15.9;
+    const x = me.position.x, z = me.position.z, inside = hid === "tosen" ? z < 8.3 : z < SMALL.Z + SMALL.D / 2;
     if (inside) return walkTo([cx, cz], r);
     if (hid === "tosen") { path = [[2.7, 14.0], [2.7, 11.3], [0.8, 10.2], [0, 7.6], [cx * 0.4, 6.0], [cx, cz]]; onArrive = r; speedMul = 1; }
-    else { const hx = hid === "enmusubi" ? -31 : 31; path = [[hx, 19.2], [hx + 1.55, 19.2], [hx + 1.55, 16.3], [hx, 15.0], [cx, cz]]; onArrive = r; speedMul = 1; }
+    else { const hx = hid === "enmusubi" ? -SMALL.X : SMALL.X, sz = SMALL.standZ, fz = SMALL.Z + SMALL.D / 2; path = [[hx, sz], [hx + 1.65, sz], [hx + 1.65, fz + 1.2], [hx, fz - 1.4], [cx, cz]]; onArrive = r; speedMul = 1; }
   });
   me.rotation.y = Math.PI;
   setPose(me, "seiza"); await wait(500);

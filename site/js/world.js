@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030948";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030948";
-import { FOLIAGE } from "./env.js?v=11030948";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031015";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL } from "./map.js?v=11031015";
+import { FOLIAGE } from "./env.js?v=11031015";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -34,8 +34,7 @@ export function buildWorld(scene, env, { mobile }) {
   for (let z = 82; z > 43; z -= 1.05) for (let x = -2; x <= 2; x += 1.02) pave.push([x + sr(-0.04, 0.04), z + sr(-0.04, 0.04), 0.98, 0.98]);
   for (let z = 39; z > 9; z -= 1.05) for (let x = -2; x <= 2; x += 1.02) pave.push([x, z, 0.98, 0.98]);                       // 楼門から本殿
   for (let x = 2.5; x < 10.6; x += 1.05) for (const z of [53.5, 54.5]) pave.push([x, z, 0.98, 0.98]);                        // 池へ
-  for (let x = -24; x > -31.5; x -= 1.05) for (const z of [16.5, 17.5]) pave.push([x, z, 0.98, 0.98]);
-  for (let x = 24; x < 31.5; x += 1.05) for (const z of [16.5, 17.5]) pave.push([x, z, 0.98, 0.98]);
+  for (const sgn of [-1, 1]) for (let x = 24; x < SMALL.X + 0.6; x += 1.05) for (const z of [19.3, 20.3]) pave.push([sgn * x, z, 0.98, 0.98]);   // 縁結び・合格への石畳
   const paveI = new THREE.InstancedMesh(stoneGeo, MAT.stone, pave.length); const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
   pave.forEach(([x, z, w, d], i) => { q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), sr(-0.04, 0.04)); m4.compose(v.set(x, 0.06, z), q, sc.set(w, 1, d)); paveI.setMatrixAt(i, m4); });
   paveI.receiveShadow = true; scene.add(paveI);
@@ -119,8 +118,8 @@ export function buildWorld(scene, env, { mobile }) {
   for (const x of [-12, 12]) for (const z of [24, 34]) W.lamps.push(toro(scene, x, z, 0, env));
 
   // ---------------------------------------------------------------- ⑨ 縁結びの社 ⑩ 合格の社
-  const en = smallHall(scene, env, { x: PLACES.enmusubi.pos[0], z: PLACES.enmusubi.pos[1], roofMat: new THREE.MeshStandardMaterial({ color: 0x6a3a52, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0xc23a5a }), theme: "en" });
-  const go = smallHall(scene, env, { x: PLACES.gokaku.pos[0], z: PLACES.gokaku.pos[1], roofMat: new THREE.MeshStandardMaterial({ color: 0x2c3a5a, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0x2c4a8a }), theme: "go" });
+  const en = smallHall(scene, env, { x: PLACES.enmusubi.pos[0], z: PLACES.enmusubi.pos[1], W: SMALL.W, D: SMALL.D, F: SMALL.F, roofMat: new THREE.MeshStandardMaterial({ color: 0x6a3a52, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0xc23a5a }), theme: "en", crest: 0xf3a6b8 });
+  const go = smallHall(scene, env, { x: PLACES.gokaku.pos[0], z: PLACES.gokaku.pos[1], W: SMALL.W, D: SMALL.D, F: SMALL.F, roofMat: new THREE.MeshStandardMaterial({ color: 0x2c3a5a, roughness: 0.6 }), zabMat: new THREE.MeshStandardMaterial({ color: 0x2c4a8a }), theme: "go", crest: 0xf6d36b });
   W.cushions.enmusubi = en.cushions; W.cushions.gokaku = go.cushions; W.altars.enmusubi = en.altar; W.altars.gokaku = go.altar;
   // 本殿の中の座布団
   const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0x8b2c3a });
@@ -128,31 +127,31 @@ export function buildWorld(scene, env, { mobile }) {
   W.cushions.tosen = hdC; W.altars.tosen = [0, -2.6];
   // 縁結び・合格の賽銭箱と鈴
   W.smallSaisen = {};
-  for (const [hid, hx] of [["enmusubi", -31], ["gokaku", 31]]) {
-    const sb = new THREE.Group(); sb.position.set(hx, 0, 17.9); scene.add(sb);
+  for (const [hid, hx] of [["enmusubi", -SMALL.X], ["gokaku", SMALL.X]]) {
+    const sb = new THREE.Group(); sb.position.set(hx, 0, SMALL.saisenZ); scene.add(sb);
     box(sb, 2.2, 0.8, 0.9, MAT.wood, 0, 0.4, 0); for (let i = -5; i <= 5; i++) box(sb, 0.05, 0.05, 0.85, MAT.kuro, i * 0.19, 0.82, 0, false);
     box(sb, 1.8, 0.24, 0.05, MAT.gold, 0, 0.45, 0.46, false);
-    const sz = new THREE.Group(); sz.position.set(hx, 3.7, 16.9); scene.add(sz);
+    const sz = new THREE.Group(); sz.position.set(hx, SMALL.F + 3.1, SMALL.saisenZ - 0.3); scene.add(sz);
     const bl = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), MAT.gold); bl.position.y = -0.3; sz.add(bl);
     const rp = new THREE.Group(); sz.add(rp);
     for (const [cc, dx] of [[0xd9412b, -0.06], [0xf4f1ea, 0], [hid === "enmusubi" ? 0xe86aa0 : 0x3b6db0, 0.06]]) cyl(rp, 0.04, 0.04, 2.6, new THREE.MeshStandardMaterial({ color: cc }), dx, -1.6, 0, 8, false);
     W.smallSaisen[hid] = { box: sb, bell: bl, rope: rp };
   }
   // 赤い糸の結び木（縁結び）・撫で牛（合格）
-  const enTree = new THREE.Group(); enTree.position.set(-24.5 - 4, 0, 20.5); enTree.userData.static = true; scene.add(enTree);
+  const enTree = new THREE.Group(); enTree.position.set(-29.5, 0, 23.8); enTree.userData.static = true; scene.add(enTree);
   cyl(enTree, 0.5, 0.7, 3.4, new THREE.MeshStandardMaterial({ color: 0x4a3426 }), 0, 1.7, 0, 10);
   const enRope = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.08, 8, 24), MAT.rope); enRope.rotation.x = Math.PI / 2; enRope.position.y = 1.6; enTree.add(enRope);
   const threadM = new THREE.MeshStandardMaterial({ color: 0xd61f3a, emissive: 0x700010, emissiveIntensity: 0.6 });
   for (let i = 0; i < 18; i++) cyl(enTree, 0.012, 0.012, sr(0.5, 1.2), threadM, sr(-1.3, 1.3), sr(2.4, 3.1), sr(-1.3, 1.3), 4, false);
   W.enTree = enTree;
-  const ushi = new THREE.Group(); ushi.position.set(28, 0, 21); ushi.rotation.y = -0.5; scene.add(ushi);
+  const ushi = new THREE.Group(); ushi.position.set(29.5, 0, 23.8); ushi.rotation.y = 0.4; scene.add(ushi);
   box(ushi, 2.0, 0.55, 1.1, MAT.stoneD, 0, 0.27, 0);
   const bronze = new THREE.MeshStandardMaterial({ color: 0x5b4a32, metalness: 0.6, roughness: 0.45 });
   const ub = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 1.0, 6, 12), bronze); ub.rotation.z = Math.PI / 2; ub.position.y = 0.95; ub.castShadow = true; ushi.add(ub);
   const uh = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), new THREE.MeshStandardMaterial({ color: 0x9a7a4a, metalness: 0.75, roughness: 0.3 })); uh.position.set(0.85, 1.05, 0); uh.scale.set(1.1, 0.9, 0.9); ushi.add(uh);  // 撫でられて光る頭
   for (const s of [-1, 1]) { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.28, 8), bronze); horn.rotation.z = -0.5; horn.position.set(0.9, 1.35, s * 0.2); ushi.add(horn); }
   W.ushi = ushi;
-  for (const s of [-1, 1]) for (const z of [8, 22]) W.lamps.push(toro(scene, s * 26.5, z, 0, env, 0.9));
+  for (const s of [-1, 1]) for (const [x, z] of [[41.5, 21], [41.5, 7]]) W.lamps.push(toro(scene, s * x, z, 0, env, 0.9));
 
   // ---------------------------------------------------------------- ⑪ 千本鳥居（山道）— InstancedMesh
   const trailPts = TRAIL.getSpacedPoints(160);
@@ -198,8 +197,8 @@ export function buildWorld(scene, env, { mobile }) {
 
   // ---------------------------------------------------------------- 木々（InstancedMesh：幹＋葉）
   const trees = { momiji: [], sakura: [], ume: [], sugi: [] };
-  const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中に木が生えないように
-  const add = (k, x, z, s = 1) => { if (!halls.some(([hx, hz]) => Math.abs(x - hx) < 8 && Math.abs(z - hz) < 6.5)) trees[k].push([x, z, s]); };
+  const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中と正面の広場に木が生えないように
+  const add = (k, x, z, s = 1) => { if (!halls.some(([hx, hz]) => Math.abs(x - hx) < SMALL.W / 2 + 2.5 && z > hz - SMALL.D / 2 - 2.5 && z < 26.5)) trees[k].push([x, z, s]); };
   for (let z = 74; z > 45; z -= 3.2) for (const sgn of [-1, 1]) add("momiji", sgn * sr(7.5, 11), z + sr(-1, 1), sr(0.9, 1.3));        // 参道の紅葉
   for (let i = 0; i < 40; i++) { const x = sr(-40, -8), z = sr(46, 84); if (Math.abs(x) > 7.5) add("momiji", x, z, sr(0.9, 1.4)); }
   for (let i = 0; i < 30; i++) { const x = sr(30, 44), z = sr(44, 84); add("momiji", x, z, sr(0.9, 1.4)); }

@@ -244,62 +244,100 @@ function emaWall(g, x, z0, z1, y, side, colors) {
 }
 
 // ------------------------------------------------------------------ 小さな社（縁結び・合格）— 中に入れる
-export function smallHall(parent, env, { x, z, roofMat = MAT.copper, zabMat, theme }) {
+export function smallHall(parent, env, { x, z, W = 13, D = 10, F = 0.6, roofMat = MAT.copper, zabMat, theme, crest = 0xffffff }) {
   const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
-  const W = 10, D = 7, F = 0.45;
-  box(g, W + 1, F, D + 1, MAT.stoneD, 0, F / 2, 0);
-  for (let i = 0; i < 2; i++) box(g, 3.4, 0.22, 0.5, MAT.stoneL, 0, 0.11 + i * 0.22, D / 2 + 0.9 - i * 0.45);
+  const fz = D / 2;                                                                  // 正面の柱の線
+  // 基壇・正面の階段（三段）
+  box(g, W + 1.2, F, D + 1.2, MAT.stoneD, 0, F / 2, 0);
+  box(g, W + 1.5, 0.12, D + 1.5, MAT.stoneL, 0, 0.06, 0);
+  for (let i = 0; i < 3; i++) box(g, 4.4, F / 3, 0.45, MAT.stoneL, 0, (F / 3) * (i + 0.5), fz + 1.25 - i * 0.42);
   box(g, W, 0.06, D, MAT.tatami, 0, F + 0.03, 0);
-  for (const cx of [-W / 2, -1.6, 1.6, W / 2]) for (const cz of [-D / 2, D / 2]) cyl(g, 0.17, 0.17, 3.4, MAT.shu, cx, F + 1.7, cz, 12);
-  box(g, W, 3.2, 0.16, MAT.woodL, 0, F + 1.6, -D / 2 + 0.05);
-  for (const s of [-1, 1]) box(g, 0.16, 3.2, D, MAT.woodL, s * (W / 2 - 0.05), F + 1.6, 0);
-  for (const cx of [-3, 0, 3]) box(g, 2.4, 2.3, 0.05, MAT.shoji, cx, F + 1.6, -D / 2 + 0.16, false);
-  box(g, W + 0.4, 0.28, D + 0.4, MAT.shuD, 0, F + 3.45, 0);
-  roof(g, { w: W + 3, d: D + 3.4, h: 2.6, lift: 0.45, y: F + 3.6, mat: roofMat });
-  // 祭壇：神鏡・榊・灯明
-  box(g, 2.8, 0.85, 0.8, MAT.wood, 0, F + 0.43, -D / 2 + 0.8);
-  const mir = cyl(g, 0.45, 0.45, 0.06, new THREE.MeshStandardMaterial({ color: 0xe8eef5, metalness: 1, roughness: 0.08 }), 0, F + 1.4, -D / 2 + 0.8, 32); mir.rotation.x = Math.PI / 2;
-  for (const s of [-1, 1]) { cyl(g, 0.06, 0.08, 0.5, MAT.white, s * 1.05, F + 1.1, -D / 2 + 0.8, 8);
-    for (let k = 0; k < 4; k++) { const l = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6), std(0x2f5a2e)); l.scale.set(1, 0.6, 0.6); l.position.set(s * 1.05, F + 1.4 + k * 0.1, -D / 2 + 0.8); g.add(l); } }
-  lightSpot(g, F + 2.4, 9, 12, 0xffb36b);
-  // 座布団 3列×4
+  box(g, W + 0.6, 0.1, 0.9, MAT.wood, 0, F + 0.02, fz + 0.15);                    // 縁側
+  // 柱・壁・障子
+  const colX = [-W / 2, -W / 4, -2.2, 2.2, W / 4, W / 2];
+  for (const cx of colX) for (const cz of [-fz, fz]) cyl(g, 0.2, 0.2, 3.6, MAT.shu, cx, F + 1.8, cz, 14);
+  for (const cz of [-fz / 3, fz / 3]) for (const s of [-1, 1]) cyl(g, 0.2, 0.2, 3.6, MAT.shu, s * W / 2, F + 1.8, cz, 14);
+  box(g, W, 3.4, 0.16, MAT.woodL, 0, F + 1.7, -fz + 0.05);
+  for (const s of [-1, 1]) box(g, 0.16, 3.4, D, MAT.woodL, s * (W / 2 - 0.05), F + 1.7, 0);
+  for (const cx of [-4.2, -1.4, 1.4, 4.2]) box(g, 2.4, 2.4, 0.05, MAT.shoji, cx, F + 1.7, -fz + 0.16, false);
+  for (const s of [-1, 1]) for (const cz of [-2.2, 2.2]) box(g, 0.05, 2.2, 2.2, MAT.shoji, s * (W / 2 - 0.16), F + 1.7, cz, false);
+  // 頭貫・欄間（金の線）
+  box(g, W + 0.5, 0.32, D + 0.5, MAT.shuD, 0, F + 3.7, 0);
+  for (const zz of [-fz - 0.27, fz + 0.27]) box(g, W + 0.5, 0.07, 0.04, MAT.gold, 0, F + 3.62, zz, false);
+  // 高欄（正面の左右）
+  for (const s of [-1, 1]) {
+    const cx = s * (2.2 + (W / 2 - 2.2) / 2), w = W / 2 - 2.2;
+    box(g, w, 0.08, 0.1, MAT.shu, cx, F + 0.75, fz + 0.55); box(g, w, 0.06, 0.08, MAT.shu, cx, F + 0.4, fz + 0.55, false);
+    for (let k = 0; k <= 4; k++) cyl(g, 0.05, 0.05, 0.75, MAT.shu, s * (2.2 + (w * k) / 4), F + 0.38, fz + 0.55, 6, false);
+    box(g, 0.08, 0.75, 0.9, MAT.shu, s * W / 2, F + 0.38, fz + 0.15, false);
+  }
+  // 幕（紫地に白い紋）：正面の梁から
+  const cv = document.createElement("canvas"); cv.width = 512; cv.height = 64; const c2 = cv.getContext("2d");
+  c2.fillStyle = "#4a2a6a"; c2.fillRect(0, 0, 512, 64);
+  for (let i = 0; i < 4; i++) { const cx = 64 + i * 128; c2.fillStyle = "#" + crest.toString(16).padStart(6, "0"); c2.beginPath(); c2.arc(cx, 32, 20, 0, Math.PI * 2); c2.fill(); c2.fillStyle = "#4a2a6a"; c2.beginPath(); c2.arc(cx, 32, 12, 0, Math.PI * 2); c2.fill(); c2.fillStyle = "#" + crest.toString(16).padStart(6, "0"); c2.beginPath(); c2.arc(cx, 32, 6, 0, Math.PI * 2); c2.fill(); }
+  const mt = new THREE.CanvasTexture(cv); mt.colorSpace = THREE.SRGBColorSpace;
+  const maku = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.55), new THREE.MeshStandardMaterial({ map: mt, roughness: 0.9, side: THREE.DoubleSide }));
+  maku.position.set(0, F + 3.3, fz + 0.3); g.add(maku);
+  // 大屋根
+  roof(g, { w: W + 3, d: D + 3.6, h: 3.0, lift: 0.5, y: F + 3.85, mat: roofMat });
+  // 向拝（正面に張り出す屋根と二本の柱）
+  for (const s of [-1, 1]) cyl(g, 0.2, 0.2, 3.3, MAT.shu, s * 2.2, F / 2 + 1.5, fz + 2.6, 14);
+  box(g, 5.0, 0.26, 0.3, MAT.shuD, 0, F + 3.15, fz + 2.6);
+  roof(g, { w: 6.2, d: 3.4, h: 1.0, lift: 0.4, y: F + 3.25, z: fz + 2.2, mat: roofMat, ridgeGold: false });
+  box(g, 1.1, 0.75, 0.08, MAT.kuro, 0, F + 2.8, fz + 2.78);                       // 扁額
+  // しめ縄と紙垂
+  const rope = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.13, 8, 32, Math.PI), MAT.rope); rope.rotation.z = Math.PI; rope.scale.y = 0.18; rope.position.set(0, F + 3.0, fz + 2.75); g.add(rope);
+  for (const xx of [-1.3, -0.45, 0.45, 1.3]) box(g, 0.18, 0.46, 0.02, MAT.paperW, xx, F + 2.5, fz + 2.8, false);
+  // 祭壇：二段の壇・神鏡・榊・灯明
+  const ab = -fz + 0.9;
+  box(g, 4.2, 0.5, 1.4, MAT.woodD, 0, F + 0.25, ab + 0.2);
+  box(g, 3.0, 0.5, 0.9, MAT.wood, 0, F + 0.75, ab);
+  box(g, 4.2, 0.05, 0.05, MAT.gold, 0, F + 0.5, ab + 0.9, false);
+  const mir = cyl(g, 0.5, 0.5, 0.06, new THREE.MeshStandardMaterial({ color: 0xe8eef5, metalness: 1, roughness: 0.08 }), 0, F + 1.75, ab, 32); mir.rotation.x = Math.PI / 2;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.53, 0.04, 8, 32), MAT.gold); rim.position.set(0, F + 1.75, ab + 0.04); g.add(rim);
+  const sakM = std(0x2f5a2e);
+  for (const s of [-1, 1]) { cyl(g, 0.06, 0.08, 0.5, MAT.white, s * 1.15, F + 1.25, ab, 8);
+    for (let k = 0; k < 5; k++) { const l = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6), sakM); l.scale.set(1, 0.6, 0.6); l.position.set(s * 1.15, F + 1.55 + k * 0.1, ab); g.add(l); }
+    for (const dx of [0.3, 0.55]) { cyl(g, 0.05, 0.06, 0.2, MAT.kuro, s * (1.5 + dx), F + 0.6, ab + 0.65, 8, false); cyl(g, 0.03, 0.03, 0.08, lampMat(0xfff4d8, 0xffb050, 3), s * (1.5 + dx), F + 0.74, ab + 0.65, 6, false); }
+  }
+  lightSpot(g, F + 2.6, 10, 14, 0xffb36b);
+  // 座布団 4列×5
   const cushions = [];
-  for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { const cx = -2.7 + c * 1.8, cz = -0.5 + r * 1.35; box(g, 0.85, 0.12, 0.85, zabMat, cx, F + 0.1, cz); cushions.push([x + cx, z + cz]); }
-  const rope = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.15, 8, 32, Math.PI), MAT.rope); rope.rotation.z = Math.PI; rope.scale.y = 0.16; rope.position.set(0, F + 3.2, D / 2 + 0.1); g.add(rope);
-  chochin(g, -4, F + 2.7, D / 2 + 0.5, env, 0.9); chochin(g, 4, F + 2.7, D / 2 + 0.5, env, 0.9);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) { const cx = -3.6 + c * 1.8, cz = -1.6 + r * 1.45; box(g, 0.85, 0.12, 0.85, zabMat, cx, F + 0.1, cz); cushions.push([x + cx, z + cz]); }
+  for (const s of [-1, 1]) chochin(g, s * 3.6, F + 2.6, fz + 1.4, env, 0.95);
   smallHallInterior(g, theme, W, D, F);
-  return { group: g, cushions, floor: { x0: x - W / 2 + 0.3, x1: x + W / 2 - 0.3, z0: z - D / 2 + 1.2, z1: z + D / 2 + 0.3, y: F + 0.06 }, altar: [x, z - D / 2 + 1.5] };
+  return { group: g, cushions, altar: [x, z - fz + 1.6] };
 }
 
 // 小さな社の内装：共通（御簾・御幣・釣灯籠・絵馬掛け）＋社ごとの飾り
 function smallHallInterior(g, theme, W, D, F) {
   const zb = -D / 2, xw = W / 2 - 0.13;
   // 御簾（祭壇の上）
-  const misu = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.5), misuMat(4)); misu.position.set(0, F + 2.95, zb + 1.35); g.add(misu);
-  box(g, 4.5, 0.1, 0.1, MAT.kuro, 0, F + 3.22, zb + 1.35, false);
+  const misu = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 0.5), misuMat(5)); misu.position.set(0, F + 2.95, zb + 1.9); g.add(misu);
+  box(g, 5.3, 0.1, 0.1, MAT.kuro, 0, F + 3.22, zb + 1.9, false);
   // 御幣（祭壇の両端）
   for (const s of [-1, 1]) {
-    cyl(g, 0.03, 0.03, 1.1, MAT.woodL, s * 0.75, F + 1.4, zb + 0.95, 6, false);
-    for (let k = 0; k < 4; k++) { const p = box(g, 0.15, 0.24, 0.02, k % 2 ? MAT.paperW : MAT.gold, s * 0.75 + (k % 2 ? 0.08 : -0.08), F + 1.88 - k * 0.2, zb + 0.95, false); p.rotation.z = (k % 2 ? 1 : -1) * 0.25; }
+    cyl(g, 0.03, 0.03, 1.1, MAT.woodL, s * 0.75, F + 1.55, zb + 0.95, 6, false);
+    for (let k = 0; k < 4; k++) { const p = box(g, 0.15, 0.24, 0.02, k % 2 ? MAT.paperW : MAT.gold, s * 0.75 + (k % 2 ? 0.08 : -0.08), F + 2.03 - k * 0.2, zb + 0.95, false); p.rotation.z = (k % 2 ? 1 : -1) * 0.25; }
   }
   // 釣灯籠（正面の軒）
-  for (const cx of [-2.6, 2.6]) tsuriDoro(g, cx, F + 3.3, D / 2 - 0.05, 0.8);
+  for (const cx of [-W / 4, W / 4]) tsuriDoro(g, cx, F + 3.5, D / 2 - 0.05, 0.8);
   if (theme === "en") {
     // 赤い糸：天井を渡る三本の糸
     const threadM = std(0xd61f3a, { emissive: 0x900018, emissiveIntensity: 0.7, roughness: 0.6 });
-    for (const [zz, sag] of [[-1.2, 0.35], [0.4, 0.5], [2.0, 0.3]]) {
-      const pts = []; for (let i = 0; i <= 20; i++) { const t = i / 20; pts.push(new THREE.Vector3(-xw + t * 2 * xw, F + 3.1 - Math.sin(t * Math.PI) * sag, zz + Math.sin(t * 9) * 0.06)); }
+    for (const [zz, sag] of [[-2.0, 0.35], [0.5, 0.5], [3.0, 0.3]]) {
+      const pts = []; for (let i = 0; i <= 20; i++) { const t = i / 20; pts.push(new THREE.Vector3(-xw + t * 2 * xw, F + 3.3 - Math.sin(t * Math.PI) * sag, zz + Math.sin(t * 9) * 0.06)); }
       g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.015, 4, false), threadM));
     }
     // 猪目（ハート）の板：祭壇の上
     const hs = new THREE.Shape(); hs.moveTo(0, -0.22); hs.bezierCurveTo(-0.3, 0, -0.26, 0.24, 0, 0.12); hs.bezierCurveTo(0.26, 0.24, 0.3, 0, 0, -0.22);
-    box(g, 0.9, 0.62, 0.06, MAT.woodL, 0, F + 2.35, zb + 0.2);
+    box(g, 0.9, 0.62, 0.06, MAT.woodL, 0, F + 2.4, zb + 0.2);
     const heart = new THREE.Mesh(new THREE.ExtrudeGeometry(hs, { depth: 0.03, bevelEnabled: false }), std(0xd8436a, { emissive: 0x5a0a20, emissiveIntensity: 0.4 }));
-    heart.position.set(0, F + 2.35, zb + 0.24); g.add(heart);
+    heart.position.set(0, F + 2.4, zb + 0.24); g.add(heart);
     // 千羽鶴（右の奥）
     const craneG = new THREE.OctahedronGeometry(0.06, 0), cols = [0xe64a6a, 0xf3a6b8, 0xf6d36b, 0x8ac6e8, 0xb48ae0, 0xffffff, 0x6fc28a];
     for (let k = 0; k < 7; k++) {
-      const cx = 3.4 + (k % 4) * 0.28, cz = zb + 0.45 + Math.floor(k / 4) * 0.3;
+      const cx = xw - 1.8 + (k % 4) * 0.28, cz = zb + 0.45 + Math.floor(k / 4) * 0.3;
       cyl(g, 0.004, 0.004, 1.6, MAT.paperW, cx, F + 2.35, cz, 3, false);
       const m = std(cols[k], { roughness: 0.8 });
       for (let j = 0; j < 12; j++) { const c = new THREE.Mesh(craneG, m); c.scale.set(1.4, 0.6, 1); c.rotation.y = j * 0.7; c.position.set(cx, F + 3.05 - j * 0.12, cz); g.add(c); }
@@ -307,18 +345,18 @@ function smallHallInterior(g, theme, W, D, F) {
     }
     // 夫婦石（左の奥）としめ縄
     const stM = std(0x8a857c, { roughness: 0.95, flatShading: true });
-    for (const [cx, r] of [[-4.1, 0.42], [-3.3, 0.34]]) { const st = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), stM); st.scale.y = 1.3; st.position.set(cx, F + r * 1.2, zb + 0.8); st.castShadow = true; g.add(st); }
-    const sm = cyl(g, 0.04, 0.04, 0.95, MAT.rope, -3.7, F + 0.75, zb + 0.8, 8, false); sm.rotation.z = Math.PI / 2;
-    for (const xx of [-3.85, -3.55]) box(g, 0.08, 0.2, 0.01, MAT.paperW, xx, F + 0.6, zb + 0.85, false);
+    for (const [cx, r] of [[-xw + 1.6, 0.42], [-xw + 2.4, 0.34]]) { const st = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), stM); st.scale.y = 1.3; st.position.set(cx, F + r * 1.2, zb + 0.8); st.castShadow = true; g.add(st); }
+    const sm = cyl(g, 0.04, 0.04, 0.95, MAT.rope, -xw + 2.0, F + 0.75, zb + 0.8, 8, false); sm.rotation.z = Math.PI / 2;
+    for (const xx of [-xw + 1.85, -xw + 2.15]) box(g, 0.08, 0.2, 0.01, MAT.paperW, xx, F + 0.6, zb + 0.85, false);
     // 桃色の絵馬（左右の壁）
-    for (const s of [-1, 1]) emaWall(g, s * xw, -1.6, 2.2, F + 1.9, s, [0xf3a6b8, 0xe64a6a, 0xffd6e0]);
+    for (const s of [-1, 1]) emaWall(g, s * xw, -2.2, 3.6, F + 1.9, s, [0xf3a6b8, 0xe64a6a, 0xffd6e0]);
   } else if (theme === "go") {
     // 掛け軸（左右の壁）
-    kakejiku(g, "合格祈願", -xw + 0.03, F + 1.95, -1.4, Math.PI / 2);
-    kakejiku(g, "学業成就", xw - 0.03, F + 1.95, -1.4, -Math.PI / 2, "#2c4a8a");
+    kakejiku(g, "合格祈願", -xw + 0.03, F + 1.95, -2.6, Math.PI / 2);
+    kakejiku(g, "学業成就", xw - 0.03, F + 1.95, -2.6, -Math.PI / 2, "#2c4a8a");
     // 撫で牛（左の奥）：頭だけ金色に光る＝みんなに撫でられた跡
     const ox = std(0x2a2622, { metalness: 0.55, roughness: 0.4 }), nade = std(0x8a6a3a, { metalness: 0.85, roughness: 0.25 });
-    const cow = new THREE.Group(); cow.position.set(-3.7, F, zb + 0.95); cow.rotation.y = 0.5; g.add(cow);
+    const cow = new THREE.Group(); cow.position.set(-xw + 1.9, F, zb + 0.95); cow.rotation.y = 0.5; g.add(cow);
     box(cow, 1.4, 0.18, 0.8, MAT.stone, 0, 0.09, 0);
     const bd = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 12), ox); bd.scale.set(1.35, 0.7, 0.8); bd.position.set(0, 0.48, 0); cow.add(bd);
     const hd = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), nade); hd.scale.set(1.2, 0.95, 0.9); hd.position.set(0.62, 0.62, 0.05); cow.add(hd);
@@ -326,7 +364,7 @@ function smallHallInterior(g, theme, W, D, F) {
     const apron = box(cow, 0.5, 0.02, 0.5, std(0xb8321e, { roughness: 0.8 }), -0.1, 0.83, 0, false); apron.rotation.y = 0.3;
     cow.traverse((o) => o.isMesh && (o.castShadow = true));
     // 文机：硯・筆・梅の一枝（右の奥）
-    const dx0 = 3.9, dz0 = zb + 0.75;
+    const dx0 = xw - 1.6, dz0 = zb + 0.75;
     box(g, 1.3, 0.06, 0.6, MAT.woodD, dx0, F + 0.42, dz0);
     for (const [dx, dz] of [[-0.58, -0.24], [0.58, -0.24], [-0.58, 0.24], [0.58, 0.24]]) box(g, 0.05, 0.4, 0.05, MAT.woodD, dx0 + dx, F + 0.2, dz0 + dz);
     box(g, 0.3, 0.04, 0.42, MAT.kuro, dx0 - 0.35, F + 0.47, dz0, false);
@@ -340,16 +378,16 @@ function smallHallInterior(g, theme, W, D, F) {
       for (let j = 1; j <= 3; j++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), ume); f.position.set(bx - Math.sin(rz) * j * 0.15, F + 0.75 + Math.cos(rz) * j * 0.15, dz0 - 0.2 + (j % 2 ? 0.03 : -0.03)); g.add(f); }
     }
     // だるま（祭壇の脇の棚）：片目だけ入れてある
-    box(g, 1.2, 0.05, 0.4, MAT.woodL, -2.3, F + 0.9, zb + 0.35);
+    box(g, 1.2, 0.05, 0.4, MAT.woodL, -2.9, F + 0.9, zb + 0.35);
     const red = std(0xc8281e, { roughness: 0.45 }), face = std(0xf6efe2);
     for (const [k, sc] of [[0, 1.2], [1, 1], [2, 0.8]]) {
-      const cx = -2.7 + k * 0.4, r = 0.15 * sc, cy = F + 0.925 + r * 1.15;
+      const cx = -3.3 + k * 0.4, r = 0.15 * sc, cy = F + 0.925 + r * 1.15;
       const dm = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), red); dm.scale.y = 1.15; dm.position.set(cx, cy, zb + 0.35); g.add(dm);
       const fc = new THREE.Mesh(new THREE.CircleGeometry(r * 0.55, 14), face); fc.position.set(cx, cy + r * 0.15, zb + 0.35 + r * 0.97); g.add(fc);
       const eye = new THREE.Mesh(new THREE.CircleGeometry(r * 0.12, 8), MAT.kuro); eye.position.set(cx - r * 0.2, cy + r * 0.28, zb + 0.35 + r * 0.98); g.add(eye);
     }
     // 青い絵馬（壁ぞい）
-    for (const s of [-1, 1]) emaWall(g, s * xw, -0.3, 2.4, F + 1.9, s, [0x8ac6e8, 0x2c4a8a, 0xf6d36b]);
+    for (const s of [-1, 1]) emaWall(g, s * xw, -0.8, 3.6, F + 1.9, s, [0x8ac6e8, 0x2c4a8a, 0xf6d36b]);
   }
 }
 
