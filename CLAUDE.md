@@ -29,6 +29,8 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 - The honden is scaled ×1.3 and moved back (`HONDEN`, `hw()` in map.js convert the old honden coordinates). kito.js puts its props in a group `H` that follows the honden, so it still uses the old local numbers.
 - AI art lives in `site/img/gen/` (tenjo ceiling, matsu pine, tsuru cranes, ume moon, washi UI paper). `artMat(name, repeat)` in arch.js loads one as a material.
 
+- Music: `site/audio/bgm.json` lists Suno tracks for day and night (keidai.mp3 = 境内の調べ, tsukiyo.mp3 = 月夜の調べ, both 112 kbps). Made on the owner's Suno Pro account, so commercial use is allowed. If the files are missing, js/bgm.js falls back to generated koto/orin music.
+
 ## Rules
 - **Before every commit, run `python tools/bump.py`.** It adds `?v=` cache-busting to the relative imports. Without it, browsers keep serving stale modules.
 - Check JS syntax with `node --check site/js/*.js site/fx.js`, but always load the page too: node --check once missed a broken string literal that the browser rejected.

@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden } from "./map.js?v=11031321";
+import { HONDEN, inHonden } from "./map.js?v=11031340";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ

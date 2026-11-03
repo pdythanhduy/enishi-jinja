@@ -5,26 +5,26 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031321";
-import { buildWorld } from "./world.js?v=11031321";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031321";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031321";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031321";
-import { deeds } from "../deeds.js?v=11031321";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031321";
-import { fireflies } from "../fx.js?v=11031321";
-import { LIGHT_SPOTS } from "./arch.js?v=11031321";
-import { freeze } from "./freeze.js?v=11031321";
-import { makeBGM } from "./bgm.js?v=11031321";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031321";
-import { setupKenno } from "./kenno.js?v=11031321";
-import { setupSocial } from "./social.js?v=11031321";
-import { setupProfile } from "./profile.js?v=11031321";
-import { setupKito } from "./kito.js?v=11031321";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031321";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031321";
-import { connect, board } from "../net.js?v=11031321";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031321";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031340";
+import { buildWorld } from "./world.js?v=11031340";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031340";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031340";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031340";
+import { deeds } from "../deeds.js?v=11031340";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031340";
+import { fireflies } from "../fx.js?v=11031340";
+import { LIGHT_SPOTS } from "./arch.js?v=11031340";
+import { freeze } from "./freeze.js?v=11031340";
+import { makeBGM } from "./bgm.js?v=11031340";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031340";
+import { setupKenno } from "./kenno.js?v=11031340";
+import { setupSocial } from "./social.js?v=11031340";
+import { setupProfile } from "./profile.js?v=11031340";
+import { setupKito } from "./kito.js?v=11031340";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031340";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031340";
+import { connect, board } from "../net.js?v=11031340";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031340";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -188,7 +188,7 @@ addEventListener("pointerdown", () => { ac(); startAmb(); gestured = true; syncH
 // 音の設定：音楽・効果音・音量
 const sndPop = document.createElement("div"); sndPop.id = "snd-pop"; sndPop.hidden = true;
 sndPop.innerHTML = `<p class="kicker">音</p>
-  <label class="snd-row"><span>🎵 境内の音楽<small>琴・おりん・風鈴</small></span><input type="checkbox" id="snd-bgm"></label>
+  <label class="snd-row"><span>🎵 境内の音楽<small>昼は「境内の調べ」、夜は「月夜の調べ」</small></span><input type="checkbox" id="snd-bgm"></label>
   <label class="snd-row"><span>🔔 効果音<small>鈴・太鼓・環境音</small></span><input type="checkbox" id="snd-fx"></label>
   <label class="snd-vol"><span>音量</span><input type="range" id="snd-vol" min="0" max="100"></label>`;
 document.body.appendChild(sndPop);

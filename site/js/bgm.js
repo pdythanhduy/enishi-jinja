@@ -67,32 +67,44 @@ export function makeBGM(ac, { night = () => 0 } = {}) {
     else furin(t);
     timers.push(setTimeout(bells, 22000 + Math.random() * 22000));
   }
-  // 自作の曲があれば、そちらを流す
+  // 自作の曲（Suno など）があれば、そちらを流す。bgm.json は ["a.mp3", …] か { "day": [...], "night": [...] }
+  let lists = null;
   async function tryTracks() {
     try {
-      const list = await fetch("audio/bgm.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null));
-      if (!Array.isArray(list) || !list.length) return false;
-      let i = Math.floor(Math.random() * list.length);
-      track = new Audio(); track.crossOrigin = "anonymous"; track.volume = vol * 0.7;
-      const play = () => { track.src = "audio/" + list[i++ % list.length]; track.play().catch(() => {}); };
-      track.onended = play; play(); return true;
+      const j = await fetch("audio/bgm.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null));
+      lists = Array.isArray(j) ? { day: j, night: j } : j && (j.day || j.night) ? { day: j.day || j.night, night: j.night || j.day } : null;
+      if (!lists || !lists.day.length) return false;
+      track = new Audio(); track.preload = "auto"; track.volume = 0;
+      const play = () => {
+        const L = night() > 0.5 ? lists.night : lists.day;
+        track.src = "audio/" + L[Math.floor(Math.random() * L.length)]; track.play().catch(() => {});
+        fadeTo(vol * 0.75, 4000);
+      };
+      track.onended = play; play();
+      timers.push(setTimeout(bells, 20000));                                       // 曲の合間にも、おりんと風鈴をそっと
+      return true;
     } catch { return false; }
+  }
+  let fadeIv = null;
+  function fadeTo(v, ms) {
+    if (!track) return; clearInterval(fadeIv); const v0 = track.volume, t0 = performance.now();
+    fadeIv = setInterval(() => { if (!track) return clearInterval(fadeIv); const k = Math.min(1, (performance.now() - t0) / ms); track.volume = Math.max(0, Math.min(1, v0 + (v - v0) * k)); if (k >= 1) clearInterval(fadeIv); }, 60);
   }
   return {
     get on() { return on; },
     async start() {
       if (on) return; init(); on = true;
-      if (await tryTracks()) return;
       out.gain.setTargetAtTime(vol, a.currentTime, 1.5);
+      if (await tryTracks()) return;
       startPad(); timers.push(setTimeout(phrase, 1200)); timers.push(setTimeout(bells, 6000));
     },
     stop() {
       if (!on) return; on = false; timers.forEach(clearTimeout); timers = [];
-      if (track) { track.pause(); track = null; }
+      if (track) { const t = track; track = null; clearInterval(fadeIv); t.pause(); }
       if (a) { out.gain.setTargetAtTime(0, a.currentTime, 0.4); pad?.stop(); pad = null; }
     },
-    setVolume(v) { vol = v; if (track) track.volume = v * 0.7; if (a && on) out.gain.setTargetAtTime(v, a.currentTime, 0.2); },
-    duck(d) { if (a && on && !track) out.gain.setTargetAtTime(d ? vol * 0.25 : vol, a.currentTime, 0.8); if (track) track.volume = (d ? 0.25 : 1) * vol * 0.7; },
+    setVolume(v) { vol = v; if (track) fadeTo(v * 0.75, 200); if (a && on) out.gain.setTargetAtTime(v, a.currentTime, 0.2); },
+    duck(d) { if (a && on) out.gain.setTargetAtTime(d ? vol * 0.25 : vol, a.currentTime, 0.8); if (track) fadeTo((d ? 0.2 : 0.75) * vol, 1500); },
     rin: (f = 392) => { init(); rin(f, a.currentTime + 0.02, 0.06); },
   };
 }
