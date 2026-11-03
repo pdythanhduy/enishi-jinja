@@ -50,6 +50,12 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
     - Rewards: +5 徳 per 5 focus minutes; counts are kept in `enishi_pomo`.
     - Status is `🛶 屋形船で作業中` or `📖 書院で作業中`. Others with 🧘, 🛶 or 📖 statuses are shown seated (`poseBySt`). These statuses are cleared on reload.
     - Music channels (`bgm.setChannel`): lofi uses the bgm.json key `lofi`, keidai is the default, and nature silences the music and applies the mixer preset 雨と川.
+  - Inside a room:
+    - `body.in-room` hides the joystick, action bar, guide and own tag. The HUD starts collapsed (`.mini`) on phones.
+    - One-finger drag looks around (yaw ±1.25 rad, pitch).
+    - Seated people write during focus and sip tea during breaks (`life()`). Steam rises from the 書院 cups.
+    - Sleeping 三毛猫 lie on the 書院 engawa and the boat bow; tap one to make it purr.
+  - Sound: one 音量 slider sets the music and the effects (effects at ×0.7).
   - 楼門 has a raised base floor (0.56) with front and back steps.
   - Speech bubbles sit above the name tag and wrap.
   - `chores.js`: お手伝い mini-games, each with no timer, once a day, +3 徳 via `deedHook("chore")`.

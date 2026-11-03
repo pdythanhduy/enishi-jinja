@@ -2,8 +2,8 @@
 // ポモドーロは部屋で共通：日本時間の毎時 :00 と :30 に始まり、25分集中・5分休憩。休憩に入ると鈴が鳴り、みんなで一礼。
 // 部屋にいる人は頭の上に「🛶 屋形船で作業中」「📖 書院で作業中」と出て、正座で並ぶ。集中の5分ごとに徳+5。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11032013";
-import { SHOIN, YAKATA } from "./map.js?v=11032013";
+import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11032027";
+import { SHOIN, YAKATA } from "./map.js?v=11032027";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...o });
 const jst = () => new Date(Date.now() + 9 * 3600e3);
@@ -18,6 +18,27 @@ export function pomodoro(d = jst()) {
   return { focus, left: Math.round(((focus ? 25 : 30) - m) * 60), block: Math.floor(d.getTime() / 1800e3) };
 }
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+// 三毛猫：縁側（書院）と舳先（屋形船）で眠っている。なでると、ごろごろ
+function makeCat(scene, x, y, z, ry) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
+  const w = std(0xf6f1e6, { roughness: 0.95 }), o = std(0xd9822b, { roughness: 0.95 }), k = std(0x2a2420, { roughness: 0.95 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), w); body.scale.set(1.35, 0.62, 0.95); body.position.y = 0.12; g.add(body);
+  const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), o); p1.scale.set(1.2, 0.5, 1); p1.position.set(-0.06, 0.2, 0.06); g.add(p1);
+  const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), k); p2.scale.set(1.2, 0.45, 1); p2.position.set(0.1, 0.19, -0.06); g.add(p2);
+  const head = new THREE.Group(); head.position.set(0.26, 0.12, 0.02); g.add(head);
+  const hm = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 10), w); hm.scale.set(1, 0.85, 1); head.add(hm);
+  const hp = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), o); hp.position.set(-0.02, 0.06, 0.05); hp.scale.set(1, 0.5, 1); head.add(hp);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.07, 4), s > 0 ? o : w); e.position.set(0, 0.1, s * 0.055); e.rotation.x = s * 0.25; head.add(e);
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.006, 0.03), k); eye.position.set(0.1, 0.01, s * 0.04); head.add(eye); }
+  const tail = new THREE.Group(); tail.position.set(-0.25, 0.08, 0); g.add(tail);
+  const tm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.32, 6), o); tm.rotation.z = Math.PI / 2; tm.position.x = -0.12; tail.add(tm);
+  g.traverse((m) => m.isMesh && (m.castShadow = true));
+  let pet = 0;
+  return { group: g, pet: () => (pet = 2.4), tick: (t, dt) => {
+    body.scale.y = 0.62 + Math.sin(t * 1.6) * 0.025; tail.rotation.y = Math.sin(t * 0.7) * 0.35 + (pet > 0 ? Math.sin(t * 9) * 0.4 : 0);
+    head.rotation.z = pet > 0 ? 0.25 : Math.sin(t * 0.2) * 0.03; if (pet > 0) pet -= dt; } };
+}
 
 // ---------------------------------------------------------------- 屋形船「えにし丸」
 function buildYakata(scene, env) {
@@ -88,6 +109,7 @@ function buildShoin(scene, env) {
     box(g, 0.56, 0.07, 0.56, zab, lx, F + 0.04, lz);
     box(g, 0.45, 0.05, 0.95, desk, lx + 0.62, F + 0.36, lz); for (const dz of [-0.4, 0.4]) box(g, 0.4, 0.32, 0.05, desk, lx + 0.62, F + 0.17, lz + dz);
     box(g, 0.24, 0.01, 0.33, paper, lx + 0.6, F + 0.395, lz + 0.12, false); box(g, 0.1, 0.03, 0.16, ink, lx + 0.65, F + 0.4, lz - 0.28, false);
+    cyl(g, 0.045, 0.035, 0.08, std(0x6b8a72, { roughness: 0.4 }), lx + 0.72, F + 0.43, lz - 0.38, 10);   // 湯呑み
   }
   // 行灯（夕方から灯る）
   for (const [lx, lz] of [[-Wd / 2 + 1.2, -Dp / 2 + 0.6], [-Wd / 2 + 1.2, Dp / 2 - 0.6], [Wd / 2 - 0.6, -Dp / 2 + 0.6], [Wd / 2 - 0.6, Dp / 2 - 0.6]]) chochin(g, lx, F + 0.45, lz, env, 0.75, 0xfff0d0);
@@ -100,6 +122,28 @@ function buildShoin(scene, env) {
 export function setupSagyo(A) {
   const fune = buildYakata(A.scene, A.env), shoin = buildShoin(A.scene, A.env);
   A.W.update.push((t) => fune.tick(t));
+  const cats = [makeCat(A.scene, SHOIN.x1 + 0.6, SHOIN.y - 0.06, (SHOIN.z0 + SHOIN.z1) / 2 + 2.2, 0.6), makeCat(A.scene, YAKATA.x + 3.2, YAKATA.deck + 0.03, YAKATA.z - 0.3, Math.PI)];
+  // 湯気：書院の湯呑みからゆらゆら
+  const SN = 70, sg = new THREE.BufferGeometry(), sp = new Float32Array(SN * 3), seeds = [];
+  const cups = SHOIN.rows.flatMap((x) => SHOIN.cols.map((z) => [x + 0.72, SHOIN.y + 0.48, z - 0.38]));
+  for (let i = 0; i < SN; i++) { const c = cups[i % cups.length]; seeds.push({ c, ph: Math.random() * 3 }); }
+  sg.setAttribute("position", new THREE.BufferAttribute(sp, 3));
+  const steam = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.35, depthWrite: false }));
+  steam.frustumCulled = false; A.scene.add(steam);
+  A.W.update.push((t, dt) => {
+    for (const c of cats) c.tick(t, dt);
+    for (let i = 0; i < SN; i++) { const s = seeds[i], k = ((t * 0.25 + s.ph) % 1); sp[i * 3] = s.c[0] + Math.sin(t * 1.3 + s.ph * 5) * 0.03 * k; sp[i * 3 + 1] = s.c[1] + k * 0.35; sp[i * 3 + 2] = s.c[2] + Math.cos(t + s.ph) * 0.02; }
+    sg.attributes.position.needsUpdate = true;
+    if (cur) life(t);
+  });
+  // 部屋の中のしぐさ：集中は筆を走らせ、ときどき頁をめくる。休憩はお茶をひと口
+  function life(t) {
+    const p = pomodoro(), list = [A.me, ...inRoom(cur.room).map((o) => o.av)];
+    list.forEach((av, i) => { const u = av.userData; if (u.pose !== "seiza" || !u.arms) return; const ph = t + i * 1.7;
+      if (p.focus) { const write = Math.sin(ph * 0.35) > -0.2; u.arms[1].rotation.x = write ? -0.95 + Math.sin(ph * 7) * 0.08 : -0.5; u.arms[1].rotation.z = write ? -0.05 + Math.sin(ph * 5) * 0.06 : -0.15;
+        u.arms[0].rotation.x = Math.sin(ph * 0.11) > 0.93 ? -1.2 : -0.6; u.body.rotation.x = 0.12; }
+      else { const sip = Math.sin(ph * 0.5) > 0.6; u.arms[1].rotation.x = sip ? -2.0 : -0.5; u.arms[0].rotation.x = -0.5; u.body.rotation.x = sip ? -0.08 : 0; } });
+  }
   const tmp = new THREE.Vector3();
   const ROOMS = {
     fune: { name: "屋形船 えにし丸", icon: "🛶", st: "🛶 屋形船で作業中", entry: [YAKATA.x, YAKATA.z + YAKATA.wid / 2 + 4.0],
@@ -110,6 +154,15 @@ export function setupSagyo(A) {
       cam: (k) => { const cz = (SHOIN.z0 + SHOIN.z1) / 2; tmp.set(SHOIN.x0 + 1.2, SHOIN.y + 2.05, cz + Math.sin(k * 0.05) * 0.5); return [tmp, new THREE.Vector3(-4, 1.0, cz)]; } },
   };
   const others = () => [...A.others.values()];
+  const look = { yaw: 0, pitch: 0 }; let drag = null;
+  const cv = document.getElementById("c"), ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  cv.addEventListener("pointerdown", (e) => { if (!cur) return; drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY }; });
+  cv.addEventListener("pointermove", (e) => { if (!cur || !drag) return; look.yaw = Math.max(-1.25, Math.min(1.25, look.yaw - (e.clientX - drag.x) * 0.006)); look.pitch = Math.max(-0.45, Math.min(0.35, look.pitch + (e.clientY - drag.y) * 0.004)); drag.x = e.clientX; drag.y = e.clientY; });
+  cv.addEventListener("pointerup", (e) => {
+    if (!cur || !drag) return; const moved = Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0); drag = null; if (moved > 8) return;
+    ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, A.camera);
+    for (const c of cats) if (ray.intersectObject(c.group, true).length) { c.pet(); A.purr(); A.toast("🐈 ごろごろ…（猫がうれしそう）", 2200); return; }
+  });
   const inRoom = (r) => others().filter((o) => o.st === r.st);
   function freeSeat(r) { return r.seats.find(([x, z]) => !others().some((o) => Math.hypot(o.av.position.x - x, o.av.position.z - z) < 0.45)); }
 
@@ -144,6 +197,7 @@ export function setupSagyo(A) {
     if (ch === "nature") A.mixer.preset("雨と川"); paint();
   }
   hud.addEventListener("click", (e) => {
+    if (e.target.closest(".rh-row:first-child,.rh-main")) { hud.classList.toggle("mini"); return; }
     const b = e.target.closest("[data-ch]"); if (b) setChannel(b.dataset.ch);
     if (e.target.closest(".rh-q")) document.body.classList.toggle("focus-quiet");
     if (e.target.closest(".rh-n")) A.askNotify().then(paintN);
@@ -180,7 +234,10 @@ export function setupSagyo(A) {
       const p = pomodoro();
       cur = { room: r, seat, prev: A.getStatus(), phase: null, last: Date.now(), focusMs: 0, blockMs: 0, ch: A.store.get("enishi_room_ch", "lofi"), iv: setInterval(tick, 1000), t0: performance.now() };
       A.setStatus(r.st);
-      A.setCine(() => { const k = (performance.now() - cur.t0) / 1000, [pos, look] = r.cam(k); A.camera.position.copy(pos); A.camera.lookAt(look); });
+      look.yaw = 0; look.pitch = 0;
+      A.setCine(() => { const k = (performance.now() - cur.t0) / 1000, [pos, at] = r.cam(k); A.camera.position.copy(pos);
+        const v = at.clone().sub(pos); v.applyAxisAngle(new THREE.Vector3(0, 1, 0), look.yaw); v.y += v.length() * look.pitch; A.camera.lookAt(pos.clone().add(v)); });
+      document.body.classList.add("in-room"); hud.classList.toggle("mini", innerWidth < 560);
       hud.hidden = false; setChannel(cur.ch); paintN(); tick(); live.hidden = true;
       A.toast(`${r.icon} ${r.name}へようこそ。${p.focus ? `いまは集中の時間（あと${Math.ceil(p.left / 60)}分）。` : `いまは休憩（あと${Math.ceil(p.left / 60)}分）。`}毎時 :00 と :30 に、みんなで集中を始めます`, 7000);
       await new Promise((res) => (cur.done = res));
@@ -189,7 +246,7 @@ export function setupSagyo(A) {
   function leave() {
     if (!cur) return;
     const c = cur; cur = null; clearInterval(c.iv);
-    hud.hidden = true; document.body.classList.remove("focus-quiet"); document.title = A.title;
+    hud.hidden = true; document.body.classList.remove("focus-quiet", "in-room"); document.title = A.title;
     A.bgm.setChannel(null); A.setStatus(c.prev || ""); A.setCine(null); A.setPose(A.me, null);
     A.warpTo(c.room.entry);
     const s = stats(); A.toast(`おつかれさまでした。今日は ${s.n}ポモドーロ・${s.min}分 集中しました 🍅`, 5000);

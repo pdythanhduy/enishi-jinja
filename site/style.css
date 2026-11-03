@@ -539,3 +539,15 @@ body.cine #cam-home{display:none}
 #cam-rot{position:fixed;right:12px;bottom:calc(206px + env(safe-area-inset-bottom));z-index:10;display:flex;gap:.4rem}
 #cam-rot button{width:44px;height:44px;border-radius:50%;border:1px solid rgba(232,198,122,.4);background:rgba(14,19,33,.72);color:var(--ink);font-size:1.25rem;line-height:1;touch-action:manipulation}
 body.cine #cam-rot,body.focus-quiet #cam-rot,body.touring #cam-rot{opacity:0;pointer-events:none}
+
+/* 作業室の中：座っている間は、歩くための道具やボタンを消して景色を広く */
+body.in-room #joy,body.in-room #cam-rot,body.in-room #guide,body.in-room #actions,body.in-room #hint,body.in-room #room-live,body.in-room #me-tag,body.in-room #cam-home{display:none!important}
+body.in-room .tag .tag-st{display:none}
+body.in-room #chat-btn{bottom:calc(24px + env(safe-area-inset-bottom))}
+body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
+#room-hud.mini{width:auto;min-width:0;padding:.4rem .7rem;gap:.2rem;cursor:pointer}
+#room-hud.mini .rh-ch,#room-hud.mini .rh-btns,#room-hud.mini .rh-me{display:none}
+#room-hud.mini .rh-main svg{width:30px;height:30px}#room-hud.mini .rh-left{font-size:1.1rem}
+#room-hud.mini .rh-row:first-child{gap:.6rem}#room-hud.mini .rh-name{font-size:.78rem}
+#room-hud.mini::after{content:"▾ ひらく";font-size:.6rem;color:var(--muted);text-align:center}
+#room-hud:not(.mini) .rh-row:first-child{cursor:pointer}
