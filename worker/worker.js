@@ -12,7 +12,7 @@
 //  POST /inbox {key}               届いた祈りを受け取る
 //  GET  /kenno · POST /kenno {key,name,gan,text} · POST /kenno/light {key}   献灯（みんなの灯りの壁）
 const MAX = 100, ROOMS = 30;
-const ALLOW = ["https://enishi-jinja.pages.dev", "https://pdythanhduy.github.io", "http://localhost:8766"];
+const ALLOW = ["https://enishijinja.com", "https://www.enishijinja.com", "https://pdythanhduy.github.io", "https://enishi-jinja.pages.dev", "http://localhost:8766"];
 const NG = ["死ね", "殺す", "ころす", "しね", "消えろ", "ブス", "きもい", "キモい", "http", "www.", ".com", "ライン交換", "副業", "稼げる", "儲かる", "裏垢", "パパ活", "セックス", "エロ", "まんこ", "ちんこ", "fuck", "shit"];
 
 const cors = (req) => {
@@ -195,7 +195,7 @@ let VKEY = null;
 async function vapidJwt(env, aud) {
   if (!VKEY) VKEY = await crypto.subtle.importKey("jwk", { ...JSON.parse(env.VAPID_PRIVATE_JWK), ext: true }, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
   const h = b64u(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
-  const c = b64u(enc.encode(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "https://pdythanhduy.github.io/enishi-jinja/" })));
+  const c = b64u(enc.encode(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "https://enishijinja.com/" })));
   const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, VKEY, enc.encode(h + "." + c));
   return h + "." + c + "." + b64u(sig);
 }
