@@ -528,3 +528,14 @@ body.cine #joy,body.focus-quiet #joy,body.touring #joy{opacity:0;pointer-events:
 #cam-home[hidden]{display:none}
 body.cine #cam-home{display:none}
 .mg,.mg *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* 合同祈祷の帯：スマホでも一行に収める（「参列する」が縦に割れない） */
+#gokito .btn{white-space:nowrap;flex:none}
+#gokito .gk-t{min-width:0}
+@media (max-width:520px){#gokito{top:calc(max(12px,env(safe-area-inset-top)) + 96px);bottom:auto;gap:.5rem;padding:.4rem .5rem .4rem .8rem;max-width:calc(100vw - 24px)}
+  #gokito .gk-t{font-size:.8rem}#gokito .btn{padding:.35rem .7rem;font-size:.74rem}
+  #room-live{top:calc(max(12px,env(safe-area-inset-top)) + 150px)}}
+/* 回すボタン（スマホ） */
+#cam-rot{position:fixed;right:12px;bottom:calc(206px + env(safe-area-inset-bottom));z-index:10;display:flex;gap:.4rem}
+#cam-rot button{width:44px;height:44px;border-radius:50%;border:1px solid rgba(232,198,122,.4);background:rgba(14,19,33,.72);color:var(--ink);font-size:1.25rem;line-height:1;touch-action:manipulation}
+body.cine #cam-rot,body.focus-quiet #cam-rot,body.touring #cam-rot{opacity:0;pointer-events:none}

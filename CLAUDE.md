@@ -58,7 +58,10 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
     - `chores.near(p)` feeds `currentAction`. Debug with `__enishi.chores.run(spec)`.
   - Stairs: ramp floors in map.js get a `table` of real step heights. `measureStairs()` in app.js raycasts them at startup, so feet land on each tread instead of sliding along a slope.
   - Controls work like a map.
-    - Mouse: left-drag or one finger pans along the ground, right-drag or two fingers rotate and zoom.
+    - Mouse: left-drag pans along the ground and right-drag rotates.
+    - Touch: one finger pans. Two fingers use a custom handler (OrbitControls TWO is off): twist rotates and pinch zooms, like Google Maps. There are also ⟲⟳ buttons (`#cam-rot`) on touch devices.
+    - Walk speed (`SPEED`) is 2.5 m/s.
+    - sw.js fetches navigations with `cache: no-cache`, because GitHub Pages caches HTML for 10 minutes.
     - Panning sets `freeCam`, which stops the follow camera and shows 「📍 自分の場所へ」. Walking, the joystick or `setCine(null)` turn it back off.
     - Movement comes from the joystick `#joy` (touch only) or WASD/arrow keys (`steer()`). Map trips over 38 m warp.
   - Minigame canvases block touch scrolling with non-passive `touchmove`/`touchstart` `preventDefault`, because iOS needs more than `touch-action`.

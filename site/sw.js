@@ -2,6 +2,11 @@
 const API = "https://enishi-rooms.thanhduy8vn.workers.dev";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+// ページ（HTML）はいつも最新を確かめる：GitHub Pages の10分キャッシュで古い版が出ないように
+self.addEventListener("fetch", (e) => {
+  if (e.request.mode !== "navigate") return;
+  e.respondWith(fetch(e.request, { cache: "no-cache" }).catch(() => fetch(e.request)));
+});
 self.addEventListener("push", (e) => e.waitUntil((async () => {
   let m = { title: "えにし神社", body: "境内でお待ちしています。", url: "./" };
   try {

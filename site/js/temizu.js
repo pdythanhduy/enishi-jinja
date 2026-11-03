@@ -1,8 +1,8 @@
 // 手水舎：龍の口から水が流れつづける水盤、柄杓の掛け台、作法の立て札。
 // 手水の所作は、肩越しのカメラで柄杓を持ち、汲んで、注ぐところまで見せる。
 import * as THREE from "three";
-import { waterMaterial } from "./water.js?v=11032001";
-import { MAT, box, cyl, roof, chochin } from "./arch.js?v=11032001";
+import { waterMaterial } from "./water.js?v=11032007";
+import { MAT, box, cyl, roof, chochin } from "./arch.js?v=11032007";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...o });
 const BRONZE = std(0x5a7458, { metalness: 0.65, roughness: 0.38 });
