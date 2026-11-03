@@ -5,39 +5,40 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { initI18n, t as tr, mountPicker } from "./i18n.js?v=11040014";
+import { initI18n, t as tr, mountPicker } from "./i18n.js?v=11040020";
 initI18n();   // 日本語以外のブラウザでは、画面の文字を English / Tiếng Việt に
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11040014";
-import { buildWorld } from "./world.js?v=11040014";
-import { PEAK } from "./vista.js?v=11040014";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11040014";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11040014";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11040014";
-import { deeds } from "../deeds.js?v=11040014";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11040014";
-import { fireflies } from "../fx.js?v=11040014";
-import { LIGHT_SPOTS } from "./arch.js?v=11040014";
-import { freeze } from "./freeze.js?v=11040014";
-import { setupSeasonal } from "./seasonal.js?v=11040014";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11040014";
-import { makeBGM } from "./bgm.js?v=11040014";
-import { setupGuide, STEP_OF } from "./guide.js?v=11040014";
-import { setupKenno } from "./kenno.js?v=11040014";
-import { setupSocial } from "./social.js?v=11040014";
-import { setupProfile } from "./profile.js?v=11040014";
-import { setupChores } from "./chores.js?v=11040014";
-import { setupSagyo } from "./sagyo.js?v=11040014";
-import { setupWelcome } from "./welcome.js?v=11040014";
-import { setupZen } from "./zen.js?v=11040014";
-import { setupMixer } from "./mixer.js?v=11040014";
-import { setupShakyo } from "./shakyo.js?v=11040014";
-import { setupTour } from "./tour.js?v=11040014";
-import { setupChat } from "./chat.js?v=11040014";
-import { setupKito, ofudaImage } from "./kito.js?v=11040014";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11040014";
-import { Lanterns, matsuri } from "../fx.js?v=11040014";
-import { connect, board } from "../net.js?v=11040014";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11040014";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11040020";
+import { buildWorld } from "./world.js?v=11040020";
+import { MASHA } from "./masha.js?v=11040020";
+import { PEAK } from "./vista.js?v=11040020";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11040020";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11040020";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11040020";
+import { deeds } from "../deeds.js?v=11040020";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11040020";
+import { fireflies } from "../fx.js?v=11040020";
+import { LIGHT_SPOTS } from "./arch.js?v=11040020";
+import { freeze } from "./freeze.js?v=11040020";
+import { setupSeasonal } from "./seasonal.js?v=11040020";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11040020";
+import { makeBGM } from "./bgm.js?v=11040020";
+import { setupGuide, STEP_OF } from "./guide.js?v=11040020";
+import { setupKenno } from "./kenno.js?v=11040020";
+import { setupSocial } from "./social.js?v=11040020";
+import { setupProfile } from "./profile.js?v=11040020";
+import { setupChores } from "./chores.js?v=11040020";
+import { setupSagyo } from "./sagyo.js?v=11040020";
+import { setupWelcome } from "./welcome.js?v=11040020";
+import { setupZen } from "./zen.js?v=11040020";
+import { setupMixer } from "./mixer.js?v=11040020";
+import { setupShakyo } from "./shakyo.js?v=11040020";
+import { setupTour } from "./tour.js?v=11040020";
+import { setupChat } from "./chat.js?v=11040020";
+import { setupKito, ofudaImage } from "./kito.js?v=11040020";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11040020";
+import { Lanterns, matsuri } from "../fx.js?v=11040020";
+import { connect, board } from "../net.js?v=11040020";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11040020";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -428,6 +429,7 @@ const ACTIONS = [
   { id: "ichino", label: "⛩ 一の鳥居で一礼", at: [0, 125.8], r: 1.8, run: () => ichiRei() },
   { id: "miharashi", label: "🌄 景色を眺める", at: [0, 129.6], r: 2.2, run: () => miharasu() },
   { id: "yohai", label: "🙏 縁の峰を遥拝する", at: PLACES.yohai.stand, r: 2.0, run: () => yohai() },
+  ...MASHA.map((m) => ({ id: "masha_" + m.id, label: `⛩ ${m.name}にお参り`, at: m.stand, r: 1.8, run: () => mashaPray(m) })),
   { id: "fune", label: "🛶 屋形船の作業室に乗る", at: [18, 62.6], r: 1.8, run: () => sagyo.enter("fune") },
   { id: "shoin", label: "📖 書院の作業室に入る", at: [-6.4, 67], r: 1.8, run: () => sagyo.enter("shoin") },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
@@ -729,6 +731,42 @@ const yohai = () => doing(async () => {
   const first = onceToday("yohai"); if (first) D.add(2);
   toast(`縁の峰を遥拝しました。遥拝とは、遠くから神さまを拝むこと。縁の峰はこの神社の御神体の山で、前の磐座は峰の神さまが降りてこられる場所と伝えられています${first ? "（徳 +2）" : ""}`, 8000);
 });
+// ------------------------------------------------------------------ 末社と境内めぐり帳
+// 末社：お参り（二礼二拍手一礼）で神さまと御利益を知り、その社の御朱印をいただく（一日一回）
+const mashaPray = (m) => doing(async () => {
+  await new Promise((r) => walkTo(m.stand, r, { route: true })); faceTo(...m.at);
+  const u = me.userData;
+  for (let i = 0; i < 2; i++) { stepText(i ? "二 礼" : "一 礼"); net?.act("bow"); await bowTo(me, 1.2, 600); await wait(250); await bowTo(me, 0, 450); }
+  stepText("二 拍 手"); net?.act("clap");
+  for (let i = 0; i < 2; i++) { u.arms.forEach((a, j) => { a.rotation.x = -1.3; a.rotation.z = (j ? -1 : 1) * 0.05; }); sfx.clap(); await wait(240); u.arms.forEach((a, j) => (a.rotation.z = (j ? -1 : 1) * 0.6)); await wait(240); }
+  stepText("祈 る"); u.arms.forEach((a, j) => { a.rotation.x = -1.3; a.rotation.z = (j ? -1 : 1) * 0.05; }); await wait(1500);
+  stepText("一 礼"); u.arms.forEach((a, j) => { a.rotation.x = 0; a.rotation.z = (j ? -1 : 1) * 0.25; }); await bowTo(me, 1.2, 600); await wait(350); await bowTo(me, 0, 500);
+  meguriMark("masha_" + m.id);
+  toast(`${m.name}（${m.kami}）。御利益：${m.goriyaku}。${m.text}`, 9000);
+  const entry = book.addGoshuin(m.id);
+  if (entry) { D.add(1); await wait(1600); await stampAnim(entry); deedHook("goshuin", { hall: m.id }); }
+});
+// 境内めぐり帳：境内の場所と末社、ぜんぶで二十四か所。近くまで行くと記される。すべて埋まると満願（徳 +20・特別な御朱印）
+const MEGURI = [...Object.entries(PLACES).map(([k, p]) => ({ id: "place_" + k, name: p.name, at: p.stand, place: k })), ...MASHA.map((m) => ({ id: "masha_" + m.id, name: m.name, at: m.stand, masha: m }))];
+function meguriMark(id) {
+  const got = store.get("enishi_meguri", {}); if (got[id]) return;
+  got[id] = today(); store.set("enishi_meguri", got);
+  const s = MEGURI.find((x) => x.id === id), n = Object.keys(got).filter((k) => MEGURI.some((x) => x.id === k)).length;
+  tone([[880, 0.2], [1175, 0.15]], 0.6, 0.05);
+  toast(`📗 境内めぐり帳に「${s?.name || ""}」を記しました（${n}/${MEGURI.length}）`, 3600);
+  if (n === MEGURI.length) setTimeout(async () => {
+    D.add(20); toast("🎊 境内めぐり満願！ 二十四か所すべてをめぐりました（徳 +20）。特別な御朱印をどうぞ", 7000);
+    const e = book.addGoshuin("meguri"); if (e) { await wait(1500); stampAnim(e); }
+  }, 2500);
+}
+setInterval(() => { if (intro) return; const x = me.position.x, z = me.position.z; for (const s of MEGURI) if (!s.masha && Math.hypot(s.at[0] - x, s.at[1] - z) < 4) meguriMark(s.id); }, 1200);
+function renderMeguri() {
+  const got = store.get("enishi_meguri", {}), n = MEGURI.filter((s) => got[s.id]).length;
+  $("#book-meguri").innerHTML = `<h3>境内めぐり帳 <small>${n} / ${MEGURI.length}</small></h3><p class="sub">境内の場所は近くまで行くと、末社はお参りすると記されます。すべてめぐると満願（徳 +20・特別な御朱印）。</p>`
+    + `<ol class="meguri">${MEGURI.map((s) => `<li class="${got[s.id] ? "ok" : ""}"><span class="mk">${got[s.id] ? "✓" : "・"}</span><b>${s.name}</b><small>${got[s.id] ? got[s.id] : s.masha ? "末社" : ""}</small><button data-mg="${s.id}">行く</button></li>`).join("")}</ol>`;
+}
+$("#m-book").addEventListener("click", (e) => { const b = e.target.closest("button[data-mg]"); if (!b) return; const s = MEGURI.find((x) => x.id === b.dataset.mg); if (!s) return;
+  $("#m-book").hidden = true; if (s.place) goPlace(s.place); else walkTo(s.at, null, { route: true }); });
 // 鐘楼そのものをタップしても鐘をつける
 tapHandlers.push((ray) => { const h = ray.intersectObjects(scene.children, true).find((q) => q.object.visible && !q.object.isPoints && q.point.y < 40);
   if (!h || Math.hypot(h.point.x - 33.5, h.point.z + 19.5) > 2.3 || h.point.y < footY(33.5, -19.5) + 0.6) return false; kaneTsuku(); return true; });
@@ -949,7 +987,8 @@ function openBook(tab = "shuin") {
     const expired = m.until < now; card.appendChild(cv); card.insertAdjacentHTML("beforeend", `<b>${o.name}</b><small>${expired ? "期限が過ぎました。感謝してお返ししましょう" : `${m.until.replace(/-/g, "/")}まで`}</small>${expired ? `<button data-ret="${o.id}">お返しする</button>` : ""}`);
     $("#book-mamori").appendChild(card); });
   document.querySelectorAll(".btab").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
-  $("#book-shuin-wrap").hidden = tab !== "shuin"; $("#book-mamori").hidden = tab !== "mamori"; $("#book-takara").hidden = tab !== "takara";
+  $("#book-shuin-wrap").hidden = tab !== "shuin"; $("#book-mamori").hidden = tab !== "mamori"; $("#book-takara").hidden = tab !== "takara"; $("#book-meguri").hidden = tab !== "meguri";
+  if (tab === "meguri") renderMeguri();
   if (tab === "takara") renderTakara();
   open("#m-book");
 }

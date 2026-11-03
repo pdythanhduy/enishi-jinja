@@ -593,3 +593,9 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 .lang-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;font-size:.85rem}
 .lang-row select{background:rgba(255,255,255,.08);color:inherit;border:1px solid var(--line);border-radius:8px;padding:.3rem .5rem;font:inherit}
 .lang-row select option{color:#222}
+
+/* 境内めぐり帳 */
+.meguri{list-style:none;margin:.4rem 0;padding:0;display:grid;gap:.3rem}
+.meguri li{display:grid;grid-template-columns:1.4rem 1fr auto auto;align-items:center;gap:.5rem;padding:.35rem .5rem;border-radius:8px;background:rgba(255,255,255,.04);font-size:.86rem}
+.meguri li.ok{background:rgba(232,198,122,.12)}.meguri li.ok .mk{color:var(--gold)}
+.meguri small{color:var(--muted);font-size:.72rem}.meguri button{font-size:.72rem;padding:.2rem .6rem;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit}

@@ -14,6 +14,17 @@ export const SHUIN = {
   enmusubi: { title: "縁結びの社", ink: "縁結社", seal: "えにし神社", mark: "結" },
   gokaku:   { title: "合格の社", ink: "合格社", seal: "えにし神社", mark: "梅" },
   okunoin:  { title: "奥の院", ink: "奥之院", seal: "えにし神社", mark: "月" },
+  // 末社（その場でお参りしていただく）
+  haraedo:  { title: "祓戸社", ink: "祓戸社", seal: "えにし神社", mark: "祓" },
+  ebisu:    { title: "恵比寿社", ink: "恵比寿", seal: "えにし神社", mark: "鯛" },
+  saruta:   { title: "猿田彦社", ink: "猿田彦", seal: "えにし神社", mark: "導" },
+  itsuku:   { title: "厳島社", ink: "厳島社", seal: "えにし神社", mark: "琵" },
+  suijin:   { title: "水神社", ink: "水神社", seal: "えにし神社", mark: "水" },
+  tenjin:   { title: "天神社", ink: "天神社", seal: "えにし神社", mark: "梅" },
+  inari:    { title: "稲荷社", ink: "稲荷社", seal: "えにし神社", mark: "稲" },
+  yama:     { title: "山神社", ink: "山神社", seal: "えにし神社", mark: "山" },
+  // 境内めぐり帳をすべて埋めた人へ
+  meguri:   { title: "境内めぐり満願", ink: "巡拝", seal: "えにし神社", mark: "満" },
 };
 // 限定の印（日付で決まる）
 export function limitedFor(d = jst()) {

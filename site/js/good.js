@@ -1,7 +1,7 @@
 // 善行（落ち葉掃き・灯籠に火・迷子の子狐）と夜祭り（花火・祭囃子）
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { height, footY, blocked } from "./map.js?v=11040014";
+import { height, footY, blocked } from "./map.js?v=11040020";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 
