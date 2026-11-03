@@ -5,33 +5,33 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031531";
-import { buildWorld } from "./world.js?v=11031531";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031531";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031531";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031531";
-import { deeds } from "../deeds.js?v=11031531";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031531";
-import { fireflies } from "../fx.js?v=11031531";
-import { LIGHT_SPOTS } from "./arch.js?v=11031531";
-import { freeze } from "./freeze.js?v=11031531";
-import { setupSeasonal } from "./seasonal.js?v=11031531";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031531";
-import { makeBGM } from "./bgm.js?v=11031531";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031531";
-import { setupKenno } from "./kenno.js?v=11031531";
-import { setupSocial } from "./social.js?v=11031531";
-import { setupProfile } from "./profile.js?v=11031531";
-import { setupZen } from "./zen.js?v=11031531";
-import { setupMixer } from "./mixer.js?v=11031531";
-import { setupShakyo } from "./shakyo.js?v=11031531";
-import { setupTour } from "./tour.js?v=11031531";
-import { setupChat } from "./chat.js?v=11031531";
-import { setupKito, ofudaImage } from "./kito.js?v=11031531";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031531";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031531";
-import { connect, board } from "../net.js?v=11031531";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031531";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031534";
+import { buildWorld } from "./world.js?v=11031534";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031534";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031534";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031534";
+import { deeds } from "../deeds.js?v=11031534";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031534";
+import { fireflies } from "../fx.js?v=11031534";
+import { LIGHT_SPOTS } from "./arch.js?v=11031534";
+import { freeze } from "./freeze.js?v=11031534";
+import { setupSeasonal } from "./seasonal.js?v=11031534";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031534";
+import { makeBGM } from "./bgm.js?v=11031534";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031534";
+import { setupKenno } from "./kenno.js?v=11031534";
+import { setupSocial } from "./social.js?v=11031534";
+import { setupProfile } from "./profile.js?v=11031534";
+import { setupZen } from "./zen.js?v=11031534";
+import { setupMixer } from "./mixer.js?v=11031534";
+import { setupShakyo } from "./shakyo.js?v=11031534";
+import { setupTour } from "./tour.js?v=11031534";
+import { setupChat } from "./chat.js?v=11031534";
+import { setupKito, ofudaImage } from "./kito.js?v=11031534";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031534";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031534";
+import { connect, board } from "../net.js?v=11031534";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031534";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -613,7 +613,7 @@ async function kujiImage(h, rk, o) {
   x.fillStyle = "#8a7f70"; x.textAlign = "center"; x.font = "34px serif"; x.fillText(`えにし神社 · ${h.name}`, 540, 230);
   x.fillStyle = "#b8321e"; x.font = "bold 190px serif"; x.fillText(rk.key, 540, 470);
   x.fillStyle = "#2b2620"; x.font = "40px serif"; x.fillText(`${h.luck}：${rk.stars}`, 540, 560); x.font = "42px serif"; wrap(x, o.short, 540, 680, 600, 64);
-  x.fillStyle = "#8a7f70"; x.font = "30px serif"; x.fillText("みんなで祈るネット神社", 540, 1120); x.fillStyle = "#fbf6ea"; x.font = "34px serif"; x.fillText("#えにし神社", 540, 1290);
+  x.fillStyle = "#8a7f70"; x.font = "30px serif"; x.fillText("作業と祈りのオンライン神社", 540, 1120); x.fillStyle = "#fbf6ea"; x.font = "34px serif"; x.fillText("#えにし神社", 540, 1290);
   return new Promise((r) => c.toBlob(r, "image/png"));
 }
 function wrap(x, t, cx, y, w, lh) { let line = ""; for (const ch of t) { if (x.measureText(line + ch).width > w) { x.fillText(line, cx, y); y += lh; line = ch; } else line += ch; } x.fillText(line, cx, y); }
@@ -980,7 +980,7 @@ const mixer = setupMixer({ ac, store, scene, camera, W, toast,
 const tour = setupTour({ camera, PLACES, footY, setCine, toast, okPond: W.okPond, floatLamp: () => makeFloatLamp(), removeFloatLamp: (l) => removeFloatLamp(l),
   nearest: () => Object.keys(PLACES).reduce((b, k) => (Math.hypot(PLACES[k].pos[0] - me.position.x, PLACES[k].pos[1] - me.position.z) < Math.hypot(PLACES[b].pos[0] - me.position.x, PLACES[b].pos[1] - me.position.z) ? k : b), "ootorii") });
 const shakyo = setupShakyo({ store, toast, today, deedHook, chime, addToku: (n) => { D.add(n); refreshToku(); }, hangEma: () => hangEma(), brush: () => noise(0.07, 1500, 0.04, "bandpass") });
-const zen = setupZen({ store, toast, today, deedHook, me, camera, PLACES, STAGE, footY, setCine, setPose, mixer, shakyo, tour, isBusy: () => busy,
+const zen = setupZen({ shareCanvas, store, toast, today, deedHook, me, camera, PLACES, STAGE, footY, setCine, setPose, mixer, shakyo, tour, isBusy: () => busy,
   doing, walkRoute: (to) => (Math.hypot(to[0] - me.position.x, to[1] - me.position.z) > 28 ? warpTo(to) : new Promise((r) => walkTo(to, r, { route: true, fast: true }))), getStatus: () => myStatus, setStatus: setStatusAll,
   addToku: (n) => { D.add(n); refreshToku(); }, gong: () => sfx.gong(), soft: () => tone([[784, 0.3], [1175, 0.2]], 1.6, 0.04),
   breathTone: (t) => tone(t.startsWith("鼻") ? [[392, 0.3]] : t.startsWith("息") ? [[523, 0.2]] : [[330, 0.3]], 2.5, 0.025),

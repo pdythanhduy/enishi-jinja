@@ -2,6 +2,11 @@
 
 Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enishi-jinja). The user writes in Vietnamese; site text is Japanese.
 
+**Brand**
+- Name: えにし神社 ～作業と祈りのオンライン神社～ (concept: 祈り × 作業・集中).
+- Tab title: `⛩ えにし神社｜作業と祈りのオンライン神社`. During a focus session it becomes `🧘 mm:ss 集中中｜えにし神社`.
+- Hashtags: #えにし神社, and #えにし作業室 on the focus share card.
+
 **Read `docs/TOAN_BO_ENISHI.md` first.** It is the full project history: concept, every feature, content, marketing and monetization plans, lessons learned and the to-do list (in Vietnamese).
 
 ## Stack

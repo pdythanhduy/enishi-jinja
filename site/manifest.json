@@ -1,5 +1,5 @@
 {
- "name": "えにし神社",
+ "name": "えにし神社 ～作業と祈りのオンライン神社～",
  "short_name": "えにし神社",
  "start_url": "./?src=pwa",
  "scope": "./",
@@ -19,5 +19,6 @@
    "type": "image/png",
    "purpose": "any maskable"
   }
- ]
+ ],
+ "description": "集中タイマー・作業用BGM・写経と、お参りのできるオンライン神社。"
 }

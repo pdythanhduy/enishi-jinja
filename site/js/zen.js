@@ -7,6 +7,7 @@ const SPOTS = [
   { id: "stage", name: "奥の院の舞台", sub: "境内を一望する山の上", at: null, face: 0 },
 ];
 const MINS = [15, 25, 45, 60];
+const TITLE = document.title;
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export function setupZen(A) {
@@ -21,8 +22,8 @@ export function setupZen(A) {
     <p class="kicker">SHIZUKA</p><h2>🧘 静のひととき</h2>
     <p class="sub">境内に、少し長く居てみませんか。勉強や仕事のあいだ、眠る前、ただ眺めていたいときに。</p>
     <div class="zen-cards">
-      <button type="button" data-go="focus"><span>🧘</span><b>集中・座禅</b><small>15〜60分。5分ごとに徳が積もる</small></button>
-      <button type="button" data-go="mix"><span>🎧</span><b>境内の音</b><small>雨・せせらぎ・風鈴…を重ねる</small></button>
+      <button type="button" data-go="focus"><span>🧘</span><b>集中・作業</b><small>作業・勉強のおともに。15〜60分、座禅しながら</small></button>
+      <button type="button" data-go="mix"><span>🎧</span><b>作業用BGM・境内の音</b><small>雨・せせらぎ・風鈴…を重ねる</small></button>
       <button type="button" data-go="shakyo"><span>🖌</span><b>写経・写歌</b><small>祓詞や和歌を一字ずつ書き写す</small></button>
       <button type="button" data-go="ema"><span>🎨</span><b>絵馬を描く</b><small>筆で描いて、絵馬掛けに掛ける</small></button>
       <button type="button" data-go="tour"><span>🎥</span><b>境内めぐり</b><small>カメラがゆっくり十三か所をめぐる</small></button>
@@ -43,7 +44,7 @@ export function setupZen(A) {
   // ---------------------------------------------------------------- 集中・座禅の設定
   const fm = document.createElement("section"); fm.className = "modal"; fm.id = "m-focus"; fm.hidden = true;
   fm.innerHTML = `<div class="sheet"><button class="x" type="button" data-x>✕</button>
-    <p class="kicker">ZAZEN · FOCUS</p><h2>🧘 集中・座禅</h2>
+    <p class="kicker">ZAZEN · FOCUS</p><h2>🧘 集中・作業</h2>
     <p class="sub">好きな場所で正座して、時間まで静かに過ごします。5分ごとに徳+5。頭の上に「集中中」と出て、まわりの人にも伝わります。</p>
     <h3>時間</h3><div class="chips" data-g="min">${MINS.map((m) => `<button type="button" class="chip" data-v="${m}">${m}分</button>`).join("")}</div>
     <h3>場所</h3><div class="chips" data-g="spot">${SPOTS.map((s) => `<button type="button" class="chip" data-v="${s.id}">${s.name}<small>${s.sub}</small></button>`).join("")}</div>
@@ -98,7 +99,7 @@ export function setupZen(A) {
   function tick() {
     if (!session) return;
     const el = (Date.now() - session.t0) / 1000, left = Math.max(0, session.min * 60 - el);
-    hud.querySelector(".fh-time").textContent = fmt(left);
+    hud.querySelector(".fh-time").textContent = fmt(left); document.title = `🧘 ${fmt(left)} 集中中｜えにし神社`;
     hud.querySelector(".fr-fg").style.strokeDashoffset = String(C * (1 - el / (session.min * 60)));
     const blocks = Math.floor(el / 300);
     if (blocks > session.blocks) { const add = blocks - session.blocks; session.blocks = blocks; A.addToku(5 * add); A.soft?.(); hud.querySelector(".fh-sub").textContent = `徳 +${session.blocks * 5}`; }
@@ -131,10 +132,36 @@ export function setupZen(A) {
     const mins = Math.floor((Date.now() - s.t0) / 60000);
     const st = stats(); st.today += mins; st.total += mins; if (mins >= 1) st.sessions += 1; A.store.set("enishi_zen", st);
     A.setStatus(s.prev || "");
-    hud.hidden = true; document.body.classList.remove("focus-quiet"); A.setCine(null);
+    hud.hidden = true; document.body.classList.remove("focus-quiet"); A.setCine(null); document.title = TITLE;
     if (complete) { A.gong?.(); A.deedHook("zen", { min: mins }); }
-    A.toast(`${complete ? "🔔 お疲れさまでした。" : ""}${mins}分 静かに過ごしました（徳 +${s.blocks * 5}）。今日は合わせて ${st.today}分。`, 6000);
+    if (mins >= 5) showDone(mins, st, s.blocks * 5, complete);
+    else A.toast(`${mins}分 静かに過ごしました。今日は合わせて ${st.today}分。`, 5000);
     s.resolve?.();
+  }
+  // おつかれさまカード：記録をシェア（#えにし作業室）
+  const done = document.createElement("section"); done.className = "modal"; done.id = "m-zendone"; done.hidden = true; document.body.appendChild(done);
+  function card(mins, st) {
+    const c = document.createElement("canvas"); c.width = 1080; c.height = 1080; const x = c.getContext("2d");
+    const g = x.createLinearGradient(0, 0, 0, 1080); g.addColorStop(0, "#141a2c"); g.addColorStop(1, "#0b0e18"); x.fillStyle = g; x.fillRect(0, 0, 1080, 1080);
+    x.strokeStyle = "rgba(232,198,122,.55)"; x.lineWidth = 3; x.strokeRect(60, 60, 960, 960);
+    const f = (px, w = "bold") => `${w} ${px}px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`;
+    x.textAlign = "center"; x.fillStyle = "#e8c67a"; x.font = f(40, ""); x.fillText("えにし作業室", 540, 200);
+    x.fillStyle = "#f4ead8"; x.font = f(220); x.fillText(String(mins), 540, 520); x.font = f(56); x.fillText("分、集中しました", 540, 620);
+    x.fillStyle = "#b9b0a0"; x.font = f(36, ""); x.fillText(`今日の合計 ${st.today}分 ・ これまで ${st.total}分`, 540, 720);
+    const d = new Date(Date.now() + 9 * 3600e3); x.fillText(`${d.getUTCFullYear()}.${d.getUTCMonth() + 1}.${d.getUTCDate()}`, 540, 780);
+    x.fillStyle = "#e8c67a"; x.font = f(52); x.fillText("えにし神社", 540, 920); x.fillStyle = "#8a7f70"; x.font = f(28, ""); x.fillText("作業と祈りのオンライン神社", 540, 965);
+    return c;
+  }
+  function showDone(mins, st, toku, complete) {
+    const c = card(mins, st);
+    done.innerHTML = `<div class="sheet"><button class="x" type="button" data-x>✕</button><p class="kicker">${complete ? "おつかれさまでした" : "おつかれさまでした"}</p>
+      <h2>🧘 ${mins}分、集中しました</h2><p class="sub">徳 +${toku}・今日は合わせて ${st.today}分。また、いつでも境内へ。</p>
+      <div class="zd-card"></div><div class="row"><button type="button" class="btn" data-x>閉じる</button><button type="button" class="btn primary" data-share>記録をシェア</button></div></div>`;
+    c.className = "zd-cv"; done.querySelector(".zd-card").appendChild(c); done.hidden = false;
+    done.onclick = (e) => {
+      if (e.target.closest("[data-x]") || e.target === done) done.hidden = true;
+      if (e.target.closest("[data-share]")) A.shareCanvas(c, `えにし神社で${mins}分、もくもく集中しました🧘 今日は合わせて${st.today}分。\n#えにし神社 #えにし作業室`, "enishi-focus.png");
+    };
   }
   hud.querySelector(".fh-end").onclick = () => end(false);
   hud.querySelector(".fh-q").onclick = () => document.body.classList.toggle("focus-quiet");
