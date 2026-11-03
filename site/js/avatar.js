@@ -1,7 +1,7 @@
 // 参拝者（浴衣のちびキャラ）。和柄・髪型・狐面・提灯。正座とお辞儀のポーズ。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { wagara } from "../fx.js?v=11031537";
+import { wagara } from "../fx.js?v=11031542";
 
 const YUKATA = [[0x2c3e73, 0xe8c67a], [0xc8432f, 0x2b2b2b], [0x5c8a5a, 0xf2e2c4], [0xe7a2b4, 0x6b3a5a], [0xe0b23a, 0x3b4f7a], [0x6a4c93, 0xe8c67a], [0xf4f1ea, 0xc8432f], [0x1f5f6a, 0xf0d8a8]];
 const PATS = ["asanoha", "ichimatsu", "seigaiha", "yagasuri", "sakura"];
@@ -93,7 +93,11 @@ export function setPose(av, pose) {
   else { u.lower.scale.y = 1; u.body.position.y = 0; u.arms.forEach((a, i) => { a.rotation.x = 0; a.rotation.z = (i ? -1 : 1) * 0.25; }); }
 }
 // お辞儀（角度へ ms でなめらかに）
+// お辞儀：上半身を腰（高さ HIP）を軸に傾ける。足もとを軸にすると頭が前へ大きく出て、賽銭箱や床にめり込むため
+const HIP = 0.6;
 export function bowTo(av, ang, ms) {
   const b = av.userData.body, s = b.rotation.x, t0 = performance.now();
-  return new Promise((r) => (function f() { const k = Math.min(1, (performance.now() - t0) / ms); b.rotation.x = s + (ang - s) * (0.5 - Math.cos(k * Math.PI) / 2); k < 1 ? requestAnimationFrame(f) : r(); })());
+  const baseY = b.position.y - HIP * (1 - Math.cos(s)), baseZ = b.position.z + HIP * Math.sin(s);   // いまの傾きを戻した位置
+  const set = (th) => { b.rotation.x = th; b.position.y = baseY + HIP * (1 - Math.cos(th)); b.position.z = baseZ - HIP * Math.sin(th); };
+  return new Promise((r) => (function f() { const k = Math.min(1, (performance.now() - t0) / ms); set(s + (ang - s) * (0.5 - Math.cos(k * Math.PI) / 2)); k < 1 ? requestAnimationFrame(f) : r(); })());
 }

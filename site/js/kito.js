@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden, PLACES } from "./map.js?v=11031537";
+import { HONDEN, inHonden, PLACES } from "./map.js?v=11031542";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -180,7 +180,8 @@ export function setupKito(A) {
     const r = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8, 0, PI * 2, 0, PI / 2), std(0xfbfaf4)); r.position.y = 0.22; sanbo.add(r);
     for (const d of [-0.12, 0.12]) { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.2, 8), std(0xfbfaf4)); s.position.set(d, 0.32, -0.1); sanbo.add(s); } }
   miko.userData.body.add(sanbo); sanbo.position.set(0, 0.62, 0.5); sanbo.visible = false;
-  const rest = (n) => { const u = n.userData; u.body.rotation.set(0, 0, 0); u.body.position.y = 0; u.lower.scale.y = 1; u.arms.forEach((a, i) => { a.rotation.set(0, 0, (i ? 1 : -1) * 0.22); }); };
+  const hip = (n) => { const b = n.userData.body, th = b.rotation.x; b.position.y += 0.6 * (1 - Math.cos(th)); b.position.z = -0.6 * Math.sin(th); };   // お辞儀は腰を軸に
+  const rest = (n) => { const u = n.userData; u.body.rotation.set(0, 0, 0); u.body.position.y = 0; u.body.position.z = 0; u.lower.scale.y = 1; u.arms.forEach((a, i) => { a.rotation.set(0, 0, (i ? 1 : -1) * 0.22); }); };
   const restAll = () => { rest(priest); rest(miko); houki.visible = fireP.visible = fireM.visible = sanbo.visible = false; };
   // keys: [時刻, x, z, 着いてから向く向き]。間は歩く（向きは進む方へ）
   function follow(n, keys, k, dt) {
@@ -231,7 +232,7 @@ export function setupKito(A) {
   function idle(dt) {
     modeT += dt;
     if (!mode || modeT >= 30) { mode = modeAt(A.env.hour); modeT = 0; }
-    restAll(); MODES[mode](modeT, dt);
+    restAll(); MODES[mode](modeT, dt); hip(priest); hip(miko);
   }
   // 授与所の巫女：参拝者が近づくと、お辞儀して迎える
   const jFloor = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.56, 6.1), std(0x8a6a48, { roughness: 0.8 })); jFloor.position.set(PLACES.juyosho.pos[0] + 1.77, 0.58, PLACES.juyosho.pos[1]); jFloor.receiveShadow = true; scene.add(jFloor);   // 授与所の板の間（一段高い）
@@ -244,6 +245,7 @@ export function setupKito(A) {
     u.body.rotation.y = Math.sin(t * 0.23) * 0.18;
     u.arms[0].rotation.x = -0.35 - Math.max(0, Math.sin(t * 0.5)) * 0.35;                      // お守りを並べ直す
     if (jmBow >= 0) { jmBow += dt; u.body.rotation.x = hump(jmBow, 0.2, 2.0) * 0.7; u.body.rotation.y *= 1 - hump(jmBow, 0, 2.2); if (jmBow > 2.2) jmBow = -1; }
+    hip(jm);
   }
   // 御扉：0 閉 → 1 開
   let door = 0, doorTo = 0, doorShown = 0;

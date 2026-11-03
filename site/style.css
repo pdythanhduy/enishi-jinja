@@ -466,3 +466,7 @@ body.touring #chat-btn,body.touring #chat-tick,body.touring #focus-hud{opacity:0
 
 /* おつかれさまカード */
 .zd-card{display:flex;justify-content:center;margin:.6rem 0}.zd-cv{width:min(260px,70vw);height:auto;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+/* ことば：いつも一番上に、長いときは中でスクロール。開いている間は、お知らせを上へ逃がす */
+#say-pop{z-index:26;max-height:calc(100dvh - 120px - env(safe-area-inset-bottom) - env(safe-area-inset-top) - 90px);overflow-y:auto;overscroll-behavior:contain}
+body:has(#say-pop:not([hidden])) #toast{bottom:auto;top:calc(max(12px,env(safe-area-inset-top)) + 64px)}
+body:has(#say-pop:not([hidden])) #chat-tick,body:has(#say-pop:not([hidden])) #guide{opacity:0;pointer-events:none}
