@@ -1,10 +1,13 @@
 // 徳（とく）と、日々のお勤め。端末に保存。境内全体の徳はサーバーで合計。
 const KEY = "enishi_toku";
 const RANKS = [[0, "参拝者"], [10, "常連さん"], [30, "氏子"], [70, "世話役"], [150, "総代"], [300, "神様の友"]];
+// 今日の参拝（参拝の道）の五つ。js/guide.js の STEPS と同じ順・同じ id
 const QUESTS = [
-  { id: "temizu_omairi", label: "手水で清めてから、お参りする", n: 1 },
-  { id: "sweep", label: "境内の落ち葉を掃く", n: 3 },
-  { id: "pray_ema", label: "誰かの絵馬に「一緒に祈る」", n: 1 },
+  { id: "temizu", label: "手水舎で心と手を清める", n: 1 },
+  { id: "omairi", label: "本殿でお参りする", n: 1 },
+  { id: "kuji", label: "授与所でおみくじを引く", n: 1 },
+  { id: "light", label: "献灯するか、御祈祷を受ける", n: 1 },
+  { id: "en", label: "誰かにお辞儀・ことば・祈りを贈る", n: 1 },
 ];
 const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };

@@ -5,24 +5,25 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031050";
-import { buildWorld } from "./world.js?v=11031050";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031050";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031050";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031050";
-import { deeds } from "../deeds.js?v=11031050";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031050";
-import { fireflies } from "../fx.js?v=11031050";
-import { LIGHT_SPOTS } from "./arch.js?v=11031050";
-import { freeze } from "./freeze.js?v=11031050";
-import { setupKenno } from "./kenno.js?v=11031050";
-import { setupSocial } from "./social.js?v=11031050";
-import { setupProfile } from "./profile.js?v=11031050";
-import { setupKito } from "./kito.js?v=11031050";
-import { makeAvatar, setPose, bowTo, restyle } from "./avatar.js?v=11031050";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031050";
-import { connect, board } from "../net.js?v=11031050";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031050";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031057";
+import { buildWorld } from "./world.js?v=11031057";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031057";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031057";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031057";
+import { deeds } from "../deeds.js?v=11031057";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031057";
+import { fireflies } from "../fx.js?v=11031057";
+import { LIGHT_SPOTS } from "./arch.js?v=11031057";
+import { freeze } from "./freeze.js?v=11031057";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031057";
+import { setupKenno } from "./kenno.js?v=11031057";
+import { setupSocial } from "./social.js?v=11031057";
+import { setupProfile } from "./profile.js?v=11031057";
+import { setupKito } from "./kito.js?v=11031057";
+import { makeAvatar, setPose, bowTo, restyle } from "./avatar.js?v=11031057";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031057";
+import { connect, board } from "../net.js?v=11031057";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031057";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -431,7 +432,7 @@ $("#kuji-box").onclick = async () => {
   for (let i = 0; i < 6; i++) setTimeout(() => tone([[400 + rand(0, 200), 0.3]], 0.15, 0.08), i * 230);
   await wait(1600); b.classList.add("out"); sfx.suzu(); await wait(900);
   const k = store.get("enishi_kuji", {}); k[(kujiHall || hallOf()).id] = today(); store.set("enishi_kuji", k);
-  $("#kuji-stage").hidden = true; $("#kuji-result").hidden = false; showKuji(); net?.act("kuji", drawKuji().rk.key);
+  $("#kuji-stage").hidden = true; $("#kuji-result").hidden = false; showKuji(); net?.act("kuji", drawKuji().rk.key); deedHook("kuji");
 };
 function showKuji() {
   const { h, rk, o } = drawKuji();
@@ -574,20 +575,21 @@ async function remindOn(day, text) {
 // ------------------------------------------------------------------ 徳・お勤め・境内の徳（夜祭り）
 const D = deeds({
   onChange: (pts, newRank) => { refreshToku(); if (pts > 0) flyToku(pts); if (newRank) setTimeout(() => toast(`🎊 位が上がりました：「${newRank}」`, 4200), 1200); },
-  onAllDone: () => setTimeout(() => toast("📜 今日のお勤めをすべて終えました。徳 +5 🎉", 4200), 1800),
+  onAllDone: () => {},                                                // 満願の知らせは guide.js
 });
 const onceToday = (k) => { const m = store.get("enishi_once", {}); if (m[k] === today()) return false; m[k] = today(); store.set("enishi_once", m); return true; };
 const TOKU = { temizu: 1, goshuin: 1, ema: 1, omamori: 0, lamp: 2, kit: 3 };
 hooks.push((kind, d) => {
   let pts = 0, q = null;
-  if (kind === "omairi") { pts = 2 + (d.purified ? 1 : 0); q = d.purified ? "temizu_omairi" : null; }
-  else if (kind === "sweep") { pts = 1; q = "sweep"; }
-  else if (kind === "pray") { pts = 1; q = "pray_ema"; }
+  if (kind === "omairi") pts = 2 + (d.purified ? 1 : 0);
+  else if (kind === "sweep") pts = 1;
+  else if (kind === "pray") pts = 1;
   else if (["koi", "ushi", "ito", "toro"].includes(kind)) pts = onceToday(kind) ? (kind === "toro" ? 2 : 1) : 0;
   else if (kind === "kito") pts = onceToday("kito") ? 5 : 0;
   else if (kind === "en") pts = onceToday("en") ? 2 : 0; else if (kind === "bless") pts = onceToday("bless") ? 1 : 0;
   else if (kind === "kenno") pts = onceToday("kenno") ? 2 : 0; else if (kind === "streak") pts = d.bonus || 0;
   else pts = TOKU[kind] || 0;
+  q = STEP_OF[kind] || null;                                          // 今日の参拝の段
   if (!pts && !q) return;
   D.add(pts, q);
   if (pts) fetch(API_T + "/toku", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ n: pts }) }).then((r) => r.json()).then(setFest).catch(() => {});
@@ -596,10 +598,11 @@ const API_T = "https://enishi-rooms.thanhduy8vn.workers.dev";
 function refreshToku() { $("#toku").textContent = D.toku; $("#rank").textContent = D.rank(); $("#me-tag").textContent = `わたし · ${myName}（${D.rank()}）`; }
 function flyToku(n) { const b = document.createElement("div"); b.className = "toku-fly"; b.textContent = `徳 +${n}`; document.body.appendChild(b); setTimeout(() => b.remove(), 1600); }
 function openQuests() {
-  $("#q-list").innerHTML = D.quests().map((q) => `<li class="${q.done >= q.n ? "done" : ""}"><span>${q.done >= q.n ? "✅" : "⬜"} ${q.label}</span><b>${q.done}/${q.n}</b></li>`).join("");
+  $("#q-list").innerHTML = guide.steps().map((q, i) => `<li class="${q.done ? "done" : ""}"><span>${q.done ? "✅" : `<b class="q-n">${i + 1}</b>`} ${q.icon} ${q.label}</span><button class="btn q-go" data-q="${q.id}" ${q.done ? "disabled" : ""}>${q.done ? "済" : "行く"}</button></li>`).join("");
   const nx = D.next(); $("#q-rank").innerHTML = `徳 <b>${D.toku}</b>・位「${D.rank()}」${nx ? `（次の位まであと ${nx - D.toku}）` : ""}`; open("#m-quest");
 }
 $("#btn-quest").onclick = openQuests;
+$("#q-list").onclick = (e) => { const b = e.target.closest("[data-q]"); if (!b || busy) return; const st = guide.steps().find((x) => x.id === b.dataset.q); $("#m-quest").hidden = true; walkTo(typeof st.to === "string" ? PLACES[st.to].stand : st.to, null, { route: true, fast: true }); };
 let festOn = false;
 function setFest(r) {
   if (!r || r.toku === undefined) return; const pct = Math.min(100, Math.round((r.toku / r.goal) * 100));
@@ -753,6 +756,10 @@ setupSocial({ API: API_T, store, me, scene, camera, toast, W, bowTo, bubble, chi
   }).catch((e) => console.warn("social", e));
 $("#btn-en").onclick = () => social?.openBook();
 hooks.push((kind) => { if (kind === "omairi" || kind === "kito" || kind === "seiza") social?.streakTick(); });
+// ------------------------------------------------------------------ 今日の参拝（guide.js）
+const guide = setupGuide({ scene, me, PLACES, W, D, store, toast, chime, today, releaseLight, footY, isBusy: () => busy, inCine: () => !!cine || !!intro,
+  walkRoute: (to) => walkTo(to, null, { route: true, fast: true }), openList: () => openQuests() });
+hooks.push((kind) => guide.onDeed(kind));
 function onboard() { if (!store.get("enishi_profile", 0) && !busy) profile.open(true); }
 if (!intro) setTimeout(onboard, 1200);
 $("#juyo-kito").onclick = () => { $("#m-juyo").hidden = true; kito.open(); };

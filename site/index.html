@@ -14,7 +14,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=11031050">
+<link rel="stylesheet" href="style.css?v=11031057">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -25,6 +25,7 @@
 <body>
 <div id="loading"><div class="lg-in"><div class="lg-torii">⛩</div><h1>えにし神社</h1><p>境内を開いています…</p></div></div>
 <canvas id="c"></canvas>
+<div id="grain" aria-hidden="true"></div>
 <div id="title-card" hidden><div class="tc-in"><p class="tc-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="tc-hall">― みんなで祈るネット神社 ―</p><p class="tc-skip">タップでスキップ</p></div></div>
 
 <header id="hud-top">
@@ -149,10 +150,10 @@
 <section class="modal" id="m-quest" hidden>
   <div class="sheet">
     <button class="x" data-close>✕</button>
-    <h2>今日のお勤め</h2>
+    <p class="kicker">参拝の道</p><h2>今日の参拝</h2>
     <p class="sub" id="q-rank"></p>
     <ul id="q-list"></ul>
-    <p class="sub">すべて終えると徳 +5。落ち葉掃き・灯籠に火を灯す・迷子の子狐を送る、なども徳になります。みんなの徳が満ちると、その日は夜祭り（花火）になります。</p>
+    <p class="sub">作法の順に五つ。すべて納めると満願、徳 +5。落ち葉掃き・灯籠に火を灯す・迷子の子狐を送る、なども徳になります。みんなの徳が満ちると、その日は夜祭り（花火）になります。</p>
   </div>
 </section>
 
@@ -175,6 +176,6 @@
 </section>
 
 <footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="js/app.js?v=11031050"></script>
+<script type="module" src="js/app.js?v=11031057"></script>
 </body>
 </html>
