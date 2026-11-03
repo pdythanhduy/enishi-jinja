@@ -1,12 +1,12 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032340";
-import { buildMonzen } from "./monzen.js?v=11032340";
-import { buildVista } from "./vista.js?v=11032340";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032340";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032340";
-import { koiSchool } from "./koi.js?v=11032340";
-import { FOLIAGE } from "./env.js?v=11032340";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032357";
+import { buildMonzen } from "./monzen.js?v=11032357";
+import { buildVista } from "./vista.js?v=11032357";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032357";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032357";
+import { koiSchool } from "./koi.js?v=11032357";
+import { FOLIAGE } from "./env.js?v=11032357";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数

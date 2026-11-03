@@ -130,4 +130,5 @@ Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.
 - Trees between the camera and the player fade with a dithered shader (`W.treeFade`, world.js). Trees are kept out of the small-hall footprints.
 
 ## Next ideas
+- Distance culling (app.js, after freeze): meshes under 3 m stop rendering beyond 55× their radius (18–120 m) by switching them to layer 1, so `visible` is left alone. Avatars are skipped, the map camera enables all layers, and `?nolod` turns it off. Meshes under 0.8 m cast no shadow, and the shadow map redraws every other frame. Court went from ~1350 to ~570 draw calls (2026-11-03).
 - Performance check on a real phone. Draw calls are ~260–420 (was ~1000–1560); triangles ~375–405k. The 41 stone toro each keep their own lamp material because DarkLanterns turns single ones off; they could become instanced if more savings are needed.

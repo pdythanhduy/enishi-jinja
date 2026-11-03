@@ -5,37 +5,37 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032340";
-import { buildWorld } from "./world.js?v=11032340";
-import { PEAK } from "./vista.js?v=11032340";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032340";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032340";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032340";
-import { deeds } from "../deeds.js?v=11032340";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032340";
-import { fireflies } from "../fx.js?v=11032340";
-import { LIGHT_SPOTS } from "./arch.js?v=11032340";
-import { freeze } from "./freeze.js?v=11032340";
-import { setupSeasonal } from "./seasonal.js?v=11032340";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032340";
-import { makeBGM } from "./bgm.js?v=11032340";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032340";
-import { setupKenno } from "./kenno.js?v=11032340";
-import { setupSocial } from "./social.js?v=11032340";
-import { setupProfile } from "./profile.js?v=11032340";
-import { setupChores } from "./chores.js?v=11032340";
-import { setupSagyo } from "./sagyo.js?v=11032340";
-import { setupWelcome } from "./welcome.js?v=11032340";
-import { setupZen } from "./zen.js?v=11032340";
-import { setupMixer } from "./mixer.js?v=11032340";
-import { setupShakyo } from "./shakyo.js?v=11032340";
-import { setupTour } from "./tour.js?v=11032340";
-import { setupChat } from "./chat.js?v=11032340";
-import { setupKito, ofudaImage } from "./kito.js?v=11032340";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032340";
-import { Lanterns, matsuri } from "../fx.js?v=11032340";
-import { connect, board } from "../net.js?v=11032340";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032340";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032357";
+import { buildWorld } from "./world.js?v=11032357";
+import { PEAK } from "./vista.js?v=11032357";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032357";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032357";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032357";
+import { deeds } from "../deeds.js?v=11032357";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032357";
+import { fireflies } from "../fx.js?v=11032357";
+import { LIGHT_SPOTS } from "./arch.js?v=11032357";
+import { freeze } from "./freeze.js?v=11032357";
+import { setupSeasonal } from "./seasonal.js?v=11032357";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032357";
+import { makeBGM } from "./bgm.js?v=11032357";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032357";
+import { setupKenno } from "./kenno.js?v=11032357";
+import { setupSocial } from "./social.js?v=11032357";
+import { setupProfile } from "./profile.js?v=11032357";
+import { setupChores } from "./chores.js?v=11032357";
+import { setupSagyo } from "./sagyo.js?v=11032357";
+import { setupWelcome } from "./welcome.js?v=11032357";
+import { setupZen } from "./zen.js?v=11032357";
+import { setupMixer } from "./mixer.js?v=11032357";
+import { setupShakyo } from "./shakyo.js?v=11032357";
+import { setupTour } from "./tour.js?v=11032357";
+import { setupChat } from "./chat.js?v=11032357";
+import { setupKito, ofudaImage } from "./kito.js?v=11032357";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032357";
+import { Lanterns, matsuri } from "../fx.js?v=11032357";
+import { connect, board } from "../net.js?v=11032357";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032357";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -55,7 +55,8 @@ renderer.setPixelRatio(LITE ? 1 : Math.min(devicePixelRatio, MOBILE ? 1.4 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;   // 影は一コマおきに描き直す（動く人の影も十分なめらか）
+let shadowTick = 0;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 1500);   // 遠くの山並み・縁の峰まで
 const fitFov = () => { const a = innerWidth / innerHeight; camera.fov = a < 0.8 ? 66 : a < 1.2 ? 58 : 52; camera.aspect = a; camera.updateProjectionMatrix(); };
@@ -80,6 +81,20 @@ const lanterns = new Lanterns(scene);
 const texTick = textures(W), noboriTick = nobori(scene), rowTick = lanternRows(scene, env); rocksAndBushes(scene, env.season); snowRoofs(env.season);
 // 動かない建物をまとめてドローコールを減らす（?nofreeze で無効）
 if (!QS.has("nofreeze")) { const fz = freeze(scene.children.filter((c) => c.userData.static), scene); console.info("[freeze]", fz); }
+// 小さいものは、遠くでは描かない（画面では数ピクセル。スマホのドローコールを大きく減らす）。?nolod で無効
+// visible には触らず layers で切り替えるので、ほかの処理の表示・非表示とぶつからない。人（アバター）は対象外
+const LOD = [];
+if (!QS.has("nolod")) queueMicrotask(() => scene.traverse((o) => {   // 全部できあがってから（自分のアバターが作られたあと）
+  if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh) return;
+  for (let p = o; p; p = p.parent) if (p === me || p.userData.otherId !== undefined) return;
+  if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere; if (!bs) return;
+  o.updateWorldMatrix(true, false); const r = bs.radius * o.matrixWorld.getMaxScaleOnAxis(); if (r >= 3) return;
+  if (r < 0.8) o.castShadow = false;                                              // 小さな物の影は目立たない：影を描く数を減らす
+  LOD.push({ o, c: bs.center, maxD: Math.min(120, Math.max(18, r * 55)), far: false });
+}));
+{ const v = new THREE.Vector3(); let k = 0;
+  W.update.push(() => { if (++k % 8) return; const cp = camera.position;
+    for (const L of LOD) { v.copy(L.c).applyMatrix4(L.o.matrixWorld); const far = v.distanceTo(cp) > L.maxD; if (far !== L.far) { L.far = far; L.o.layers.set(far ? 1 : 0); } } }); }
 // 灯りの素材をすべて昼夜の切り替えに登録し、今の時刻を一度反映（世界を作る前の env.set では間に合わない）
 scene.traverse((o) => { if (o.isMesh && !Array.isArray(o.material) && o.material.userData?.base !== undefined) env.registerLamp(o.material, null); });
 env.set(hourNow());
@@ -338,7 +353,7 @@ function drawMap() {
   env.set(12.5); scene.fog = null;
   renderer.setPixelRatio(1); renderer.setSize(MW, MH, false);
   const cam = new THREE.OrthographicCamera(MAPB.x0, MAPB.x1, -MAPB.z0, -MAPB.z1, 150, 215);   // 高さ 50 m より上（雲）は写さない
-  cam.position.set(0, 200, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix();
+  cam.position.set(0, 200, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix(); cam.layers.enableAll();   // 遠くで隠した小物も地図には写す
   renderer.render(scene, cam);
   const shot = new Image(); shot.src = renderer.domElement.toDataURL("image/png");
   renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); scene.fog = fog; env.set(hour); hidden.forEach((o) => (o.visible = true));
@@ -1089,6 +1104,7 @@ function loop() {
   }
   net?.pos(me.position.x, me.position.z, me.rotation.y);
   bloom.strength = (MOBILE ? 0.42 : 0.55) * (0.12 + 0.88 * env.lamp); bloom.threshold = 0.86 + (1 - env.lamp) * 0.12; bloom.radius = 0.45;
+  renderer.shadowMap.needsUpdate = (++shadowTick & 1) === 0 || shadowTick < 4;
   composer.render();
   v3.copy(me.position); v3.y += 2.15 * AV_SCALE; v3.project(camera);
   tagEl.style.display = intro ? "none" : ""; tagEl.style.left = (v3.x * 0.5 + 0.5) * innerWidth + "px"; tagEl.style.top = (-v3.y * 0.5 + 0.5) * innerHeight + "px";
