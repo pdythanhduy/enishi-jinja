@@ -1,7 +1,8 @@
 // 手水舎：龍の口から水が流れつづける水盤、柄杓の掛け台、作法の立て札。
 // 手水の所作は、肩越しのカメラで柄杓を持ち、汲んで、注ぐところまで見せる。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, chochin } from "./arch.js?v=11031417";
+import { waterMaterial } from "./water.js?v=11031442";
+import { MAT, box, cyl, roof, chochin } from "./arch.js?v=11031442";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...o });
 const BRONZE = std(0x5a7458, { metalness: 0.65, roughness: 0.38 });
@@ -37,7 +38,7 @@ export function buildTemizuya(scene, env, [x, z]) {
   // 水盤：縁のある石、少し低い水面
   box(g, 2.7, 0.62, 1.4, MAT.stoneL, 0, 0.49, 0);
   for (const s of [-1, 1]) { box(g, 2.82, 0.12, 0.12, MAT.stone, 0, 0.84, s * 0.66); box(g, 0.12, 0.12, 1.4, MAT.stone, s * 1.35, 0.84, 0); }
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(2.56, 1.2), MAT.water); water.rotation.x = -Math.PI / 2; water.position.set(0, 0.83, 0); g.add(water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(2.56, 1.2), waterMaterial({ rx: 1.28, rz: 0.6, foam: 0, minAlpha: 0.45, scale: 0.6 })); water.rotation.x = -Math.PI / 2; water.position.set(0, 0.83, 0); g.add(water);
   // 龍：岩の上から水を吐く（青銅）
   const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), std(0x6f6a62, { flatShading: true, roughness: 0.95 })); rock.scale.set(1.2, 0.8, 1); rock.position.set(-1.12, 0.98, 0.34); rock.castShadow = true; g.add(rock);
   const dr = new THREE.Group(); dr.position.set(-1.05, 1.12, 0.34); dr.rotation.y = 0.15; g.add(dr);

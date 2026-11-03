@@ -1,8 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031417";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031417";
-import { FOLIAGE } from "./env.js?v=11031417";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031442";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031442";
+import { makePond, pondPlants, tickWater } from "./water.js?v=11031442";
+import { koiSchool } from "./koi.js?v=11031442";
+import { FOLIAGE } from "./env.js?v=11031442";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -46,21 +48,19 @@ export function buildWorld(scene, env, { mobile }) {
   for (const x of [-5.5, 5.5]) W.lamps.push(toro(scene, x, 80, 0, env, 1.3));
 
   // ---------------------------------------------------------------- ③ 池と太鼓橋、鯉
-  const pondShape = new THREE.Shape(); pondShape.absellipse(0, 0, POND.rx, POND.rz, 0, Math.PI * 2);
-  const water = new THREE.Mesh(new THREE.ShapeGeometry(pondShape, 48), MAT.water); water.rotation.x = -Math.PI / 2; water.position.set(POND.cx, 0.05, POND.cz); scene.add(water);
-  const bed = new THREE.Mesh(new THREE.ShapeGeometry(pondShape, 48), new THREE.MeshStandardMaterial({ color: 0x1d2e26 })); bed.rotation.x = -Math.PI / 2; bed.position.set(POND.cx, 0.01, POND.cz); scene.add(bed);
-  for (let i = 0; i < 46; i++) { const a = (i / 46) * Math.PI * 2; const r = box(scene, sr(0.5, 1.0), sr(0.25, 0.5), sr(0.5, 0.9), MAT.stoneD, POND.cx + Math.cos(a) * (POND.rx + 0.2), 0.15, POND.cz + Math.sin(a) * (POND.rz + 0.2)); r.rotation.y = sr(0, 3); r.userData.static = true; }
+  // 鯉の池：すり鉢の底・澄んだ水面・蓮と菖蒲・泳ぐ鯉
+  const pond = makePond(scene, { cx: POND.cx, cz: POND.cz, rx: POND.rx, rz: POND.rz, y: -0.08, depth: 1.0 });
+  // 岸の石組み：大小の自然石を、少し沈めて不揃いに
+  { const rockG = [new THREE.DodecahedronGeometry(1, 0), new THREE.IcosahedronGeometry(1, 0)], rockM = [0x7a756c, 0x8a857b, 0x6a665e].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true }));
+    for (let i = 0; i < 58; i++) { const a = (i / 58) * Math.PI * 2 + sr(-0.03, 0.03), big = i % 7 === 0, k = big ? sr(0.55, 0.8) : sr(0.28, 0.5);
+      const r = new THREE.Mesh(rockG[i % 2], rockM[i % 3]); r.scale.set(k * sr(1.0, 1.6), k * sr(0.55, 0.9), k * sr(0.9, 1.3));
+      r.position.set(POND.cx + Math.cos(a) * (POND.rx + sr(0.0, 0.35)), big ? 0.12 : -0.02, POND.cz + Math.sin(a) * (POND.rz + sr(0.0, 0.3))); r.rotation.set(sr(0, 3), sr(0, 6), sr(0, 3));
+      r.castShadow = r.receiveShadow = true; r.userData.static = true; scene.add(r); } }
   taikobashi(scene, BRIDGE);
-  const koi = [];
-  const koiCols = [0xff6a2a, 0xffffff, 0xf2c14a, 0xe83a2a, 0x222222];
-  for (let i = 0; i < 9; i++) {
-    const k = new THREE.Group(); const body = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), new THREE.MeshStandardMaterial({ color: koiCols[i % koiCols.length], roughness: 0.4 }));
-    body.scale.set(2.6, 0.6, 1); k.add(body); const tail = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.3, 6), body.material); tail.rotation.z = Math.PI / 2; tail.position.x = -0.55; k.add(tail);
-    k.position.y = -0.05; scene.add(k); koi.push({ k, a: sr(0, 6.28), r: sr(2, 6), sp: sr(0.15, 0.35), t: tail });
-  }
-  W.koi = koi; W.pondWater = water;
-  W.update.push((t) => { for (const f of koi) { f.a += f.sp * 0.016 * (f.boost || 1); f.boost = Math.max(1, (f.boost || 1) * 0.99);
-    const x = POND.cx + Math.cos(f.a) * f.r * 1.4, z = POND.cz + Math.sin(f.a) * f.r * 0.8; f.k.position.set(x, -0.02, z); f.k.rotation.y = -f.a - Math.PI / 2; f.t.rotation.y = Math.sin(t * 8 + f.a) * 0.4; } });
+  pondPlants(scene, { cx: POND.cx, cz: POND.cz, rx: POND.rx, rz: POND.rz, y: -0.08 }, { pads: mobile ? 12 : 22, lotus: 6, iris: 12 });
+  const school = koiSchool(scene, { cx: POND.cx, cz: POND.cz, rx: POND.rx, rz: POND.rz, y: -0.08 }, mobile ? 9 : 14);
+  W.koi = school.fish; W.koiFeed = school.feed; W.pondWater = pond.surface;
+  W.update.push((t, dt) => { school.update(t, Math.min(dt, 0.05)); tickWater(t); });
   for (const [x, z] of [[9, 47], [27, 47], [9, 61], [27, 61]]) W.lamps.push(toro(scene, x, z, 0, env, 0.85));
 
   // ---------------------------------------------------------------- ④ 楼門 と 玉垣
@@ -172,6 +172,7 @@ export function buildWorld(scene, env, { mobile }) {
   const up = new THREE.Vector3(0, 1, 0), o3 = new THREE.Object3D();
   for (let i = 1; i <= n; i++) {
     const p = trailPts[i], nx = trailPts[i + 1], t = i / trailPts.length, y = trailHeight(t);
+    o3.scale.setScalar(Math.hypot(p.x + 2, p.z + 74) < 12.5 ? 0 : 1);                 // 山頂の境内には鳥居を並べない
     const dir = new THREE.Vector3(nx.x - p.x, 0, nx.z - p.z).normalize(), side = new THREE.Vector3().crossVectors(up, dir).normalize();
     const ang = Math.atan2(dir.x, dir.z);
     for (const s of [-1, 1]) {
@@ -183,7 +184,7 @@ export function buildWorld(scene, env, { mobile }) {
   }
   for (const im of [pil, beam, top, foot]) { im.castShadow = true; scene.add(im); }
   // 山道の灯籠（間隔をあけて）
-  for (let i = 8; i < trailPts.length - 4; i += 14) { const p = trailPts[i], nx = trailPts[i + 1], t = i / trailPts.length; const d = new THREE.Vector3(nx.z - p.z, 0, -(nx.x - p.x)).normalize();
+  for (let i = 8; i < trailPts.length - 4; i += 14) { const p = trailPts[i], nx = trailPts[i + 1], t = i / trailPts.length; const d = new THREE.Vector3(nx.z - p.z, 0, -(nx.x - p.x)).normalize(); if (Math.hypot(p.x + 2, p.z + 74) < 12.5) continue;
     W.lamps.push(toro(scene, p.x + d.x * 2.6, p.z + d.z * 2.6, trailHeight(t), env, 0.75)); }
   torii(scene, { x: 21.5, z: -6.2, s: 1.1, gaku: null });
 
@@ -202,16 +203,39 @@ export function buildWorld(scene, env, { mobile }) {
     for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, r = 30 + Math.random() * 26, p = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), cm); p.rotation.x = -Math.PI / 2; p.rotation.z = Math.random() * 6;
       p.position.set(-2 + Math.cos(a) * r, okY - 9 - Math.random() * 6, -74 + Math.sin(a) * r * 0.8); if (p.position.z > -40) p.position.z = -40 - Math.random() * 8; scene.add(p); puffs.push(p); }
     W.update.push((tt) => puffs.forEach((p, i) => { p.rotation.z += 0.0004 * (i % 2 ? 1 : -1); p.position.x += Math.sin(tt * 0.05 + i) * 0.005; })); }
-  const op = new THREE.Shape(); op.absellipse(0, 0, 5.5, 3.6, 0, Math.PI * 2);
-  const oWater = new THREE.Mesh(new THREE.ShapeGeometry(op, 40), MAT.water); oWater.rotation.x = -Math.PI / 2; oWater.position.set(OKPOND.cx, okY + 0.05, OKPOND.cz); scene.add(oWater);
-  W.okPond = { x: 6, z: -73, y: okY, rx: 5.5, rz: 3.6 };
+  // 山頂の池（灯籠流し）：滝が東の端に落ちる
+  makePond(scene, { cx: OKPOND.cx, cz: OKPOND.cz, rx: OKPOND.rx, rz: OKPOND.rz, y: okY - 0.08, depth: 0.85, minAlpha: 0.3 });
+  pondPlants(scene, { cx: OKPOND.cx, cz: OKPOND.cz, rx: OKPOND.rx, rz: OKPOND.rz, y: okY - 0.08 }, { pads: 6, lotus: 2, iris: 5 });
+  { const s2 = koiSchool(scene, { cx: OKPOND.cx, cz: OKPOND.cz, rx: OKPOND.rx, rz: OKPOND.rz, y: okY - 0.08 }, 4); W.update.push((t, dt) => s2.update(t, Math.min(dt, 0.05))); }
+  W.okPond = { x: OKPOND.cx, z: OKPOND.cz, y: okY - 0.08, rx: OKPOND.rx, rz: OKPOND.rz };
   const fallTex = (() => { const cv = document.createElement("canvas"); cv.width = 32; cv.height = 128; const x = cv.getContext("2d");
     for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.5})`; x.fillRect(Math.random() * 32, Math.random() * 128, 1 + Math.random() * 2, 8 + Math.random() * 20); }
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
-  const fall = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 9), new THREE.MeshBasicMaterial({ map: fallTex, transparent: true, opacity: 0.85, color: 0xd8ecff, depthWrite: false }));
-  fall.position.set(11, okY + 4.5, -76.5); fall.rotation.y = -0.6; fall.scale.y = 1.3; scene.add(fall);
-  { const b = box(scene, 6, 10, 3, MAT.stoneD, 12.5, okY + 4, -78.5); b.rotation.y = -0.6; b.userData.static = true; }
-  W.update.push((t, dt) => { fallTex.offset.y -= dt * 1.4; });
+  // 滝：岩を積んだ崖から、二枚の水の幕が池の東の端へ落ちる。足もとに飛沫と霧
+  const fx = OKPOND.cx + OKPOND.rx + 0.15, fz = OKPOND.cz, fallTop = okY + 8.5;
+  const rockM = new THREE.MeshStandardMaterial({ color: 0x6f6a62, roughness: 1, flatShading: true });
+  for (let i = 0; i < 16; i++) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1 + Math.random() * 0.9, 0), rockM); const lvl = Math.floor(i / 4);
+    r.position.set(fx + 1.2 + Math.random() * 1.6, okY + 0.6 + lvl * 2.1 + Math.random() * 0.6, fz + (i % 4 - 1.5) * 1.15 + (Math.random() - 0.5) * 0.6); r.rotation.set(Math.random() * 3, Math.random() * 3, 0); r.castShadow = r.receiveShadow = true; r.userData.static = true; scene.add(r); }
+  const sheetM = (op, col) => new THREE.MeshBasicMaterial({ map: fallTex, alphaMap: fallTex, transparent: true, opacity: op, color: col, depthWrite: false, side: THREE.DoubleSide });
+  const sheetT2 = fallTex.clone(); sheetT2.needsUpdate = true; sheetT2.repeat.set(1.5, 1.2);
+  const s1 = new THREE.Mesh(new THREE.PlaneGeometry(1.8, fallTop - okY), sheetM(0.92, 0xe8f4ff)); s1.position.set(fx + 0.35, (fallTop + okY) / 2, fz); s1.rotation.y = -Math.PI / 2; scene.add(s1);
+  const s2m = sheetM(0.55, 0xffffff); s2m.map = sheetT2; s2m.alphaMap = sheetT2;
+  const s2 = new THREE.Mesh(new THREE.PlaneGeometry(1.3, fallTop - okY), s2m); s2.position.set(fx + 0.2, (fallTop + okY) / 2, fz + 0.05); s2.rotation.y = -Math.PI / 2; scene.add(s2);
+  const lip = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.9, 8), new THREE.MeshBasicMaterial({ color: 0xf2faff, transparent: true, opacity: 0.8 })); lip.rotation.x = Math.PI / 2; lip.position.set(fx + 0.4, fallTop, fz); scene.add(lip);
+  // 飛沫（白い粒が跳ねる）と霧
+  const SN = 90, spray = new THREE.BufferGeometry(), sp = new Float32Array(SN * 3), sv = new Float32Array(SN * 3);
+  const respawn = (i) => { sp[i * 3] = fx + (Math.random() - 0.3) * 0.8; sp[i * 3 + 1] = okY; sp[i * 3 + 2] = fz + (Math.random() - 0.5) * 1.6; sv[i * 3] = -Math.random() * 1.2; sv[i * 3 + 1] = 1 + Math.random() * 1.8; sv[i * 3 + 2] = (Math.random() - 0.5) * 1.2; };
+  for (let i = 0; i < SN; i++) { respawn(i); sp[i * 3 + 1] += Math.random() * 0.8; }
+  spray.setAttribute("position", new THREE.BufferAttribute(sp, 3));
+  scene.add(new THREE.Points(spray, new THREE.PointsMaterial({ color: 0xffffff, size: 0.07, transparent: true, opacity: 0.8, depthWrite: false })));
+  const mcv = document.createElement("canvas"); mcv.width = mcv.height = 64; const mx = mcv.getContext("2d"), mg = mx.createRadialGradient(32, 32, 0, 32, 32, 32); mg.addColorStop(0, "rgba(255,255,255,.55)"); mg.addColorStop(1, "rgba(255,255,255,0)"); mx.fillStyle = mg; mx.fillRect(0, 0, 64, 64);
+  const mist = [0, 1, 2].map((i) => { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(mcv), transparent: true, depthWrite: false, opacity: 0.5 })); m.scale.setScalar(3.2 + i); m.position.set(fx - 0.3 - i * 0.4, okY + 0.6 + i * 0.4, fz); scene.add(m); return m; });
+  W.update.push((t, dt) => {
+    fallTex.offset.y -= dt * 1.6; sheetT2.offset.y -= dt * 2.3; dt = Math.min(dt, 0.05);
+    for (let i = 0; i < SN; i++) { sv[i * 3 + 1] -= 9.8 * dt; sp[i * 3] += sv[i * 3] * dt; sp[i * 3 + 1] += sv[i * 3 + 1] * dt; sp[i * 3 + 2] += sv[i * 3 + 2] * dt; if (sp[i * 3 + 1] < okY - 0.1) respawn(i); }
+    spray.attributes.position.needsUpdate = true; mist.forEach((m, i) => { m.material.opacity = 0.35 + Math.sin(t * 0.8 + i) * 0.12; });
+  });
+  W.fallAt = [fx, fz];
   torii(scene, { x: 3.5, z: -70, y: okY, s: 0.8, gaku: null });
   for (const x of [-6, 2]) W.lamps.push(toro(scene, x, -69, okY, env, 0.8));
 
@@ -221,7 +245,8 @@ export function buildWorld(scene, env, { mobile }) {
   // ---------------------------------------------------------------- 木々（InstancedMesh：幹＋葉）
   const trees = { momiji: [], sakura: [], ume: [], sugi: [] };
   const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中と正面の広場に木が生えないように
-  const add = (k, x, z, s = 1) => { if (Math.abs(x) > 21 && Math.abs(x) < 28 && z > 24.5 && z < 44) return;   // 回廊の上には木を植えない
+  const add = (k, x, z, s = 1) => { if (Math.abs(x) > 21 && Math.abs(x) < 28 && z > 24.5 && z < 44) return;
+    if (Math.hypot(x + 2, z + 74) < 14.5) return;                                          // 山頂（奥の院）は木を植えない   // 回廊の上には木を植えない
     if (!halls.some(([hx, hz]) => Math.abs(x - hx) < SMALL.W / 2 + 2.5 && z > hz - SMALL.D / 2 - 2.5 && z < 26.5)) trees[k].push([x, z, s]); };
   for (let z = 74; z > 45; z -= 3.2) for (const sgn of [-1, 1]) add("momiji", sgn * sr(7.5, 11), z + sr(-1, 1), sr(0.9, 1.3));        // 参道の紅葉
   for (let i = 0; i < 40; i++) { const x = sr(-40, -8), z = sr(46, 84); if (Math.abs(x) > 7.5) add("momiji", x, z, sr(0.9, 1.4)); }

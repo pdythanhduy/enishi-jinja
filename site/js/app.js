@@ -5,28 +5,28 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031417";
-import { buildWorld } from "./world.js?v=11031417";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031417";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031417";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031417";
-import { deeds } from "../deeds.js?v=11031417";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031417";
-import { fireflies } from "../fx.js?v=11031417";
-import { LIGHT_SPOTS } from "./arch.js?v=11031417";
-import { freeze } from "./freeze.js?v=11031417";
-import { setupSeasonal } from "./seasonal.js?v=11031417";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031417";
-import { makeBGM } from "./bgm.js?v=11031417";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031417";
-import { setupKenno } from "./kenno.js?v=11031417";
-import { setupSocial } from "./social.js?v=11031417";
-import { setupProfile } from "./profile.js?v=11031417";
-import { setupKito } from "./kito.js?v=11031417";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031417";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031417";
-import { connect, board } from "../net.js?v=11031417";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031417";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031442";
+import { buildWorld } from "./world.js?v=11031442";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031442";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031442";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031442";
+import { deeds } from "../deeds.js?v=11031442";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031442";
+import { fireflies } from "../fx.js?v=11031442";
+import { LIGHT_SPOTS } from "./arch.js?v=11031442";
+import { freeze } from "./freeze.js?v=11031442";
+import { setupSeasonal } from "./seasonal.js?v=11031442";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031442";
+import { makeBGM } from "./bgm.js?v=11031442";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031442";
+import { setupKenno } from "./kenno.js?v=11031442";
+import { setupSocial } from "./social.js?v=11031442";
+import { setupProfile } from "./profile.js?v=11031442";
+import { setupKito } from "./kito.js?v=11031442";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031442";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031442";
+import { connect, board } from "../net.js?v=11031442";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031442";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -295,7 +295,7 @@ const ACTIONS = [
   { id: "ushi", label: "🐂 撫で牛を撫でる", at: [28.6, 21.9], r: 2.8, run: () => nadeUshi() },
   { id: "enito", label: "💞 赤い糸に願う", at: [-28.6, 21.9], r: 2.8, run: () => akaiIto() },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
-  { id: "toro", label: "🏮 灯籠を流す", at: [2, -71.5], r: 5, run: () => toroNagashi() },
+  { id: "toro", label: "🏮 灯籠を流す", at: [4.2, -72.4], r: 3.2, run: () => toroNagashi() },
   { id: "kito", label: "🎴 御祈祷を受ける", at: hw(0, 0.5), r: 1.5, run: () => kito.open() },
   { id: "kito_front", label: "🎴 御祈祷を受ける", at: [0, 9.9], r: 1.4, run: () => kito.open() },
   { id: "kenno", label: "🏮 献灯する", at: [-18.2, 22], r: 2.4, run: () => kenno?.open() },
@@ -531,12 +531,12 @@ function petFox(i) {
 }
 function nadeUshi() { deedHook("ushi"); bubbleAt(W.ushi, "もぉ〜", 1500, 1.9); tone([[160, 0.5], [120, 0.3]], 0.6, 0.15); toast("撫で牛の頭を撫でました。知恵と合格を授かりますように 📚"); }
 function akaiIto() { deedHook("ito"); bubbleAt(W.enTree, "💞", 1800, 3.4); tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.2, 0.1); releaseLight(W.enTree.position.x, 0, W.enTree.position.z, true); toast("赤い糸にご縁を願いました。同じ時に願った人がいると、糸がつながるかも…💞"); net?.act("ito"); }
-function feedKoi() { deedHook("koi"); for (const k of W.koi) k.boost = 4; noise(0.2, 2500, 0.15, "highpass"); toast("鯉が集まってきました 🐟"); }
+function feedKoi() { deedHook("koi"); W.koiFeed?.(me.position.x, me.position.z); noise(0.2, 2500, 0.15, "highpass"); toast("鯉が集まってきました 🐟"); }
 function toroNagashi() { deedHook("toro");
   const lamp = new THREE.Group(); const m = new THREE.MeshStandardMaterial({ color: 0xfff0d0, emissive: 0xffa040, emissiveIntensity: 2.6 });
   const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), m); b.position.y = 0.25; lamp.add(b);
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.55), new THREE.MeshStandardMaterial({ color: 0x6b4428 })); lamp.add(base);
-  lamp.position.set(OKPOND.cx - 3.5, OKU_Y + 0.1, OKPOND.cz + 0.5); scene.add(lamp); W.floatLamps = (W.floatLamps || []).concat([{ lamp, a: Math.random() * 6, t: 0 }]);
+  lamp.position.set(OKPOND.cx - OKPOND.rx * 0.7, OKU_Y - 0.06, OKPOND.cz + 0.4); scene.add(lamp); W.floatLamps = (W.floatLamps || []).concat([{ lamp, a: Math.random() * 6, t: 0 }]);
   toast("灯籠を池に流しました。遠くの大切な人に、想いが届きますように 🏮"); releaseLight(lamp.position.x, OKU_Y, lamp.position.z, true); net?.act("toro");
 }
 
@@ -809,7 +809,7 @@ function loop() {
   W.treeFade?.(camera.position, controls.target);
   env.follow(me.position);
   for (const f of W.update) f(t, dt, me.position);
-  for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * 3.2; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * 1.8; fl.lamp.position.y = OKU_Y + 0.08 + Math.sin(t * 2 + fl.a) * 0.02; }
+  for (const fl of W.floatLamps || []) { fl.t += dt; fl.a += dt * 0.12; fl.lamp.position.x = OKPOND.cx + Math.cos(fl.a) * OKPOND.rx * 0.65; fl.lamp.position.z = OKPOND.cz + Math.sin(fl.a) * OKPOND.rz * 0.6; fl.lamp.position.y = OKU_Y - 0.06 + Math.sin(t * 2 + fl.a) * 0.02; }
   lanterns.update(dt, t); kit.update(dt, me); texTick(t); noboriTick(t); rowTick(t); cloudTick(t, env); ffTick(t);
   fireworks.update(dt, () => { tone([[60, 0.8], [90, 0.4]], 1.2, 0.25); setTimeout(() => noise(0.6, 2200, 0.12, "highpass"), 300); });
   for (const o of others.values()) {

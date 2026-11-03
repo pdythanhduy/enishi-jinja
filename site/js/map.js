@@ -49,12 +49,13 @@ export const trailHeight = (t) => smooth(0.0, 1, t) * OKU_Y;
 export function height(x, z) {
   if (z > -6 && Math.abs(x) < 46 && z < 88) {
     if (z < 2 && x > 33 && x < 44) return Math.max(0, smooth(2, -13, z) * (Math.max(0, 1 - Math.hypot(x - 40, z + 21) / 16) * 5 + smooth(-6, -80, z) * 16));
-    return 0;
+    const rp = Math.hypot((x - POND.cx) / POND.rx, (z - POND.cz) / POND.rz);   // 池はすり鉢に掘る
+    return rp < 1.25 ? -1.3 * smooth(1.25, 0.88, rp) : 0;
   }
   let h = rawMountain(x, z);
   const dOk = Math.hypot(x + 2, z + 74);
   if (dOk < 46) h = Math.max(h, OKU_Y - Math.pow(Math.max(0, dOk - 13), 1.18) * 0.95);   // 山頂へ尖っていく
-  if (dOk < 13) h = OKU_Y;                                                        // 奥の院の平地
+  if (dOk < 13) { h = OKU_Y; const ro = Math.hypot((x - OKPOND.cx) / OKPOND.rx, (z - OKPOND.cz) / OKPOND.rz); if (ro < 1.25) h -= 1.1 * smooth(1.25, 0.88, ro); }   // 奥の院の平地と池
   if (z > -14 && z <= -6 && Math.abs(x) < 46) h *= smooth(-6, -14, z);
   if (Math.abs(x) < 25 && z > -30) h *= Math.max(smooth(-20, -30, z), smooth(17, 25, Math.abs(x)));   // 本殿の裏は平らに、なだらかに山へ
   const tr = trailInfo(x, z);
@@ -65,7 +66,7 @@ export function height(x, z) {
 // 池（楕円の中は水。橋の上だけ通れる）
 export const POND = { cx: 18, cz: 54, rx: 9, rz: 6 };
 export const BRIDGE = { x0: 8.4, x1: 27.6, z: 54, w: 2.2 };
-export const OKPOND = { cx: 6, cz: -73, rx: 5.5, rz: 3.6 };
+export const OKPOND = { cx: 7.0, cz: -76, rx: 3.4, rz: 2.7 };
 const inEll = (x, z, e) => ((x - e.cx) / e.rx) ** 2 + ((z - e.cz) / e.rz) ** 2 < 1;
 
 // 当たり判定 [x0, z0, x1, z1]
@@ -94,7 +95,7 @@ export const BLOCKS = [
   [-6.2, 17, -4.8, 19], [4.8, 17, 6.2, 19],                   // 狛狐の台
   [-30.3, 23.0, -28.7, 24.6], [28.4, 23.0, 30.6, 24.6],        // 赤い糸の木・撫で牛
   [36.2, -25.8, 43.8, -18.2],                                 // 五重塔
-  [-6.9, -81.9, 2.9, -74.2],                                  // 奥の院（1.5倍）
+  [-7.4, -82.4, 3.4, -74.0],                                  // 奥の院（1.5倍・透塀まで）
   [-13.0, -75.4, -8.0, -70.6], [-12.2, -81.0, -6.8, -79.0],    // 磐座・夫婦杉
 ];
 export function walkable(x, z) {

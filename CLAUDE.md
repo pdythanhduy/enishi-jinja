@@ -22,6 +22,7 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
   - `guide.js`: 今日の参拝, five daily steps (手水 → お参り → おみくじ → 献灯/御祈祷 → 縁). It reuses the deeds.js quest ids, shows a gold marker at the next spot, and fires 満願 when all five are done. `STEP_OF` maps deed kinds to steps.
   - `temizu.js`: the 手水舎 (dragon spout with running water, ladle rack, 作法 sign, water sound) and the over-the-shoulder 手水 ritual.
   - `seasonal.js`: calendar events by JST month (now 七五三 in November: banners, 千歳飴 stand, extra 願意). Force one with `?event=753`.
+  - `water.js`: light water shader (two drifting normal maps, Fresnel alpha so koi show from above, edge foam), bowl-shaped pond bed with caustics, lotus and iris. `koi.js`: patterned koi that wander and bend as they swim; `W.koiFeed(x, z)` gathers them. Ponds are dug into the terrain in `height()`.
   - `freeze.js`: at startup, merges the meshes of groups marked `userData.static = true` (arch.js builders) into one mesh per material. Groups stay for position lookups. Anything that moves, or swaps materials per mesh, must NOT be marked static. `?nofreeze` disables it.
 - `site/fx.js`: wagara patterns, ambience sounds, `matsuri()` お囃子 festival music. `site/content.js`: halls, stories, omikuji.
 - `worker/worker.js`: also /presence, /bless, /inbox, /kenno, /kenno/light (Remind DO tables pres, inbox, lamp) and GET /ema/:hall?ids=. Admin can hide a lamp with POST /admin/:hall {key, lamp}.
@@ -38,7 +39,7 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 
 ## Rules
 - **Before every commit, run `python tools/bump.py`.** It adds `?v=` cache-busting to the relative imports. Without it, browsers keep serving stale modules.
-- Check JS syntax with `node --check site/js/*.js site/fx.js`, but always load the page too: node --check once missed a broken string literal that the browser rejected.
+- Check syntax with `node --experimental-vm-modules tools/modcheck.mjs site/js/*.js site/*.js`. It parses each file as a real ES module, so it catches duplicate declarations that `node --check` misses. Still load the page: lazy regex errors only show in the browser.
 - Never print or commit `.env`. It holds CF_WORKER_TOKEN, ADMIN_KEY, GEMINI_API_KEY and VAPID keys.
 - Commit messages end with the Co-Authored-By / Claude-Session lines given by the harness.
 
