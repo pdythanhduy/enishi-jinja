@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden, PLACES } from "./map.js?v=11031534";
+import { HONDEN, inHonden, PLACES } from "./map.js?v=11031537";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -70,7 +70,7 @@ function tamagushi() {
 // ------------------------------------------------------------------ 声（祝詞の節）と笛：WebAudio で合成
 function chantVoice(ac, muted) {
   if (muted()) return { syl() {}, rest() {}, stop() {} };
-  const a = ac(), out = a.createGain(); out.gain.value = 0; out.connect(a.destination);
+  const a = ac(), out = a.createGain(); out.gain.value = 0; out.connect(a.fxBus || a.destination);
   const f1 = a.createBiquadFilter(), f2 = a.createBiquadFilter(); f1.type = f2.type = "bandpass"; f1.frequency.value = 520; f2.frequency.value = 980; f1.Q.value = 4; f2.Q.value = 6;
   const mix = a.createGain(); mix.gain.value = 0.9; f1.connect(out); f2.connect(out);
   const oscs = [104, 104.6, 156].map((f) => { const o = a.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.connect(mix); o.start(); return o; });
@@ -90,7 +90,7 @@ function chantVoice(ac, muted) {
 }
 function fue(ac, muted, notes) {   // 篠笛：息まじりの正弦波でゆったりと
   if (muted()) return () => {};
-  const a = ac(), t0 = a.currentTime + 0.05, out = a.createGain(); out.gain.value = 0; out.connect(a.destination);
+  const a = ac(), t0 = a.currentTime + 0.05, out = a.createGain(); out.gain.value = 0; out.connect(a.fxBus || a.destination);
   const o = a.createOscillator(); o.type = "sine"; const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 5.5; vg.gain.value = 9; vib.connect(vg).connect(o.frequency); o.connect(out);
   let t = t0; for (const [f, d] of notes) { o.frequency.setTargetAtTime(f, t, 0.04); out.gain.setTargetAtTime(0.07, t, 0.05); out.gain.setTargetAtTime(0.045, t + d * 0.7, 0.2); t += d; }
   out.gain.setTargetAtTime(0, t, 0.3); o.start(t0); vib.start(t0); o.stop(t + 1.5); vib.stop(t + 1.5);

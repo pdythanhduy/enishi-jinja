@@ -104,13 +104,13 @@ export function ambience(getCtx, isMuted) {
   let started = false, master;
   return function start() {
     if (started || isMuted()) return; started = true;
-    const a = getCtx(); master = a.createGain(); master.gain.value = 0.0; master.connect(a.destination);
-    master.gain.linearRampToValueAtTime(0.5, a.currentTime + 3);
+    const a = getCtx(); master = a.createGain(); master.gain.value = 0.0; master.connect(a.fxBus || a.destination);
+    master.gain.linearRampToValueAtTime(0.3, a.currentTime + 3);
     // 風（ブラウンノイズ＋ローパス）
     const len = a.sampleRate * 4, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0); let last = 0;
     for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; }
     const src = a.createBufferSource(); src.buffer = buf; src.loop = true;
-    const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420; const wg = a.createGain(); wg.gain.value = 0.35;
+    const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380; const wg = a.createGain(); wg.gain.value = 0.15;
     src.connect(lp).connect(wg).connect(master); src.start();
     // 鈴虫（リーン…）
     const cricket = () => {
@@ -172,7 +172,7 @@ export function matsuri(getCtx, isMuted) {
   return {
     set(v) {
       if (v === on) return; on = v; const a = getCtx();
-      if (!bus) { bus = a.createGain(); bus.connect(a.destination); }
+      if (!bus) { bus = a.createGain(); bus.connect(a.fxBus || a.destination); }
       bus.gain.cancelScheduledValues(a.currentTime); bus.gain.setValueAtTime(bus.gain.value, a.currentTime);
       bus.gain.linearRampToValueAtTime(v ? 0.6 : 0, a.currentTime + 2);
       if (v) { step = 0; clearTimeout(timer); tick(); } else clearTimeout(timer);

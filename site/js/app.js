@@ -5,33 +5,33 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031534";
-import { buildWorld } from "./world.js?v=11031534";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031534";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031534";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031534";
-import { deeds } from "../deeds.js?v=11031534";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031534";
-import { fireflies } from "../fx.js?v=11031534";
-import { LIGHT_SPOTS } from "./arch.js?v=11031534";
-import { freeze } from "./freeze.js?v=11031534";
-import { setupSeasonal } from "./seasonal.js?v=11031534";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031534";
-import { makeBGM } from "./bgm.js?v=11031534";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031534";
-import { setupKenno } from "./kenno.js?v=11031534";
-import { setupSocial } from "./social.js?v=11031534";
-import { setupProfile } from "./profile.js?v=11031534";
-import { setupZen } from "./zen.js?v=11031534";
-import { setupMixer } from "./mixer.js?v=11031534";
-import { setupShakyo } from "./shakyo.js?v=11031534";
-import { setupTour } from "./tour.js?v=11031534";
-import { setupChat } from "./chat.js?v=11031534";
-import { setupKito, ofudaImage } from "./kito.js?v=11031534";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031534";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031534";
-import { connect, board } from "../net.js?v=11031534";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031534";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031537";
+import { buildWorld } from "./world.js?v=11031537";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031537";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031537";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031537";
+import { deeds } from "../deeds.js?v=11031537";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031537";
+import { fireflies } from "../fx.js?v=11031537";
+import { LIGHT_SPOTS } from "./arch.js?v=11031537";
+import { freeze } from "./freeze.js?v=11031537";
+import { setupSeasonal } from "./seasonal.js?v=11031537";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031537";
+import { makeBGM } from "./bgm.js?v=11031537";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031537";
+import { setupKenno } from "./kenno.js?v=11031537";
+import { setupSocial } from "./social.js?v=11031537";
+import { setupProfile } from "./profile.js?v=11031537";
+import { setupZen } from "./zen.js?v=11031537";
+import { setupMixer } from "./mixer.js?v=11031537";
+import { setupShakyo } from "./shakyo.js?v=11031537";
+import { setupTour } from "./tour.js?v=11031537";
+import { setupChat } from "./chat.js?v=11031537";
+import { setupKito, ofudaImage } from "./kito.js?v=11031537";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031537";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031537";
+import { connect, board } from "../net.js?v=11031537";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031537";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -133,20 +133,30 @@ canvas.addEventListener("pointerup", (e) => {
     if (c) { const taken = [...others.values()].some((o) => Math.hypot(o.to.x - c[0], o.to.z - c[1]) < 0.5); if (taken) { toast("その座布団には、どなたかが座っています"); return; } seiza(hid, c); return; }
   }
   const hit = ray.intersectObject(W.terrain)[0] || ray.intersectObjects(scene.children, true).find((h) => h.point.y < 20);
-  if (hit) { walkTo([hit.point.x, hit.point.z]); $("#hint").style.opacity = 0; }
+  if (hit) { const to = nearestFree(hit.point.x, hit.point.z); if (to) { walkTo(to); $("#hint").style.opacity = 0; } }
 });
+// 建物の中や柵の向こうをタップしたとき：まわりを少しずつ広げて、いちばん近い歩ける点を探す
+function nearestFree(x, z) {
+  if (!blocked(x, z)) return [x, z];
+  for (let r = 0.3; r <= 4; r += 0.3) { let best = null, bd = 1e9; for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+    if (!blocked(px, pz)) { const d = Math.hypot(px - me.position.x, pz - me.position.z); if (d < bd) { bd = d; best = [px, pz]; } } } if (best) return best; }
+  return null;
+}
 function walkTo(dest, cb = null, { route = false, fast = false } = {}) {
+  prog.best = 1e9; prog.t = 0;
   if (me.userData.pose === "seiza" && !busy) setPose(me, null);      // 座って待っていたら立ち上がる
   path = route ? routeTo([me.position.x, me.position.z], dest) : [dest];
   onArrive = cb; speedMul = fast ? 2.4 : 1;
 }
 const SPEED = 3.4, step = new THREE.Vector3();
-let stuck = 0, avoidSide = 0;
+let stuck = 0, avoidSide = 0; const prog = { best: 1e9, t: 0 };   // 目的地に近づけているか
 function stepMove(dt) {
   const u = me.userData;
   if (path.length) {
     const [tx, tz] = path[0], dx = tx - me.position.x, dz = tz - me.position.z, dist = Math.hypot(dx, dz);
-    if (dist < 0.08 || (path.length > 1 && dist < 0.9)) { path.shift(); avoidSide = 0; if (!path.length) { u.walk = 0; speedMul = 1; const cb = onArrive; onArrive = null; cb && cb(); } }
+    if (dist < prog.best - 0.12) { prog.best = dist; prog.t = 0; } else prog.t += dt;
+    if (prog.t > 1.4) { path = []; u.walk = 0; speedMul = 1; stuck = 0; prog.t = 0; const cb = onArrive; onArrive = null; cb && cb(); return; }   // 近づけない：その場で止まる
+    if (dist < 0.08 || (path.length > 1 && dist < 0.9)) { path.shift(); avoidSide = 0; prog.best = 1e9; prog.t = 0; if (!path.length) { u.walk = 0; speedMul = 1; const cb = onArrive; onArrive = null; cb && cb(); } }
     else {
       const ang = Math.atan2(dx, dz);
       me.rotation.y += ((((ang - me.rotation.y) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI) * Math.min(1, dt * 10);
@@ -171,20 +181,21 @@ function stepMove(dt) {
 
 // ------------------------------------------------------------------ 音
 let AC = null, muted = store.get("enishi_mute", false);
-const ac = () => (AC ||= new (window.AudioContext || window.webkitAudioContext)());
+let fxVol = store.get("enishi_fxvol", 0.4);
+const ac = () => { if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); AC.fxBus = AC.createGain(); AC.fxBus.gain.value = fxVol; AC.fxBus.connect(AC.destination); } return AC; };   // 効果音はすべて fxBus を通す
 function tone(freqs, dur = 2.5, gain = 0.25) {
-  if (muted) return; const a = ac(), t = a.currentTime, out = a.createGain(); out.gain.value = gain; out.connect(a.destination);
+  if (muted) return; const a = ac(), t = a.currentTime, out = a.createGain(); out.gain.value = gain; out.connect(a.fxBus);
   freqs.forEach(([f, g]) => { const o = a.createOscillator(), v = a.createGain(); o.frequency.value = f; v.gain.setValueAtTime(g, t); v.gain.exponentialRampToValueAtTime(0.0001, t + dur * (0.5 + g)); o.connect(v).connect(out); o.start(t); o.stop(t + dur * 1.5); });
 }
 function noise(dur, freq, gain, type = "bandpass") {
   if (muted) return; const a = ac(), n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
   for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 4);
-  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); f.type = type; f.frequency.value = freq; g.gain.value = gain; s.buffer = b; s.connect(f).connect(g).connect(a.destination); s.start();
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); f.type = type; f.frequency.value = freq; g.gain.value = gain; s.buffer = b; s.connect(f).connect(g).connect(a.fxBus); s.start();
 }
 const sfx = {
   suzu: () => { for (let i = 0; i < 6; i++) setTimeout(() => tone([[2093 + rand(-30, 30), 0.5], [3136, 0.3], [4186, 0.2]], 1.2, 0.12), i * 90); },
-  clap: () => noise(0.12, 1400, 0.9), coin: () => tone([[1567, 0.6], [2349, 0.3]], 0.5, 0.15), gong: () => tone([[110, 0.8], [220, 0.4], [331, 0.2]], 3.5, 0.2),
-  taiko: () => { tone([[70, 0.9], [105, 0.3]], 0.9, 0.5); noise(0.08, 300, 0.4, "lowpass"); }, splash: () => noise(0.5, 1800, 0.35, "highpass"),
+  clap: () => noise(0.12, 1400, 0.5), coin: () => tone([[1567, 0.6], [2349, 0.3]], 0.5, 0.15), gong: () => tone([[110, 0.8], [220, 0.4], [331, 0.2]], 3.5, 0.2),
+  taiko: () => { tone([[70, 0.9], [105, 0.3]], 0.9, 0.35); noise(0.08, 300, 0.25, "lowpass"); }, splash: () => noise(0.5, 1800, 0.35, "highpass"),
 };
 $("#btn-sound").textContent = muted ? "🔇" : "🔈";
 const startAmb = ambience(() => ac(), () => muted);
@@ -198,14 +209,16 @@ const sndPop = document.createElement("div"); sndPop.id = "snd-pop"; sndPop.hidd
 sndPop.innerHTML = `<p class="kicker">音</p>
   <label class="snd-row"><span>🎵 境内の音楽<small>昼は「境内の調べ」、夜は「月夜の調べ」</small></span><input type="checkbox" id="snd-bgm"></label>
   <label class="snd-row"><span>🔔 効果音<small>鈴・太鼓・環境音</small></span><input type="checkbox" id="snd-fx"></label>
-  <label class="snd-vol"><span>音量</span><input type="range" id="snd-vol" min="0" max="100"></label>`;
+  <label class="snd-vol"><span>音楽の音量</span><input type="range" id="snd-vol" min="0" max="100"></label>
+  <label class="snd-vol"><span>効果音の音量</span><input type="range" id="snd-fxvol" min="0" max="100"></label>`;
 document.body.appendChild(sndPop);
-const paintSnd = () => { $("#snd-bgm").checked = bgmOn; $("#snd-fx").checked = !muted; $("#snd-vol").value = Math.round(store.get("enishi_vol", 0.55) * 100); $("#btn-sound").textContent = !bgmOn && muted ? "🔇" : bgmOn ? "🎵" : "🔈"; };
+const paintSnd = () => { $("#snd-fxvol").value = Math.round(fxVol * 100); $("#snd-bgm").checked = bgmOn; $("#snd-fx").checked = !muted; $("#snd-vol").value = Math.round(store.get("enishi_vol", 0.55) * 100); $("#btn-sound").textContent = !bgmOn && muted ? "🔇" : bgmOn ? "🎵" : "🔈"; };
 bgm.setVolume(store.get("enishi_vol", 0.55)); paintSnd();
 $("#btn-sound").onclick = (e) => { e.stopPropagation(); sndPop.hidden = !sndPop.hidden; paintSnd(); };
 document.addEventListener("pointerdown", (e) => { if (!sndPop.hidden && !sndPop.contains(e.target) && e.target.id !== "btn-sound") sndPop.hidden = true; });
 $("#snd-bgm").onchange = (e) => { bgmOn = e.target.checked; store.set("enishi_bgm", bgmOn); bgmOn ? bgm.start() : bgm.stop(); paintSnd(); };
 $("#snd-fx").onchange = (e) => { muted = !e.target.checked; store.set("enishi_mute", muted); syncHayashi(); paintSnd(); };
+$("#snd-fxvol").oninput = (e) => { fxVol = e.target.value / 100; store.set("enishi_fxvol", fxVol); if (AC) AC.fxBus.gain.setTargetAtTime(fxVol, AC.currentTime, 0.05); };
 $("#snd-vol").oninput = (e) => { const v = e.target.value / 100; store.set("enishi_vol", v); bgm.setVolume(v); };
 
 // ------------------------------------------------------------------ UI
@@ -395,10 +408,10 @@ const panorama = () => doing(async () => {
 
 // ------------------------------------------------------------------ お参り（賽銭→鈴→二礼二拍手一礼）
 const SHRINES = {
-  tosen: { stand: [0, 12.2], bell: () => W.suzu, place: "honden" },
+  tosen: { stand: [0, 12.8], bell: () => W.suzu, place: "honden" },          // 賽銭箱から1m（お辞儀で頭が当たらない）
   enmusubi: { stand: PLACES.enmusubi.stand, bell: () => W.smallSaisen.enmusubi, place: "enmusubi" },
   gokaku: { stand: PLACES.gokaku.stand, bell: () => W.smallSaisen.gokaku, place: "gokaku" },
-  okunoin: { stand: [-2, -73.4], bell: () => null, place: "okunoin" },
+  okunoin: { stand: [-2, -72.9], bell: () => null, place: "okunoin" },
 };
 const COINS = [
   { yen: 5, label: "5円", mean: "ご縁がありますように" }, { yen: 15, label: "15円", mean: "十分なご縁" }, { yen: 25, label: "25円", mean: "二重にご縁" },
@@ -423,7 +436,7 @@ const omairi = (sid = "tosen") => doing(async () => {
   const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xd9b45a, metalness: 0.8, roughness: 0.3 }));
   coin.position.set(me.position.x, me.position.y + 1.0, me.position.z - 0.3); scene.add(coin); const cy0 = coin.position.y;
   await new Promise((r) => { const t0 = performance.now(); (function f() { const k = Math.min(1, (performance.now() - t0) / 700);
-    coin.position.z = me.position.z - 0.3 - k * 0.9; coin.position.y = cy0 + Math.sin(k * Math.PI) * 0.8 - k * 0.25; coin.rotation.x += 0.4; k < 1 ? requestAnimationFrame(f) : r(); })(); });
+    coin.position.z = me.position.z - 0.3 - k * 1.2; coin.position.y = cy0 + Math.sin(k * Math.PI) * 0.8 - k * 0.25; coin.rotation.x += 0.4; k < 1 ? requestAnimationFrame(f) : r(); })(); });
   scene.remove(coin); sfx.coin(); await wait(400); net?.act("suzu");
   u.arms.forEach((a) => (a.rotation.x = -2.4)); sfx.suzu();
   const BL = S.bell(); if (BL) for (let i = 0; i < 18; i++) { BL.rope.rotation.x = Math.sin(i / 2) * 0.22 * (1 - i / 18); BL.bell.position.x = Math.sin(i / 1.5) * 0.06; await wait(45); }

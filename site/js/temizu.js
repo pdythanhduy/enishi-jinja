@@ -1,8 +1,8 @@
 // 手水舎：龍の口から水が流れつづける水盤、柄杓の掛け台、作法の立て札。
 // 手水の所作は、肩越しのカメラで柄杓を持ち、汲んで、注ぐところまで見せる。
 import * as THREE from "three";
-import { waterMaterial } from "./water.js?v=11031534";
-import { MAT, box, cyl, roof, chochin } from "./arch.js?v=11031534";
+import { waterMaterial } from "./water.js?v=11031537";
+import { MAT, box, cyl, roof, chochin } from "./arch.js?v=11031537";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...o });
 const BRONZE = std(0x5a7458, { metalness: 0.65, roughness: 0.38 });
@@ -134,7 +134,7 @@ export function waterSound(A, TZ) {
       src = a.createBufferSource(); src.buffer = b; src.loop = true;
       const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1700; bp.Q.value = 0.7;
       const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3800;
-      gain = a.createGain(); gain.gain.value = 0; src.connect(bp).connect(lp).connect(gain).connect(a.destination); src.start();
+      gain = a.createGain(); gain.gain.value = 0; src.connect(bp).connect(lp).connect(gain).connect(a.fxBus || a.destination); src.start();
     }
     const d = Math.hypot(me.position.x - TZ.center[0], me.position.z - TZ.center[1]);
     gain.gain.setTargetAtTime(Math.max(0, 1 - d / 9) * 0.09, a.currentTime, 0.3);
