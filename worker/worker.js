@@ -109,6 +109,14 @@ export class Room {
       if ((m.a === "say" || m.a === "emo") && now - (me.said || 0) < 1500) return;          // 言葉は少し間をあけて
       if (m.a === "say" || m.a === "emo") { me.said = now; ws.serializeAttachment(me); }
       this.broadcast({ t: "act", id: me.id, a: m.a, r: String(m.r || "").slice(0, 4) }, ws);
+    } else if (m.t === "st") {                                                             // ひとこと：頭の上の言葉・話す
+      const kind = m.kind === "say" ? "say" : "st";
+      if (now - (me[kind + "At"] || 0) < (kind === "say" ? 2500 : 8000)) return;
+      let text = String(m.text || "").replace(/[<>&"'`\\]/g, "").replace(/\s+/g, " ").trim().slice(0, 20);
+      if (text && NG.some((w) => text.toLowerCase().includes(w.toLowerCase()))) { try { ws.send(JSON.stringify({ t: "nope" })); } catch {} return; }
+      if (kind === "say" && !text) return;
+      me[kind + "At"] = now; if (kind === "st") me.st = text; ws.serializeAttachment(me);
+      this.broadcast({ t: "st", id: me.id, kind, text }, ws);
     } else if (m.t === "en") {                                                             // 縁：特定の一人へのお辞儀
       if (now - (me.en || 0) < 3000) return; me.en = now; ws.serializeAttachment(me);
       const pid = String(m.pid || "").replace(/[^0-9a-f]/g, "").slice(0, 16);

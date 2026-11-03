@@ -184,6 +184,14 @@ function hondenInterior(g, env, W, D, F) {
   box(g, W - 5.6, 0.14, 0.14, MAT.kuro, 0, F + 4.75, zb + 2.3, false);
   const fusaM = std(0x6a2a8a, { roughness: 0.8 });
   for (const s of [-1, 0, 1]) { const f = cyl(g, 0.02, 0.12, 0.7, fusaM, s * 3.2, F + 3.0, zb + 2.36, 8, false); }
+  // 結界：参拝者はここまで（祭壇の手前の低い柵としめ縄）
+  for (const s of [-1, 1]) {
+    const x0 = s * 1.6, x1 = s * (W / 2 - 1.2), cxm = (x0 + x1) / 2, len = Math.abs(x1 - x0), zz = -2.05;
+    box(g, len, 0.07, 0.07, MAT.kuro, cxm, y0 + 0.42, zz); box(g, len, 0.05, 0.05, MAT.kuro, cxm, y0 + 0.18, zz, false);
+    for (let k = 0; k <= 5; k++) cyl(g, 0.045, 0.05, 0.48, MAT.kuro, x0 + (x1 - x0) * (k / 5), y0 + 0.24, zz, 6, false);
+    const r = cyl(g, 0.03, 0.03, len, MAT.rope, cxm, y0 + 0.5, zz + 0.02, 6, false); r.rotation.z = Math.PI / 2;
+    for (let k = 0; k < 4; k++) box(g, 0.1, 0.22, 0.01, MAT.paperW, x0 + (x1 - x0) * ((k + 0.5) / 4), y0 + 0.36, zz + 0.04, false);
+  }
   // 大太鼓（左手）
   const drumG = new THREE.Group(); drumG.position.set(-7.5, y0, -3.3); g.add(drumG);
   for (const s of [-1, 1]) { box(drumG, 0.12, 1.4, 0.12, MAT.woodD, s * 0.75, 0.7, 0); }

@@ -2,7 +2,7 @@
 import * as THREE from "three";
 
 // 本殿：大きくして山側へ下げた。hw(x, z) は「以前の本殿まわりの座標」を今の座標に直す（中のものは全部これで置く）
-export const HONDEN = { Z: -3.5, S: 1.3 };
+export const HONDEN = { Z: -5.95, S: 1.55 };
 export const hw = (x, z) => [x * HONDEN.S, HONDEN.Z + (z - 1) * HONDEN.S];
 const [HX0, HZ0] = hw(-9, -4.5), [HX1, HZ1] = hw(9, 8.3);
 export const inHonden = (x, z) => x > HX0 && x < HX1 && z > HZ0 && z < HZ1;
@@ -14,17 +14,17 @@ export const PLACES = {
   temizu:   { n: 5,  name: "手水舎",         vi: "Nơi rửa tay",             pos: [11, 33],   stand: [11, 31.0],  face: 0 },
   juyosho:  { n: 6,  name: "授与所",         vi: "Quầy bùa & quẻ",          pos: [18.5, 21], stand: [15.6, 21],  face: Math.PI / 2 },
   shinboku: { n: 7,  name: "御神木",         vi: "Cây thiêng",              pos: [13.5, 11.5], stand: [13.5, 15.8], face: Math.PI },
-  honden:   { n: 8,  name: "本殿・当選の社", vi: "Điện chính (cầu trúng)",  pos: [0, -3.5],  stand: [0, 12.8],   face: Math.PI },
+  honden:   { n: 8,  name: "本殿・当選の社", vi: "Điện chính (cầu trúng)",  pos: [0, -6],    stand: [0, 12.8],   face: Math.PI },
   enmusubi: { n: 9,  name: "縁結びの社",     vi: "Điện cầu duyên",          pos: [-33, 11],  stand: [-33, 19.7], face: Math.PI },
   gokaku:   { n: 10, name: "合格の社",       vi: "Điện cầu đỗ",             pos: [33, 11],   stand: [33, 19.7],  face: Math.PI },
-  senbon:   { n: 11, name: "千本鳥居",       vi: "Nghìn cổng torii",        pos: [18, -12],  stand: [18.5, -6.9], face: Math.PI },
+  senbon:   { n: 11, name: "千本鳥居",       vi: "Nghìn cổng torii",        pos: [21, -12],  stand: [21.5, -6.9], face: Math.PI },
   okunoin:  { n: 12, name: "奥の院",         vi: "Điện trên đỉnh núi",      pos: [-2, -78],  stand: [-2, -71],   face: Math.PI },
   pagoda:   { n: 13, name: "五重塔",         vi: "Tháp năm tầng",           pos: [40, -22],  stand: [39, -13.5], face: Math.PI },
 };
 
 // 千本鳥居の山道（本殿の右奥から、つづら折りで奥の院へ）
 export const TRAIL = new THREE.CatmullRomCurve3([
-  [18.5, -5.5], [17.5, -15], [6, -25], [-8, -28], [-12, -36], [-4, -44], [8, -50], [10, -57], [2, -63], [-2, -69],
+  [21.5, -5.5], [20.5, -16], [7, -27], [-8, -29], [-12, -36], [-4, -44], [8, -50], [10, -57], [2, -63], [-2, -69],
 ].map(([x, z]) => new THREE.Vector3(x, 0, z)), false, "catmullrom", 0.4);
 const TRAIL_PTS = TRAIL.getSpacedPoints(400);
 
@@ -51,7 +51,7 @@ export function height(x, z) {
   let h = rawMountain(x, z);
   if (Math.hypot(x + 2, z + 74) < 13) h = 15.5;                                     // 奥の院の平地
   if (z > -14 && z <= -6 && Math.abs(x) < 46) h *= smooth(-6, -14, z);
-  if (Math.abs(x) < 22 && z > -26) h *= Math.max(smooth(-17, -26, z), smooth(14, 22, Math.abs(x)));   // 本殿の裏は平らに、なだらかに山へ
+  if (Math.abs(x) < 25 && z > -30) h *= Math.max(smooth(-20, -30, z), smooth(17, 25, Math.abs(x)));   // 本殿の裏は平らに、なだらかに山へ
   const tr = trailInfo(x, z);
   if (tr.d < 4.2) { const k = smooth(4.2, 1.8, tr.d); h = h * (1 - k) + trailHeight(tr.t) * k; }
   return h;
@@ -71,9 +71,11 @@ const hallBlocks = (cx) => {
   return [[cx - w - 0.7, b - 0.6, cx + w + 0.7, b + 0.6], [cx - w - 0.7, b - 0.6, cx - w + 0.7, f + 0.3], [cx + w - 0.7, b - 0.6, cx + w + 0.7, f + 0.3],
     [cx - w - 0.7, f - 0.2, cx - 2.2, f + 0.8], [cx + 2.2, f - 0.2, cx + w + 0.7, f + 0.8],                       // 正面の高欄（真ん中だけ入れる）
     [cx - 2.45, f + 2.35, cx - 1.95, f + 2.85], [cx + 1.95, f + 2.35, cx + 2.45, f + 2.85],                     // 向拝の柱
-    [cx - 1.15, SMALL.saisenZ - 0.45, cx + 1.15, SMALL.saisenZ + 0.45]];                                        // 賽銭箱
+    [cx - 1.15, SMALL.saisenZ - 0.45, cx + 1.15, SMALL.saisenZ + 0.45],                                         // 賽銭箱
+    [cx - w + 0.6, b + 0.4, cx + w - 0.6, b + 2.3]];                                                           // 祭壇のまわり（内陣）
 };
 export const BLOCKS = [
+  [...hw(-9, -4.5), ...hw(9, -1.05)],                          // 本殿の内陣（結界の先へは入らない）
   ...[[-10.6, -6.2, 10.6, -4.5], [-10.6, -6.2, -9, 8.3], [9, -6.2, 10.6, 8.3], [-10.6, 6.7, -3.8, 8.3], [3.8, 6.7, 10.6, 8.3]].map(([a, b, c, d]) => [...hw(a, b), ...hw(c, d)]),   // 本殿
   [-1.9, 10.35, 1.9, 11.65],                                  // 賽銭箱
   ...hallBlocks(-SMALL.X), ...hallBlocks(SMALL.X),            // 縁結び・合格の社
@@ -161,7 +163,7 @@ export function routeTo(from, to) {
   const sx = SMALL.standZ;
   const toCourt = { sando: [[0, 46], [0, 38]], pond: [[6.6, 54], [0, 47], [0, 38]], west: [[-28, sx], [-26.5, 17], [-22.8, 17]], east: [[28, sx], [26.5, 17], [22.8, 17]], pagoda: [[38, 0], [34.5, 3.2], [23, 4.5], [16, 13.5]], court: [] };
   const fromCourt = { sando: [[0, 38], [0, 47]], pond: [[0, 38], [0, 47], [6.6, 54]], west: [[-22.8, 17], [-26.5, 17], [-28, sx]], east: [[22.8, 17], [26.5, 17], [28, sx]], pagoda: [[16, 13.5], [23, 4.5], [34.5, 3.2], [38, 0]], court: [] };
-  const TRAIL_IN = [[8, 15], [16.3, 14.8], [16.3, -3], [18.5, -4.2]];
+  const TRAIL_IN = [[8, 15], [17.2, 14.8], [18.6, -3], [21.5, -4.2]];
   const pts = [];
   if (a === "trail" && b === "trail") return trailPath(trailT(from), trailT(to)).concat([to]);
   if (a === "trail") pts.push(...trailPath(trailT(from), 0), ...[...TRAIL_IN].reverse()); else pts.push(...toCourt[a]);

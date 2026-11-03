@@ -1,7 +1,7 @@
 // 仕上げ：反射（環境マップ）、瓦・砂利のテクスチャ、幟、提灯の列、岩・植え込み、雲、蛍、水面のきらめき
 import * as THREE from "three";
-import { MAT, sharedLamp } from "./arch.js?v=11031118";
-import { height, POND } from "./map.js?v=11031118";
+import { MAT, sharedLamp } from "./arch.js?v=11031321";
+import { height, POND } from "./map.js?v=11031321";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let sd = 11; const sr = (a, b) => a + ((sd = (sd * 16807) % 2147483647) / 2147483647) * (b - a);
@@ -53,6 +53,34 @@ export function textures(W) {
   for (const m of [MAT.stone, MAT.stoneD, MAT.stoneL]) { m.map = stone; m.needsUpdate = true; }
   // 朱：塗りの艶
   MAT.shu.roughness = 0.35; MAT.shu.metalness = 0.05; MAT.gold.roughness = 0.22; MAT.gold.metalness = 1;
+  // 木・畳・朱塗り・漆喰：世界座標で貼る（箱の大きさに関係なく同じ細かさ・木目はいつも縦）
+  const img = (name) => { const t = new THREE.TextureLoader().load(`img/gen/${name}.jpg`); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping; t.anisotropy = 8; return t; };
+  const wood = img("wood"), tatami = img("tatami");
+  const lacquer = canvasTex(256, 256, (x, w, h) => {                                    // 朱塗り：縦の刷毛目と擦れ（白に近い灰色＝元の色にかける）
+    x.fillStyle = "#f2f2f2"; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 260; i++) { const g = 205 + Math.random() * 50; x.fillStyle = `rgba(${g},${g},${g},.55)`; x.fillRect(Math.random() * w, 0, 1 + Math.random() * 2, h); }
+    for (let i = 0; i < 90; i++) { x.fillStyle = `rgba(120,90,80,${Math.random() * 0.18})`; x.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 6, 6 + Math.random() * 30); }
+  });
+  const plaster = canvasTex(256, 256, (x, w, h) => {                                    // 漆喰：やわらかなむら
+    x.fillStyle = "#fbfaf6"; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 1400; i++) { const g = 228 + Math.random() * 27; x.fillStyle = `rgba(${g},${g - 2},${g - 6},.35)`; const r = 2 + Math.random() * 10; x.beginPath(); x.arc(Math.random() * w, Math.random() * h, r, 0, 7); x.fill(); }
+  });
+  for (const t of [lacquer, plaster]) t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping;
+  const tri = (m, map, size, color) => {
+    m.map = map; if (color !== undefined) m.color.set(color); m.userData.tri = 1 / size;
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.triScale = { value: m.userData.tri };
+      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vTriW; varying vec3 vTriN;")
+        .replace("#include <project_vertex>", "#include <project_vertex>\nvec4 triW = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\ntriW = instanceMatrix * triW;\n#endif\ntriW = modelMatrix * triW; vTriW = triW.xyz; vTriN = normalize(mat3(modelMatrix) * objectNormal);");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vTriW; varying vec3 vTriN; uniform float triScale;")
+        .replace("#include <map_fragment>", "#ifdef USE_MAP\n vec3 tn = abs(normalize(vTriN));\n vec2 tuv = tn.y > max(tn.x, tn.z) ? vTriW.xz : (tn.x > tn.z ? vTriW.zy : vTriW.xy);\n diffuseColor *= texture2D(map, tuv * triScale);\n#endif");
+    };
+    m.needsUpdate = true;
+  };
+  tri(MAT.woodL, wood, 1.6, 0xffffff); tri(MAT.wood, wood, 1.6, 0xb08865); tri(MAT.woodD, wood, 1.6, 0x6e5240);
+  tri(MAT.tatami, tatami, 0.9, 0xffffff);
+  tri(MAT.shu, lacquer, 1.2); tri(MAT.shuD, lacquer, 1.2);
+  tri(MAT.white, plaster, 2.2);
   // 水：きらめき（法線マップを流す）
   const nrm = canvasTex(256, 256, (x, w, h) => { const img = x.createImageData(w, h);
     for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const a = Math.sin(xx * 0.09 + Math.sin(yy * 0.05) * 2) + Math.sin(yy * 0.13 + xx * 0.03); const b = Math.cos(yy * 0.08 + Math.cos(xx * 0.06) * 2);

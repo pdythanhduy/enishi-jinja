@@ -24,7 +24,8 @@ export async function setupSocial(A) {
 
   // ---------------------------------------------------------------- ことば（定型文・絵文字）
   const pop = document.createElement("div"); pop.id = "say-pop"; pop.hidden = true;
-  pop.innerHTML = `<div class="say-emo">${EMOTES.map((e, i) => `<button data-e="${i}" aria-label="${e}">${e}</button>`).join("")}</div>
+  pop.innerHTML = `<div class="say-free"><input id="say-text" maxlength="20" placeholder="ひとこと（20文字まで）" autocomplete="off" enterkeyhint="send"><div class="say-free-btns"><button type="button" class="btn" data-free="st">頭の上に出す</button><button type="button" class="btn primary" data-free="say">話す</button></div><p class="say-note" id="say-note"></p></div>
+    <div class="say-emo">${EMOTES.map((e, i) => `<button data-e="${i}" aria-label="${e}">${e}</button>`).join("")}</div>
     <div class="say-list">${PHRASES.map((p, i) => `<button data-p="${i}">${p}</button>`).join("")}</div>`;
   document.body.appendChild(pop);
   let myBubble = null;
@@ -32,8 +33,18 @@ export async function setupSocial(A) {
     myBubble?.remove(); const b = document.createElement("div"); b.className = "tag bub mine"; b.textContent = text; document.body.appendChild(b); myBubble = b;
     setTimeout(() => { if (myBubble === b) { b.remove(); myBubble = null; } }, 4200);
   };
+  const note = (t) => { pop.querySelector("#say-note").textContent = t; };
+  const sendFree = (kind) => {
+    const t = A.clean(pop.querySelector("#say-text").value, 20);
+    if (kind === "say" && !t) { note("ことばを入れてください"); return; }
+    if (A.ng(t)) { note("その言葉は使えません"); return; }
+    if (kind === "st") { A.setStatus(t); A.net?.st(t, "st"); note(t ? "頭の上に出しました（みんなに見えます）" : "頭の上の言葉を消しました"); }
+    else { say(t); A.net?.st(t, "say"); pop.querySelector("#say-text").value = ""; pop.hidden = true; A.deedHook("say"); }
+  };
+  pop.querySelector("#say-text").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendFree("say"); } });
   pop.onclick = (e) => {
     const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.free) { sendFree(b.dataset.free); return; }
     if (b.dataset.e) { say(EMOTES[+b.dataset.e]); A.net?.act("emo", b.dataset.e); }
     else { say(PHRASES[+b.dataset.p]); A.net?.act("say", b.dataset.p); }
     pop.hidden = true; A.deedHook("say");
@@ -55,6 +66,7 @@ export async function setupSocial(A) {
     const o = cardFor; card.hidden = true;
     if (b.dataset.do === "bow") await bowTo(o, false);
     else if (b.dataset.do === "return") await bowTo(o, true);
+    else if (b.dataset.do === "mute") A.toggleMute(o);
   };
   async function bowTo(o, isReturn) {
     if (A.isBusy()) return;
@@ -70,7 +82,7 @@ export async function setupSocial(A) {
   function tapOther(o) {
     const known = enList().find((x) => x.pid && x.pid === o.pid);
     showCard(o, `<p class="en-name">${esc(o.name)}<small>${known ? "🧧 縁のある人" : "参拝者"}</small></p>
-      <div class="en-btns"><button data-do="bow" class="btn primary">🙇 お辞儀をする</button></div>
+      <div class="en-btns"><button data-do="bow" class="btn primary">🙇 お辞儀をする</button><button data-do="mute" class="btn">${A.isMuted(o) ? "言葉を表示する" : "言葉を表示しない"}</button></div>
       <p class="sub">${known ? "また会えましたね。お辞儀で挨拶を。" : "お辞儀を交わすと、縁が結ばれて縁帳に残ります。"}</p>`);
   }
   // 相手からお辞儀が届いた
@@ -195,5 +207,6 @@ export async function setupSocial(A) {
   emaNews();
   const rememberEma = (hall, id, text) => { const l = store.get("enishi_myema", []); l.unshift({ hall, id, text, n: 0 }); store.set("enishi_myema", l.slice(0, 30)); };
 
-  return { pid, toggleSay, otherSay, tapOther, onEn, openBook, streakTick, rememberEma, close: () => { pop.hidden = true; card.hidden = true; } };
+  const openSay = () => { pop.hidden = false; pop.querySelector("#say-text").value = A.getStatus(); note(""); };
+  return { pid, toggleSay: () => (pop.hidden ? openSay() : (pop.hidden = true)), otherSay, tapOther, onEn, openBook, streakTick, rememberEma, close: () => { pop.hidden = true; card.hidden = true; } };
 }

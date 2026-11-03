@@ -3,11 +3,11 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden } from "./map.js?v=11031118";
+import { HONDEN, inHonden } from "./map.js?v=11031321";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
-const SEAT = new THREE.Vector3(0, FLOOR, 0.5), PRIEST_HOME = new THREE.Vector3(-3.0, FLOOR, -1.0), MIKO_HOME = new THREE.Vector3(3.0, FLOOR, -1.0);
+const SEAT = new THREE.Vector3(0, FLOOR, 0.5), PRIEST_HOME = new THREE.Vector3(-1.15, FLOOR, -1.5), MIKO_HOME = new THREE.Vector3(1.15, FLOOR, -1.5);   // 結界の内側、中央の両脇
 const MIRROR = new THREE.Vector3(0, 4.1, -3.6), TABLE_Z = -1.35;
 const HARAE = "掛けまくも畏き 伊邪那岐大神 筑紫の日向の橘の小戸の阿波岐原に 禊ぎ祓へ給ひし時に 生り坐せる祓戸の大神等 諸々の禍事罪穢有らむをば 祓へ給ひ清め給へと 白す事を聞こし食せと 恐み恐みも白す";
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...o });

@@ -6,7 +6,7 @@ export const STEPS = [
   { id: "omairi", icon: "⛩", label: "本殿でお参りする", short: "お参り", to: [0, 12.2] },
   { id: "kuji", icon: "🎋", label: "授与所でおみくじを引く", short: "おみくじ", to: "juyosho" },
   { id: "light", icon: "🏮", label: "献灯するか、御祈祷を受ける", short: "献灯・御祈祷", to: [-18.2, 22] },
-  { id: "en", icon: "🧧", label: "誰かにお辞儀・ことば・祈りを贈る", short: "縁", to: [16.4, 13.2] },
+  { id: "en", icon: "🧧", label: "誰かにお辞儀・ことば・祈りを贈る", short: "縁", to: [18.6, 13.6] },
 ];
 // 行いの種類 → どの段か
 export const STEP_OF = { temizu: "temizu", omairi: "omairi", kuji: "kuji", kenno: "light", kito: "light", en: "en", say: "en", bless: "en", pray: "en" };

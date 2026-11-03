@@ -2,7 +2,8 @@
 export const API = "https://enishi-rooms.thanhduy8vn.workers.dev";
 const WS = API.replace(/^http/, "ws");
 
-export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onLeave, onCount, onLook, onEn }) {
+export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onLeave, onCount, onLook, onEn, onSt, onNope }) {
+  let myStatus = "";
   let ws = null, room = 1, alive = true, retry = 0;
   async function pickRoom() {
     try {
@@ -18,7 +19,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
     const forced = new URLSearchParams(location.search).get("room");
     room = forced ? +forced : await pickRoom();
     ws = new WebSocket(`${WS}/room/${hall}/${room}`);
-    ws.onopen = () => { retry = 0; ws.send(JSON.stringify({ t: "hi", name, look })); };
+    ws.onopen = () => { retry = 0; ws.send(JSON.stringify({ t: "hi", name, look })); if (myStatus) setTimeout(() => ws.readyState === 1 && ws.send(JSON.stringify({ t: "st", kind: "st", text: myStatus })), 9000); };
     clearInterval(open._p); open._p = setInterval(() => ws && ws.readyState === 1 && ws.send('{"t":"ping"}'), 25e3);
     ws.onmessage = (e) => {
       let m; try { m = JSON.parse(e.data); } catch { return; }
@@ -28,6 +29,8 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
       else if (m.t === "act") onAct(m);
       else if (m.t === "look") onLook?.(m);
       else if (m.t === "en") onEn?.(m);
+      else if (m.t === "st") onSt?.(m);
+      else if (m.t === "nope") onNope?.();
       else if (m.t === "leave") { onLeave(m); onCount(m.n); }
     };
     ws.onclose = () => { if (!alive) return; retry++; setTimeout(open, Math.min(15000, 1000 * 2 ** retry)); };
@@ -42,6 +45,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
       lastSent = now; last = k; ws.send(JSON.stringify({ t: "pos", x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(2) }));
     },
     act(a, r = "") { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "act", a, r })); },
+    st(text, kind = "st") { if (kind === "st") myStatus = text; if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "st", kind, text })); },
     en(to, pid) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "en", to, pid })); },
     // 名前・見た目を変えたとき（再接続のときも新しい値で入る）
     hello(n, l) { name = n; look = l; if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "hi", name, look })); },

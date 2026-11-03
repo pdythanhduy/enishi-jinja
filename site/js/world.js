@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031118";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031118";
-import { FOLIAGE } from "./env.js?v=11031118";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031321";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031321";
+import { FOLIAGE } from "./env.js?v=11031321";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -76,7 +76,7 @@ export function buildWorld(scene, env, { mobile }) {
   const kusu = new THREE.MeshStandardMaterial({ color: env.season === "winter" ? 0x3d5a3a : 0x3f6a36, roughness: 0.9, flatShading: true });
   shinboku(scene, { x: PLACES.shinboku.pos[0], z: PLACES.shinboku.pos[1] }, kusu);
   // 絵馬掛け（御神木の前）
-  const emaRack = new THREE.Group(); emaRack.position.set(18.2, 0, 9.4); emaRack.rotation.y = -Math.PI / 2.4; scene.add(emaRack);
+  const emaRack = new THREE.Group(); emaRack.position.set(21.2, 0, 11.6); emaRack.rotation.y = -Math.PI / 2.4; scene.add(emaRack);
   for (const x of [-2, 2]) cyl(emaRack, 0.09, 0.09, 2.3, MAT.woodD, x, 1.15, 0, 8);
   for (const y of [1.25, 1.85]) box(emaRack, 4.3, 0.07, 0.07, MAT.woodD, 0, y, 0);
   roof(emaRack, { w: 4.8, d: 1.2, h: 0.4, lift: 0.1, y: 2.3, mat: MAT.hinoki, gable: false, ridgeGold: false });
@@ -175,7 +175,7 @@ export function buildWorld(scene, env, { mobile }) {
   // 山道の灯籠（間隔をあけて）
   for (let i = 8; i < trailPts.length - 4; i += 14) { const p = trailPts[i], nx = trailPts[i + 1], t = i / trailPts.length; const d = new THREE.Vector3(nx.z - p.z, 0, -(nx.x - p.x)).normalize();
     W.lamps.push(toro(scene, p.x + d.x * 2.6, p.z + d.z * 2.6, trailHeight(t), env, 0.75)); }
-  torii(scene, { x: 18.5, z: -6.2, s: 1.1, gaku: null });
+  torii(scene, { x: 21.5, z: -6.2, s: 1.1, gaku: null });
 
   // ---------------------------------------------------------------- ⑫ 奥の院・滝・灯籠流しの池
   const okY = 15.5;
@@ -209,7 +209,7 @@ export function buildWorld(scene, env, { mobile }) {
   for (let i = 0; i < (mobile ? 420 : 760); i++) {                                                                                     // 山の杉林
     const x = sr(-130, 130), z = sr(-140, 120);
     if (z > -8 && Math.abs(x) < 46 && z < 86) continue;
-    if (Math.abs(x) < 23 && z > -21) continue;                                             // 本殿の裏
+    if (Math.abs(x) < 26 && z > -24) continue;                                             // 本殿の裏
     const y = height(x, z); if (y < 0.5 && z > -8) continue;
     let near = false; for (let k = 0; k < trailPts.length; k += 6) if ((trailPts[k].x - x) ** 2 + (trailPts[k].z - z) ** 2 < 16) { near = true; break; }
     if (near || Math.hypot(x + 2, z + 72) < 12 || Math.hypot(x - 40, z + 22) < 8) continue;

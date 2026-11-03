@@ -1,12 +1,14 @@
 // 善行（落ち葉掃き・灯籠に火・迷子の子狐）と夜祭り（花火・祭囃子）
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { height, footY } from "./map.js?v=11031118";
+import { height, footY, blocked } from "./map.js?v=11031321";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 // ------------------------------------------------------------------ 落ち葉の山
-const LEAF_SPOTS = [[-3.2, 66], [3.4, 60], [-3, 52], [3, 47], [-9, 30], [9, 26], [-12, 14], [14, 15], [-6, 36], [6, 2], [-18, 8], [18, 32], [-30, 21], [30, 22], [0, 72]];
+const LEAF_SPOTS0 = [[-3.2, 66], [3.4, 60], [-3, 52], [3, 47], [-9, 30], [9, 26], [-12, 14], [10, 16.5], [-6, 36], [-8, 12], [-17, 12], [18, 32], [-27.5, 21], [27.5, 18.5], [0, 72], [17, 4], [-17, 4]];
+// 山そのものと、掃く人の立つ所（左手前）がどちらも歩ける所だけ
+const LEAF_SPOTS = LEAF_SPOTS0.filter(([x, z]) => !blocked(x, z) && !blocked(x - 0.9, z + 0.4));
 export class Leaves {
   constructor(scene, season) {
     this.scene = scene; this.piles = []; this.geo = new THREE.IcosahedronGeometry(0.22, 0);
@@ -25,6 +27,19 @@ export class Leaves {
     this.scene.add(g); this.piles.push({ g, x, z });
   }
   near(p, r = 1.8) { return this.piles.find((q) => Math.hypot(q.x - p.x, q.z - p.z) < r); }
+  // 掃き終えた山を片づける
+  remove(pile) { this.scene.remove(pile.g); pile.g.traverse((m) => m.isMesh && m.geometry.dispose()); this.piles = this.piles.filter((q) => q !== pile); }
+  // ひと掃きで舞う葉
+  burst(x, z, n = 7) {
+    for (let i = 0; i < n; i++) {
+      const l = new THREE.Mesh(this.geo, this.mats[i % this.mats.length]); l.scale.set(0.6, 0.25, 0.6);
+      l.position.set(x + rnd(-0.3, 0.3), 0.15, z + rnd(-0.3, 0.3)); this.scene.add(l);
+      const v = new THREE.Vector3(rnd(-1.4, 1.4), rnd(1.6, 3.0), rnd(-1.4, 1.4)), sp = new THREE.Vector3(rnd(-6, 6), rnd(-6, 6), 0), t0 = performance.now();
+      (function f() { const t = (performance.now() - t0) / 1000; if (t > 1.3) { l.parent?.remove(l); return; }
+        l.position.x += v.x * 0.016; l.position.z += v.z * 0.016; l.position.y = Math.max(0.03, 0.15 + v.y * t - 2.6 * t * t); l.rotation.x += sp.x * 0.016; l.rotation.y += sp.y * 0.016;
+        requestAnimationFrame(f); })();
+    }
+  }
   async sweep(pile) {       // 少しずつ消える
     for (let k = 1; k <= 10; k++) { pile.g.scale.setScalar(1 - k * 0.09); pile.g.position.x += 0.04; await new Promise((r) => setTimeout(r, 120)); }
     this.scene.remove(pile.g); pile.g.traverse((m) => m.isMesh && m.geometry.dispose()); this.piles = this.piles.filter((q) => q !== pile);
