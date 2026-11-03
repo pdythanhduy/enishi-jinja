@@ -582,3 +582,7 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 #r-items dt{color:#8a3a2a;font-weight:700}
 .p-sha{margin-top:.8rem;padding-top:.5rem;border-top:1px dashed rgba(120,80,40,.35)}.p-sha b{font-size:.78rem;color:#8a3a2a}
 .p-sha .p-msg{white-space:pre-line}
+.p-top{align-items:flex-start}.p-top .p-rank{align-self:center}
+.p-waka{max-height:none;height:auto;flex-shrink:0;gap:.25rem}
+.p-waka span{white-space:nowrap}
+.p-waka{flex-direction:column}.p-waka span:nth-child(2n){padding-top:1.4em}.p-top .p-rank{font-size:2.8rem;padding:.6rem .5rem}
