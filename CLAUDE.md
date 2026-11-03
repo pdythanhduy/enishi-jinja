@@ -23,6 +23,17 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
   - `social.js`: preset phrases and emotes (`say`/`emo` acts carry an index, never free text), 縁 (tap a visitor, bow; a returned bow within 2 min binds), 縁帳 with presence and once-a-day blessings, streak (🔥), news when others pray for your ema. Identity: a secret `enishi_key` on the device; the public id is `pid = sha256("enishi:"+key)[:8]`.
   - `kenno.js`: 献灯所 at (-15, 8.6). 64 lanterns, one per person per day; each lantern gains a day of brightness every day its owner returns.
     - It also hangs 18 奉納提灯 on the honden side walls with today's kenno names (your own first). Empty slots get 講 and 崇敬会 names.
+  - 静のひととき (🧘 button in the top bar) is for long stays:
+    - `zen.js`: the menu and 集中・座禅.
+      - Pick 15, 25, 45 or 60 minutes and a spot: honden front, pond or 奥の院 stage. Spots more than 28 m away are reached with a fade-out warp.
+      - Optional 4-7-8 breathing first; seiza with a slow sway camera.
+      - +5 徳 every 5 minutes. The status tag shows `🧘 集中中 N分`, which other players see and `focusing()` counts. Optional quiet mode hides the HUD.
+      - Stats are kept in `enishi_zen`.
+    - `mixer.js`: synthesized ambient layers (rain, stream, wind, mushi, birds, furin, suzu, 拍子木 every 5/10/20 s) plus the music volume, and presets. Rain also draws falling lines around the camera.
+    - `shakyo.js`: 写経・写歌 of PD texts (祓詞, 大祓詞, 百人一首, 芭蕉, 一茶). Every typed character, or holding 「なぞる」, inks the next one.
+      - Finishing adds a 奉納 seal and +10 徳 (up to 3 a day) and is saved in `enishi_shakyo`.
+      - 絵馬を描く is a brush canvas. The drawing is kept only on the device (`enishi_myema`, max 6) and is hung on `W.emaRack`.
+    - `tour.js`: 境内めぐり, a 40 s slow arc per PLACES entry with fades and captions, and 奥の院の池, a fixed view with floating lanterns. Tap or Esc exits.
   - `chat.js`: room chat (💬 button at bottom left). Lines are up to 60 characters, filtered by the NG list on both client and server.
     - Tap a line to mute or report that person. Reports from 3 different people silence that socket in that room (`t:"rep"`, in-memory in the Room DO).
     - Nothing is stored server-side.

@@ -5,29 +5,33 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031518";
-import { buildWorld } from "./world.js?v=11031518";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031518";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031518";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031518";
-import { deeds } from "../deeds.js?v=11031518";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031518";
-import { fireflies } from "../fx.js?v=11031518";
-import { LIGHT_SPOTS } from "./arch.js?v=11031518";
-import { freeze } from "./freeze.js?v=11031518";
-import { setupSeasonal } from "./seasonal.js?v=11031518";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031518";
-import { makeBGM } from "./bgm.js?v=11031518";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031518";
-import { setupKenno } from "./kenno.js?v=11031518";
-import { setupSocial } from "./social.js?v=11031518";
-import { setupProfile } from "./profile.js?v=11031518";
-import { setupChat } from "./chat.js?v=11031518";
-import { setupKito, ofudaImage } from "./kito.js?v=11031518";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031518";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031518";
-import { connect, board } from "../net.js?v=11031518";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031518";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031531";
+import { buildWorld } from "./world.js?v=11031531";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031531";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031531";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031531";
+import { deeds } from "../deeds.js?v=11031531";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031531";
+import { fireflies } from "../fx.js?v=11031531";
+import { LIGHT_SPOTS } from "./arch.js?v=11031531";
+import { freeze } from "./freeze.js?v=11031531";
+import { setupSeasonal } from "./seasonal.js?v=11031531";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031531";
+import { makeBGM } from "./bgm.js?v=11031531";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031531";
+import { setupKenno } from "./kenno.js?v=11031531";
+import { setupSocial } from "./social.js?v=11031531";
+import { setupProfile } from "./profile.js?v=11031531";
+import { setupZen } from "./zen.js?v=11031531";
+import { setupMixer } from "./mixer.js?v=11031531";
+import { setupShakyo } from "./shakyo.js?v=11031531";
+import { setupTour } from "./tour.js?v=11031531";
+import { setupChat } from "./chat.js?v=11031531";
+import { setupKito, ofudaImage } from "./kito.js?v=11031531";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031531";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031531";
+import { connect, board } from "../net.js?v=11031531";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031531";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -552,11 +556,16 @@ function fudeNosame() {
 function akaiIto() { deedHook("ito"); bubbleAt(W.enTree, "💞", 1800, 3.4); tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.2, 0.1); releaseLight(W.enTree.position.x, 0, W.enTree.position.z, true); toast("赤い糸にご縁を願いました。同じ時に願った人がいると、糸がつながるかも…💞"); net?.act("ito"); }
 function feedKoi() { deedHook("koi"); W.koiFeed?.(me.position.x, me.position.z); noise(0.2, 2500, 0.15, "highpass"); toast("鯉が集まってきました 🐟"); }
 function toroNagashi() { deedHook("toro");
+  const { lamp } = makeFloatLamp();
+  toast("灯籠を池に流しました。遠くの大切な人に、想いが届きますように 🏮"); releaseLight(lamp.position.x, OKU_Y, lamp.position.z, true); net?.act("toro");
+}
+function removeFloatLamp(fl) { scene.remove(fl.lamp); W.floatLamps = (W.floatLamps || []).filter((x) => x !== fl); }
+function makeFloatLamp() {
   const lamp = new THREE.Group(); const m = new THREE.MeshStandardMaterial({ color: 0xfff0d0, emissive: 0xffa040, emissiveIntensity: 2.6 });
   const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), m); b.position.y = 0.25; lamp.add(b);
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.55), new THREE.MeshStandardMaterial({ color: 0x6b4428 })); lamp.add(base);
-  lamp.position.set(OKPOND.cx - OKPOND.rx * 0.7, OKU_Y - 0.06, OKPOND.cz + 0.4); scene.add(lamp); W.floatLamps = (W.floatLamps || []).concat([{ lamp, a: Math.random() * 6, t: 0 }]);
-  toast("灯籠を池に流しました。遠くの大切な人に、想いが届きますように 🏮"); releaseLight(lamp.position.x, OKU_Y, lamp.position.z, true); net?.act("toro");
+  lamp.position.set(OKPOND.cx - OKPOND.rx * 0.7, OKU_Y - 0.06, OKPOND.cz + 0.4); scene.add(lamp);
+  const fl = { lamp, a: Math.random() * 6, t: 0 }; W.floatLamps = (W.floatLamps || []).concat([fl]); return fl;
 }
 
 // ------------------------------------------------------------------ おみくじ（一日一回）
@@ -688,7 +697,10 @@ function renderTakara() {
   el.innerHTML = `<h3>御札 <small>${ofuda.length}体</small></h3>` + (ofuda.length ? `<div class="ofuda-row"></div>` : `<p class="sub">まだ御札はありません。本殿で御祈祷を受けると、あなたの名前の入った御札を授かります。</p>`)
     + `<h3>見つけたもの・いただいたもの</h3><div class="finds-grid">${TAKARA().map((f) => { const n = finds[f.id] || 0;
       return `<div class="find${n ? "" : " no"}"><span>${n ? f.icon : "？"}</span><b>${n ? f.name : "まだ見つけていません"}</b><small>${n ? `× ${n}` : ""}</small></div>`; }).join("")}</div>
-    <p class="sub">落ち葉を掃くと、ときどき何かが見つかります。行事の日には、いただけるものも。</p>`;
+    <p class="sub">落ち葉を掃くと、ときどき何かが見つかります。行事の日には、いただけるものも。</p>`
+    + (() => { const sk = store.get("enishi_shakyo", []), me2 = store.get("enishi_myema", []);
+        return `<h3>写経・写歌 <small>${sk.length}巻</small></h3>` + (sk.length ? `<div class="sk-done">${sk.slice(0, 12).map((x) => `<span><b>${escT(x.title)}</b><small>${escT(x.date)}</small></span>`).join("")}</div>` : `<p class="sub">🧘 静のひととき →「写経・写歌」から。</p>`)
+          + `<h3>描いた絵馬 <small>${me2.length}枚</small></h3>` + (me2.length ? `<div class="my-ema">${me2.map((x) => `<img src="${x.url}" alt="描いた絵馬">`).join("")}</div>` : `<p class="sub">絵馬を奉納する画面の「筆で絵馬を描く」から。</p>`); })();
   const row = el.querySelector(".ofuda-row");
   ofuda.forEach((rec) => { const cv = ofudaImage(rec); cv.className = "ofuda-thumb"; cv.title = `${rec.gan}・${rec.date}`; cv.onclick = () => viewOfuda(rec); row?.appendChild(cv); });
 }
@@ -959,4 +971,39 @@ setupSeasonal({ scene, W, toast, addAction: (a) => ACTIONS.unshift(a), addGan: (
     tone([[1046, 0.3], [1568, 0.2]], 1.0, 0.08); bubbleAt(me, "🍬", 2200, 2.2); D.add(1);
     toast("🍬 千歳飴をいただきました。細く長く、粘り強く…子どもの長寿と健やかな成長を願う縁起物です", 5200);
   } });
-window.__enishi = { social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+// ------------------------------------------------------------------ 静のひととき（zen.js・mixer.js・shakyo.js・tour.js）
+let stResend = 0;
+const setStatusAll = (t) => { myStatus = t; store.set("enishi_status", t); refreshToku(); net?.st(t, "st"); clearTimeout(stResend); stResend = setTimeout(() => net?.st(myStatus, "st"), 9000); };
+const mixer = setupMixer({ ac, store, scene, camera, W, toast,
+  getMusic: () => (bgmOn ? store.get("enishi_vol", 0.55) : 0),
+  setMusic: (v) => { if (v > 0.001) { store.set("enishi_vol", v); bgm.setVolume(v); if (!bgmOn) { bgmOn = true; store.set("enishi_bgm", true); } if (gestured && !bgm.on) bgm.start(); } else if (bgmOn) { bgmOn = false; store.set("enishi_bgm", false); bgm.stop(); } paintSnd(); } });
+const tour = setupTour({ camera, PLACES, footY, setCine, toast, okPond: W.okPond, floatLamp: () => makeFloatLamp(), removeFloatLamp: (l) => removeFloatLamp(l),
+  nearest: () => Object.keys(PLACES).reduce((b, k) => (Math.hypot(PLACES[k].pos[0] - me.position.x, PLACES[k].pos[1] - me.position.z) < Math.hypot(PLACES[b].pos[0] - me.position.x, PLACES[b].pos[1] - me.position.z) ? k : b), "ootorii") });
+const shakyo = setupShakyo({ store, toast, today, deedHook, chime, addToku: (n) => { D.add(n); refreshToku(); }, hangEma: () => hangEma(), brush: () => noise(0.07, 1500, 0.04, "bandpass") });
+const zen = setupZen({ store, toast, today, deedHook, me, camera, PLACES, STAGE, footY, setCine, setPose, mixer, shakyo, tour, isBusy: () => busy,
+  doing, walkRoute: (to) => (Math.hypot(to[0] - me.position.x, to[1] - me.position.z) > 28 ? warpTo(to) : new Promise((r) => walkTo(to, r, { route: true, fast: true }))), getStatus: () => myStatus, setStatus: setStatusAll,
+  addToku: (n) => { D.add(n); refreshToku(); }, gong: () => sfx.gong(), soft: () => tone([[784, 0.3], [1175, 0.2]], 1.6, 0.04),
+  breathTone: (t) => tone(t.startsWith("鼻") ? [[392, 0.3]] : t.startsWith("息") ? [[523, 0.2]] : [[330, 0.3]], 2.5, 0.025),
+  focusing: () => [...others.values()].filter((o) => (o.st || "").startsWith("🧘")).length });
+$("#btn-zen").onclick = () => { if (!intro) zen.open(); };
+$("#btn-ema-draw").onclick = () => { $("#m-ema").hidden = true; shakyo.drawEma(); };
+// 遠い場所へは、暗転してそのまま移る（静のひとときの座る場所へ）
+async function warpTo([x, z]) {
+  const f = document.getElementById("tour-fade"); f.classList.add("on"); await wait(1000);
+  const dx = x - me.position.x, dz = z - me.position.z, y = footY(x, z);
+  me.position.set(x, y, z); controls.target.set(x, y + 1, z); camera.position.x += dx; camera.position.z += dz; camera.position.y = y + 4.2; controls.update();
+  await wait(300); f.classList.remove("on"); await wait(600);
+}
+// 自分で描いた絵馬：絵馬掛けの下段・上段に交互に（最大6枚）
+const myEmaMeshes = [];
+function hangEma() {
+  const rack = W.emaRack; if (!rack) return;
+  for (const m of myEmaMeshes) { rack.remove(m); m.material.map?.dispose(); m.material.dispose(); m.geometry.dispose(); } myEmaMeshes.length = 0;
+  store.get("enishi_myema", []).forEach((e, i) => {
+    const img = new Image(), t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; img.onload = () => (t.needsUpdate = true); img.src = e.url;
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.42), new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 }));
+    mesh.position.set(-1.55 + i * 0.62, i % 2 ? 1.62 : 1.02, 0.07); mesh.rotation.z = ((i * 37) % 7 - 3) * 0.015; rack.add(mesh); myEmaMeshes.push(mesh);
+  });
+}
+hangEma();
+window.__enishi = { zen, mixer, tour, shakyo, social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
