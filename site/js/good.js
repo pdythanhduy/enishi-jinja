@@ -1,6 +1,6 @@
 // 善行（落ち葉掃き・灯籠に火・迷子の子狐）と夜祭り（花火・祭囃子）
 import * as THREE from "three";
-import { height, footY } from "./map.js?v=11030932";
+import { height, footY } from "./map.js?v=11030938";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 

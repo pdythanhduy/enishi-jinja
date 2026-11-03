@@ -59,7 +59,7 @@ export function roof(parent, { w, d, h, lift = 0.35, thick = 0.22, mat = MAT.cop
 
 // ------------------------------------------------------------------ 鳥居
 export function torii(parent, { x = 0, z = 0, y = 0, s = 1, ry = 0, gaku = "", mat = MAT.shu }) {
-  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); parent.add(g); g.userData.static = true;
   const w = 3.6, h = 4.2;
   for (const xx of [-w / 2, w / 2]) { cyl(g, 0.17, 0.21, h, mat, xx, h / 2, 0, 16); cyl(g, 0.25, 0.25, 0.4, MAT.kuro, xx, 0.2, 0, 16); }
   box(g, w + 0.9, 0.22, 0.26, mat, 0, h - 0.7, 0);                          // 貫
@@ -74,7 +74,7 @@ export function torii(parent, { x = 0, z = 0, y = 0, s = 1, ry = 0, gaku = "", m
 
 // ------------------------------------------------------------------ 石灯籠
 export function toro(parent, x, z, y = 0, env, scale = 1) {
-  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(scale); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(scale); parent.add(g); g.userData.static = true;
   cyl(g, 0.45, 0.55, 0.28, MAT.stoneD, 0, 0.14, 0, 6); cyl(g, 0.14, 0.17, 1.05, MAT.stone, 0, 0.8, 0, 12);
   cyl(g, 0.44, 0.3, 0.2, MAT.stone, 0, 1.42, 0, 6); box(g, 0.52, 0.44, 0.52, MAT.stone, 0, 1.73, 0);
   const fm = lampMat(0xffe2a8, 0xffa040, 2.4); box(g, 0.32, 0.27, 0.54, fm, 0, 1.73, 0, false); box(g, 0.54, 0.27, 0.32, fm, 0, 1.73, 0, false);
@@ -82,7 +82,7 @@ export function toro(parent, x, z, y = 0, env, scale = 1) {
   cyl(g, 0.1, 0.1, 0.16, MAT.stone, 0, 2.42, 0, 10);
   lightSpot(g, 1.73 * scale, 5, 9);
   env && env.registerLamp(fm, null);
-  g.userData = { lamp: fm };
+  g.userData.lamp = fm;
   return g;
 }
 // 提灯
@@ -97,7 +97,7 @@ export function chochin(parent, x, y, z, env, s = 1, col = 0xfff3d6) {
 
 // ------------------------------------------------------------------ 本殿（大きな拝殿＋本殿、向拝、金の飾り）
 export function honden(parent, env, { x = 0, z = 0 } = {}) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
   const W = 18, D = 12, F = 1.4;                                   // 幅・奥行き・床の高さ
   box(g, W + 2, F, D + 2, MAT.stoneD, 0, F / 2, 0);                 // 基壇
   box(g, W + 2.4, 0.15, D + 2.4, MAT.stoneL, 0, F + 0.05, 0);
@@ -238,7 +238,7 @@ function emaWall(g, x, z0, z1, y, side, colors) {
 
 // ------------------------------------------------------------------ 小さな社（縁結び・合格）— 中に入れる
 export function smallHall(parent, env, { x, z, roofMat = MAT.copper, zabMat, theme }) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
   const W = 10, D = 7, F = 0.45;
   box(g, W + 1, F, D + 1, MAT.stoneD, 0, F / 2, 0);
   for (let i = 0; i < 2; i++) box(g, 3.4, 0.22, 0.5, MAT.stoneL, 0, 0.11 + i * 0.22, D / 2 + 0.9 - i * 0.45);
@@ -348,7 +348,7 @@ function smallHallInterior(g, theme, W, D, F) {
 
 // ------------------------------------------------------------------ 楼門（二階建ての門）
 export function romon(parent, env, { x = 0, z = 0 } = {}) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
   const W = 12, D = 4;
   box(g, W + 0.6, 0.4, D + 0.6, MAT.stoneD, 0, 0.2, 0);
   for (const cx of [-5.6, -2, 2, 5.6]) for (const cz of [-D / 2 + 0.3, D / 2 - 0.3]) cyl(g, 0.3, 0.3, 5, MAT.shu, cx, 2.9, cz, 16);
@@ -370,7 +370,7 @@ export function romon(parent, env, { x = 0, z = 0 } = {}) {
 
 // ------------------------------------------------------------------ 五重塔
 export function pagoda(parent, env, { x, z, y = 0 }) {
-  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); g.userData.static = true;
   box(g, 7.5, 0.8, 7.5, MAT.stoneD, 0, 0.4, 0);
   let yy = 0.8, w = 5.6;
   for (let i = 0; i < 5; i++) {
@@ -392,7 +392,7 @@ export function pagoda(parent, env, { x, z, y = 0 }) {
 
 // ------------------------------------------------------------------ 太鼓橋
 export function taikobashi(parent, { x0, x1, z, w }) {
-  const g = new THREE.Group(); parent.add(g);
+  const g = new THREE.Group(); parent.add(g); g.userData.static = true;
   const L = x1 - x0, N = 26;
   for (let i = 0; i < N; i++) {
     const t = (i + 0.5) / N, xx = x0 + t * L, yy = Math.sin(t * Math.PI) * 1.9, slope = Math.cos(t * Math.PI) * Math.PI * 1.9 / L;
@@ -424,7 +424,7 @@ export function tamagaki(parent, segments, h = 1.3) {
 
 // ------------------------------------------------------------------ 手水舎
 export function temizuya(parent, env, { x, z }) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
   for (const [xx, zz] of [[-1.6, -1.1], [1.6, -1.1], [-1.6, 1.1], [1.6, 1.1]]) cyl(g, 0.15, 0.15, 3, MAT.woodD, xx, 1.5, zz, 10);
   roof(g, { w: 4.6, d: 3.6, h: 1.3, lift: 0.3, y: 3.0, mat: MAT.copper, ridgeGold: false });
   box(g, 2.6, 0.75, 1.3, MAT.stoneL, 0, 0.5, 0);
@@ -437,7 +437,7 @@ export function temizuya(parent, env, { x, z }) {
 
 // ------------------------------------------------------------------ 授与所（お守り・おみくじ）
 export function juyosho(parent, env, { x, z, ry = -Math.PI / 2 }) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; parent.add(g); g.userData.static = true;
   box(g, 7, 0.3, 4, MAT.stoneD, 0, 0.15, 0);
   for (const xx of [-3.2, 3.2]) for (const zz of [-1.7, 1.7]) cyl(g, 0.14, 0.14, 3, MAT.woodD, xx, 1.6, zz, 10);
   box(g, 6.6, 2.8, 0.15, MAT.woodL, 0, 1.7, -1.7);
@@ -453,7 +453,7 @@ export function juyosho(parent, env, { x, z, ry = -Math.PI / 2 }) {
 
 // ------------------------------------------------------------------ 御神木（大きな楠）
 export function shinboku(parent, { x, z }, leafMat) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
   const trunk = cyl(g, 0.9, 1.5, 6.5, std(0x4a3426, { roughness: 1 }), 0, 3.25, 0, 14);
   for (let i = 0; i < 5; i++) { const r = cyl(g, 0.18, 0.4, 2.2, std(0x4a3426), Math.cos(i * 1.3) * 1.4, 0.4, Math.sin(i * 1.3) * 1.4, 8); r.rotation.set(Math.sin(i) * 0.9, 0, Math.cos(i * 1.3) * 0.9); }   // 根
   const rope = new THREE.Mesh(new THREE.TorusGeometry(1.32, 0.16, 10, 28), MAT.rope); rope.rotation.x = Math.PI / 2; rope.position.y = 2.6; g.add(rope);
@@ -468,7 +468,7 @@ export function shinboku(parent, { x, z }, leafMat) {
 
 // ------------------------------------------------------------------ 奥の院（山頂の小さな社）
 export function okunoin(parent, env, { x, z, y }) {
-  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); g.userData.static = true;
   box(g, 6, 0.5, 4.5, MAT.stoneD, 0, 0.25, 0);
   for (const xx of [-2.6, 2.6]) for (const zz of [-1.9, 1.9]) cyl(g, 0.14, 0.14, 2.8, MAT.shu, xx, 1.9, zz, 10);
   box(g, 5.6, 2.6, 0.12, MAT.woodL, 0, 1.8, -1.9);

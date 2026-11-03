@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030932";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030932";
-import { FOLIAGE } from "./env.js?v=11030932";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11030938";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND } from "./map.js?v=11030938";
+import { FOLIAGE } from "./env.js?v=11030938";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数

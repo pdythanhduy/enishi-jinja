@@ -12,6 +12,7 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
   - `decor.js`: PMREM env, textures, nobori, lantern rows, rocks, clouds, snowRoofs.
   - `avatar.js`, `collect.js` (goshuin and omamori), `good.js` (leaves, dark lanterns, lost fox, fireworks), `deeds.js` (徳, ranks, quests), `net.js`.
   - `app.js`: core, rituals, UI, multiplayer.
+  - `freeze.js`: at startup, merges the meshes of groups marked `userData.static = true` (arch.js builders) into one mesh per material. Groups stay for position lookups. Anything that moves, or swaps materials per mesh, must NOT be marked static. `?nofreeze` disables it.
 - `site/fx.js`: wagara patterns, ambience sounds, `matsuri()` お囃子 festival music. `site/content.js`: halls, stories, omikuji.
 - `worker/worker.js`: Cloudflare Worker `enishi-rooms` with Durable Objects. Room is WebSocket, 100 per room. Board is SQLite ema/pray/report/light. Remind sends Web Push at 08:00 JST and tracks global 徳 (FEST_GOAL 300). Deploy with `python worker/deploy.py`, which reads keys from `.env`.
 
@@ -38,4 +39,4 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 - Trees between the camera and the player fade with a dithered shader (`W.treeFade`, world.js). Trees are kept out of the small-hall footprints.
 
 ## Next ideas
-- Performance check on a real phone.
+- Performance check on a real phone. Draw calls are ~350–675 after freeze (was ~1000–1560); triangles ~360–395k. Next candidates: the lanternRows chochin (each has its own lamp material, so they can't merge) and nobori.
