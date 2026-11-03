@@ -2,8 +2,8 @@
 // ポモドーロは部屋で共通：日本時間の毎時 :00 と :30 に始まり、25分集中・5分休憩。休憩に入ると鈴が鳴り、みんなで一礼。
 // 部屋にいる人は頭の上に「🛶 屋形船で作業中」「📖 書院で作業中」と出て、正座で並ぶ。集中の5分ごとに徳+5。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11031853";
-import { SHOIN, YAKATA } from "./map.js?v=11031853";
+import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11031909";
+import { SHOIN, YAKATA } from "./map.js?v=11031909";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...o });
 const jst = () => new Date(Date.now() + 9 * 3600e3);
@@ -119,7 +119,7 @@ export function setupSagyo(A) {
     <div class="rh-row rh-main"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" class="fr-bg"/><circle cx="22" cy="22" r="19" class="fr-fg"/></svg>
       <div class="rh-t"><small class="rh-ph"></small><b class="rh-left"></b></div><div class="rh-me"><small>今日</small><b class="rh-today"></b></div></div>
     <div class="rh-row rh-ch">${CHANNELS.map((c) => `<button type="button" data-ch="${c.id}">${c.icon} ${c.name}</button>`).join("")}</div>
-    <div class="rh-row rh-btns"><button type="button" class="rh-q" title="画面を静かに">🌙 静かに</button><button type="button" class="rh-x">退室する</button></div>`;
+    <div class="rh-row rh-btns"><button type="button" class="rh-n" title="ほかの画面を見ていても、集中と休憩の切りかわりを知らせます">🔔 通知</button><button type="button" class="rh-q" title="画面を静かに">🌙 静かに</button><button type="button" class="rh-x">退室する</button></div>`;
   document.body.appendChild(hud);
   const C = 2 * Math.PI * 19;
   let cur = null;
@@ -137,6 +137,7 @@ export function setupSagyo(A) {
     hud.querySelectorAll("[data-ch]").forEach((b) => b.classList.toggle("on", b.dataset.ch === cur.ch));
     document.title = `${p.focus ? "🍅" : "🍵"} ${fmt(p.left)} ${p.focus ? "集中" : "休憩"}｜えにし神社`;
   }
+  const paintN = () => { const on = "Notification" in window && Notification.permission === "granted", b = hud.querySelector(".rh-n"); b.textContent = on ? "🔔 通知オン" : "🔔 通知"; b.classList.toggle("on", on); };
   function setChannel(ch) {
     if (!cur) return; cur.ch = ch; A.store.set("enishi_room_ch", ch);
     A.ensureMusic(); A.bgm.setChannel(ch === "keidai" ? null : ch);
@@ -145,6 +146,7 @@ export function setupSagyo(A) {
   hud.addEventListener("click", (e) => {
     const b = e.target.closest("[data-ch]"); if (b) setChannel(b.dataset.ch);
     if (e.target.closest(".rh-q")) document.body.classList.toggle("focus-quiet");
+    if (e.target.closest(".rh-n")) A.askNotify().then(paintN);
     if (e.target.closest(".rh-x")) leave();
   });
 
@@ -157,8 +159,8 @@ export function setupSagyo(A) {
     if (cur.phase !== null && cur.phase !== p.focus) {
       if (!p.focus) {                                                                                 // 休憩へ：鈴と一礼、のび
         A.gong(); const s = stats(); if (cur.blockMs >= 15 * 60e3) { s.n += 1; A.store.set("enishi_pomo", s); A.deedHook("pomodoro", { n: s.n }); }
-        bowAll(); A.toast(`🍵 おつかれさまでした。5分休憩です。のびをして、お茶を一口。${inRoom(cur.room).length ? "チャットでひとこと話してもいいですね。" : ""}`, 6500);
-      } else { A.suzu(); A.toast("🔔 集中の時間です。今日も、ここから。", 3500); }
+        A.notify("🍵 休憩の時間です", "25分おつかれさまでした。5分、のびをしてお茶を一口。"); bowAll(); A.toast(`🍵 おつかれさまでした。5分休憩です。のびをして、お茶を一口。${inRoom(cur.room).length ? "チャットでひとこと話してもいいですね。" : ""}`, 6500);
+      } else { A.suzu(); A.notify("🔔 集中の時間です", "えにし作業室で、みんなと25分。"); A.toast("🔔 集中の時間です。今日も、ここから。", 3500); }
       cur.blockMs = 0;
     }
     if (p.focus) cur.blockMs += 1000;
@@ -179,7 +181,7 @@ export function setupSagyo(A) {
       cur = { room: r, seat, prev: A.getStatus(), phase: null, last: Date.now(), focusMs: 0, blockMs: 0, ch: A.store.get("enishi_room_ch", "lofi"), iv: setInterval(tick, 1000), t0: performance.now() };
       A.setStatus(r.st);
       A.setCine(() => { const k = (performance.now() - cur.t0) / 1000, [pos, look] = r.cam(k); A.camera.position.copy(pos); A.camera.lookAt(look); });
-      hud.hidden = false; setChannel(cur.ch); tick();
+      hud.hidden = false; setChannel(cur.ch); paintN(); tick(); live.hidden = true;
       A.toast(`${r.icon} ${r.name}へようこそ。${p.focus ? `いまは集中の時間（あと${Math.ceil(p.left / 60)}分）。` : `いまは休憩（あと${Math.ceil(p.left / 60)}分）。`}毎時 :00 と :30 に、みんなで集中を始めます`, 7000);
       await new Promise((res) => (cur.done = res));
     });
@@ -193,5 +195,14 @@ export function setupSagyo(A) {
     const s = stats(); A.toast(`おつかれさまでした。今日は ${s.n}ポモドーロ・${s.min}分 集中しました 🍅`, 5000);
     c.done?.();
   }
+  const live = document.createElement("button"); live.id = "room-live"; live.type = "button"; live.hidden = true; document.body.appendChild(live);
+  let liveRoom = null;
+  setInterval(() => {
+    if (cur || A.isBusy()) { live.hidden = true; return; }
+    let best = null, n = 0; for (const [id, r] of Object.entries(ROOMS)) { const k = inRoom(r).length; if (k > n) { n = k; best = id; } }
+    liveRoom = best; live.hidden = !best;
+    if (best) { const r = ROOMS[best], p = pomodoro(); live.innerHTML = `${r.icon} ${r.name}で <b>${n}人</b> が作業中 <small>${p.focus ? `集中 あと${Math.ceil(p.left / 60)}分` : "いまは休憩"}</small>`; }
+  }, 3000);
+  live.onclick = () => liveRoom && enter(liveRoom);
   return { enter, leave, ROOMS, get active() { return !!cur; } };
 }

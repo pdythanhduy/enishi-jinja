@@ -39,6 +39,10 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
       - Finishing adds a 奉納 seal and +10 徳 (up to 3 a day) and is saved in `enishi_shakyo`.
       - 絵馬を描く is a brush canvas. The drawing is kept only on the device (`enishi_myema`, max 6) and is hung on `W.emaRack`.
     - `tour.js`: 境内めぐり, a 40 s slow arc per PLACES entry with fades and captions, and 奥の院の池, a fixed view with floating lanterns. Tap or Esc exits.
+  - `welcome.js`: a four-card intro (rooms, chores, 🧘) shown once after the profile, stored in `enishi_welcome`.
+  - Notifications: the room HUD 🔔 asks for permission. `notify()` shows a system notification only when the tab is hidden, and vibrates on phones.
+  - `#room-live` chip at the top left shows which room has people right now; tapping it joins.
+  - og.jpg is a 書院 dusk shot with the tagline, composed with PIL and Yu Mincho.
   - `sagyo.js` (えにし作業室): two shared focus rooms.
     - 屋形船「えにし丸」 is moored on the main pond (`YAKATA`, with a pier and entry at [18, 62.6]). The 書院 sits beside the 参道 (`SHOIN`, open to the east, entry at [-6.4, 67]).
     - Players warp into a free seat and sit seiza, with a fixed room camera.
@@ -60,7 +64,9 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
     - Nothing is stored server-side.
   - `guide.js`: 今日の参拝, five daily steps (手水 → お参り → おみくじ → 献灯/御祈祷 → 縁). It reuses the deeds.js quest ids, shows a gold marker at the next spot, and fires 満願 when all five are done. `STEP_OF` maps deed kinds to steps.
   - `temizu.js`: the 手水舎 (dragon spout with running water, ladle rack, 作法 sign, water sound) and the over-the-shoulder 手水 ritual.
-  - `seasonal.js`: calendar events by JST date. Force one with `?event=753|hatsumode|juken`.
+  - `seasonal.js`: calendar events by JST date. Force one with `?event=753|oharae|joya|hatsumode|juken` (joya starts the clock at 23:57:40).
+    - 年越の大祓 (Dec 20–31): 茅の輪 at (0, 28) with the figure-8 walk; 人形 modal (write a name, stroke, three breaths, offer; the name stays on the device).
+    - 除夜の鐘 (Dec 31 22:00 – Jan 1 1:00): a distant bell with a shared count n/108 based on JST time, a 10-second countdown, then fireworks.
     - 七五三 (November): banners, 千歳飴 stand.
     - 初詣 (Jan 1–7): 門松, banners, 甘酒 stand.
     - 受験 (Jan 8 – Mar 15): banners at the 合格 hall.

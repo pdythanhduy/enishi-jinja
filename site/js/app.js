@@ -5,35 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031853";
-import { buildWorld } from "./world.js?v=11031853";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031853";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031853";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031853";
-import { deeds } from "../deeds.js?v=11031853";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031853";
-import { fireflies } from "../fx.js?v=11031853";
-import { LIGHT_SPOTS } from "./arch.js?v=11031853";
-import { freeze } from "./freeze.js?v=11031853";
-import { setupSeasonal } from "./seasonal.js?v=11031853";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031853";
-import { makeBGM } from "./bgm.js?v=11031853";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031853";
-import { setupKenno } from "./kenno.js?v=11031853";
-import { setupSocial } from "./social.js?v=11031853";
-import { setupProfile } from "./profile.js?v=11031853";
-import { setupChores } from "./chores.js?v=11031853";
-import { setupSagyo } from "./sagyo.js?v=11031853";
-import { setupZen } from "./zen.js?v=11031853";
-import { setupMixer } from "./mixer.js?v=11031853";
-import { setupShakyo } from "./shakyo.js?v=11031853";
-import { setupTour } from "./tour.js?v=11031853";
-import { setupChat } from "./chat.js?v=11031853";
-import { setupKito, ofudaImage } from "./kito.js?v=11031853";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031853";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031853";
-import { connect, board } from "../net.js?v=11031853";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031853";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031909";
+import { buildWorld } from "./world.js?v=11031909";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031909";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031909";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031909";
+import { deeds } from "../deeds.js?v=11031909";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031909";
+import { fireflies } from "../fx.js?v=11031909";
+import { LIGHT_SPOTS } from "./arch.js?v=11031909";
+import { freeze } from "./freeze.js?v=11031909";
+import { setupSeasonal } from "./seasonal.js?v=11031909";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031909";
+import { makeBGM } from "./bgm.js?v=11031909";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031909";
+import { setupKenno } from "./kenno.js?v=11031909";
+import { setupSocial } from "./social.js?v=11031909";
+import { setupProfile } from "./profile.js?v=11031909";
+import { setupChores } from "./chores.js?v=11031909";
+import { setupSagyo } from "./sagyo.js?v=11031909";
+import { setupWelcome } from "./welcome.js?v=11031909";
+import { setupZen } from "./zen.js?v=11031909";
+import { setupMixer } from "./mixer.js?v=11031909";
+import { setupShakyo } from "./shakyo.js?v=11031909";
+import { setupTour } from "./tour.js?v=11031909";
+import { setupChat } from "./chat.js?v=11031909";
+import { setupKito, ofudaImage } from "./kito.js?v=11031909";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031909";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031909";
+import { connect, board } from "../net.js?v=11031909";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031909";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -1019,7 +1020,9 @@ function onboard() { if (!store.get("enishi_profile", 0) && !busy) profile.open(
 if (!intro) setTimeout(onboard, 1200);
 $("#juyo-kito").onclick = () => { $("#m-juyo").hidden = true; kito.open(); };
 // ------------------------------------------------------------------ 季節の行事（seasonal.js）
-setupSeasonal({ scene, W, toast, addAction: (a) => ACTIONS.unshift(a), addGan: (g) => kito.addGan(g),
+setupSeasonal({ scene, W, toast, addAction: (a) => ACTIONS.unshift(a), addGan: (g) => kito.addGan(g), me, doing, stepText, deedHook, tone, noise, fireworks, getName: () => myName,
+  walk: (p) => new Promise((r) => walkTo(p, r)), bow: async () => { await bowTo(me, 1.1, 600); await wait(300); await bowTo(me, 0, 500); }, light: (x, z) => releaseLight(x, footY(x, z), z, true),
+  once: (k) => onceToday(k), addToku: (n) => { D.add(n); refreshToku(); }, chime: () => tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.4, 0.08),
   amazake: () => {
     if (!onceToday("amazake")) { toast("甘酒は一日に一杯。明日もどうぞ 🍶"); return; }
     const got = store.get("enishi_finds", {}); got.amazake = (got.amazake || 0) + 1; store.set("enishi_finds", got);
@@ -1041,10 +1044,20 @@ const mixer = setupMixer({ ac, store, scene, camera, W, toast,
 const tour = setupTour({ camera, PLACES, footY, setCine, toast, okPond: W.okPond, floatLamp: () => makeFloatLamp(), removeFloatLamp: (l) => removeFloatLamp(l),
   nearest: () => Object.keys(PLACES).reduce((b, k) => (Math.hypot(PLACES[k].pos[0] - me.position.x, PLACES[k].pos[1] - me.position.z) < Math.hypot(PLACES[b].pos[0] - me.position.x, PLACES[b].pos[1] - me.position.z) ? k : b), "ootorii") });
 const shakyo = setupShakyo({ store, toast, today, deedHook, chime, addToku: (n) => { D.add(n); refreshToku(); }, hangEma: () => hangEma(), brush: () => noise(0.07, 1500, 0.04, "bandpass") });
-const sagyo = setupSagyo({ scene, env, W, me, camera, others, store, toast, today, deedHook, bgm, mixer, setCine, setPose, bowTo, warpTo, doing, isBusy: () => busy,
+// 通知：画面がほかにあるときだけ（作業室の切りかわり・集中の終わり）。端末を少しふるわせる
+const notify = (title, body) => {
+  navigator.vibrate?.([180, 90, 180]);
+  if (!document.hidden || !("Notification" in window) || Notification.permission !== "granted") return;
+  (navigator.serviceWorker ? navigator.serviceWorker.ready : Promise.reject()).then((r) => r.showNotification(title, { body, icon: "img/icon-192.png", badge: "img/icon-192.png", tag: "enishi-pomo", renotify: true }))
+    .catch(() => { try { new Notification(title, { body, icon: "img/icon-192.png" }); } catch {} });
+};
+const askNotify = async () => { if (!("Notification" in window)) { toast("この端末では通知が使えません"); return false; } if (Notification.permission === "default") await Notification.requestPermission();
+  if (Notification.permission === "granted") { toast("🔔 ほかの画面を見ていても、集中と休憩の切りかわりをお知らせします", 4000); return true; }
+  toast("通知がオフになっています。ブラウザの設定から許可できます", 4000); return false; };
+const sagyo = setupSagyo({ notify, askNotify, scene, env, W, me, camera, others, store, toast, today, deedHook, bgm, mixer, setCine, setPose, bowTo, warpTo, doing, isBusy: () => busy,
   getStatus: () => myStatus, setStatus: setStatusAll, addToku: (n) => { D.add(n); refreshToku(); }, gong: () => sfx.gong(), suzu: () => sfx.suzu(), soft: () => tone([[784, 0.3], [1175, 0.2]], 1.6, 0.04),
   ensureMusic: () => { if (!bgmOn) { bgmOn = true; store.set("enishi_bgm", true); paintSnd(); } if (gestured && !bgm.on) bgm.start(); }, title: document.title });
-const zen = setupZen({ room: (id) => sagyo.enter(id), shareCanvas, store, toast, today, deedHook, me, camera, PLACES, STAGE, footY, setCine, setPose, mixer, shakyo, tour, isBusy: () => busy,
+const zen = setupZen({ notify, room: (id) => sagyo.enter(id), shareCanvas, store, toast, today, deedHook, me, camera, PLACES, STAGE, footY, setCine, setPose, mixer, shakyo, tour, isBusy: () => busy,
   doing, walkRoute: (to) => (Math.hypot(to[0] - me.position.x, to[1] - me.position.z) > 28 ? warpTo(to) : new Promise((r) => walkTo(to, r, { route: true, fast: true }))), getStatus: () => myStatus, setStatus: setStatusAll,
   addToku: (n) => { D.add(n); refreshToku(); }, gong: () => sfx.gong(), soft: () => tone([[784, 0.3], [1175, 0.2]], 1.6, 0.04),
   breathTone: (t) => tone(t.startsWith("鼻") ? [[392, 0.3]] : t.startsWith("息") ? [[523, 0.2]] : [[330, 0.3]], 2.5, 0.025),
@@ -1070,4 +1083,5 @@ function hangEma() {
   });
 }
 hangEma();
-window.__enishi = { sagyo, chores, zen, mixer, tour, shakyo, social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
+const welcome = setupWelcome({ store, enterRoom: (id) => sagyo.enter(id), openZen: () => zen.open(), ready: () => store.get("enishi_profile", 0) && $("#m-profile")?.hidden !== false && !busy && !intro && !cine });
+window.__enishi = { welcome, sagyo, chores, zen, mixer, tour, shakyo, social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };

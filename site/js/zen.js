@@ -135,7 +135,7 @@ export function setupZen(A) {
     const st = stats(); st.today += mins; st.total += mins; if (mins >= 1) st.sessions += 1; A.store.set("enishi_zen", st);
     A.setStatus(s.prev || "");
     hud.hidden = true; document.body.classList.remove("focus-quiet"); A.setCine(null); document.title = TITLE;
-    if (complete) { A.gong?.(); A.deedHook("zen", { min: mins }); }
+    if (complete) { A.gong?.(); A.deedHook("zen", { min: mins }); A.notify?.("🔔 集中おつかれさまでした", `${mins}分、静かに過ごしました。`); }
     if (mins >= 5) showDone(mins, st, s.blocks * 5, complete);
     else A.toast(`${mins}分 静かに過ごしました。今日は合わせて ${st.today}分。`, 5000);
     s.resolve?.();
