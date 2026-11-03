@@ -1,10 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031506";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM } from "./map.js?v=11031506";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11031506";
-import { koiSchool } from "./koi.js?v=11031506";
-import { FOLIAGE } from "./env.js?v=11031506";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031518";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM } from "./map.js?v=11031518";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11031518";
+import { koiSchool } from "./koi.js?v=11031518";
+import { FOLIAGE } from "./env.js?v=11031518";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -162,6 +162,54 @@ export function buildWorld(scene, env, { mobile }) {
   const uh = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), new THREE.MeshStandardMaterial({ color: 0x9a7a4a, metalness: 0.75, roughness: 0.3 })); uh.position.set(0.85, 1.05, 0); uh.scale.set(1.1, 0.9, 0.9); ushi.add(uh);  // 撫でられて光る頭
   for (const s of [-1, 1]) { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.28, 8), bronze); horn.rotation.z = -0.5; horn.position.set(0.9, 1.35, s * 0.2); ushi.add(horn); }
   W.ushi = ushi;
+  // ---------------------------------------------------------------- 社ごとの顔：縁結び「赤い糸の結び棚」・合格「筆塚」
+  const signTex = (text, bg, fg, w = 256, h = 64, px = 34) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d");
+    x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.font = `bold ${px}px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`; x.fillText(text, w / 2, h / 2 + 2);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+  {
+    const tana = new THREE.Group(); tana.position.set(-34.6, 0, 24.5); tana.rotation.y = Math.PI; scene.add(tana);   // 表は参道（南）側
+    for (const sx of [-1.65, 1.65]) cyl(tana, 0.07, 0.08, 2.3, MAT.woodD, sx, 1.15, 0, 8);
+    box(tana, 3.7, 0.12, 0.14, MAT.woodD, 0, 2.25, 0);
+    roof(tana, { w: 4.2, d: 0.9, h: 0.32, lift: 0.1, y: 2.32, mat: MAT.copper, gable: false, ridgeGold: false });
+    const cordM = new THREE.MeshStandardMaterial({ color: 0x8a1a22, roughness: 0.7 });
+    for (const y of [0.85, 1.3, 1.75]) { const r = cyl(tana, 0.018, 0.018, 3.3, cordM, 0, y, 0, 5, false); r.rotation.z = Math.PI / 2; }
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.36), new THREE.MeshStandardMaterial({ map: signTex("赤い糸 結び処", "#2a1d14", "#f3c2c8") })); sg.position.set(0, 2.06, 0.08); tana.add(sg);
+    // 結ばれた赤い糸：結び目と垂れた糸。結ぶたびに一本ずつ増える（最大 MAX）
+    const MAX = 420, knotG = new THREE.TorusGeometry(0.035, 0.012, 4, 10), tailG = new THREE.CylinderGeometry(0.006, 0.006, 0.22, 3);
+    const itoM = new THREE.MeshStandardMaterial({ color: 0xd61f3a, emissive: 0x6a0010, emissiveIntensity: 0.5, roughness: 0.6 }), pinkM = new THREE.MeshStandardMaterial({ color: 0xf07a96, emissive: 0x5a1020, emissiveIntensity: 0.4 });
+    const knots = new THREE.InstancedMesh(knotG, itoM, MAX), tails = new THREE.InstancedMesh(tailG, itoM, MAX * 2), pinks = new THREE.InstancedMesh(knotG, pinkM, 40);
+    const o = new THREE.Object3D(); let s0 = 77; const rnd = () => ((s0 = (s0 * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < MAX; i++) {
+      const x = -1.55 + rnd() * 3.1, y = [0.85, 1.3, 1.75][i % 3], z = (rnd() - 0.5) * 0.03;
+      o.position.set(x, y, z); o.rotation.set(rnd() * 3, Math.PI / 2 + (rnd() - 0.5), rnd()); o.scale.setScalar(0.8 + rnd() * 0.5); o.updateMatrix(); knots.setMatrixAt(i, o.matrix);
+      for (let k = 0; k < 2; k++) { o.position.set(x + (k ? 0.02 : -0.02), y - 0.12, z); o.rotation.set((rnd() - 0.5) * 0.4, 0, (k ? 1 : -1) * (0.15 + rnd() * 0.2)); o.scale.setScalar(1); o.updateMatrix(); tails.setMatrixAt(i * 2 + k, o.matrix); }
+    }
+    for (let i = 0; i < 40; i++) { o.position.set(-1.55 + rnd() * 3.1, [0.85, 1.3, 1.75][i % 3], 0.01); o.rotation.set(0, Math.PI / 2, rnd()); o.scale.setScalar(1); o.updateMatrix(); pinks.setMatrixAt(i, o.matrix); }
+    tana.add(knots, tails, pinks);
+    const setN = (n) => { knots.count = Math.min(MAX, n); tails.count = knots.count * 2; };
+    W.itoTana = { group: tana, setN, MAX };
+    // 合格：筆塚（使い終えた筆に感謝して納める石碑）と筆納箱
+    const fz = new THREE.Group(); fz.position.set(34.6, 0, 24.5); fz.rotation.y = Math.PI; scene.add(fz); fz.userData.static = true;
+    box(fz, 1.7, 0.28, 1.1, MAT.stoneD, 0, 0.14, 0); box(fz, 1.3, 0.22, 0.8, MAT.stone, 0, 0.39, 0);
+    const stoneT = (() => { const c = document.createElement("canvas"); c.width = 128; c.height = 256; const x = c.getContext("2d");
+      x.fillStyle = "#6f6a62"; x.fillRect(0, 0, 128, 256); for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? "255,255,255" : "0,0,0"},${Math.random() * 0.08})`; x.fillRect(Math.random() * 128, Math.random() * 256, 2, 2); }
+      x.textAlign = "center"; x.textBaseline = "middle"; x.font = `bold 70px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`;
+      for (const [ch, y] of [["筆", 80], ["塚", 170]]) { x.fillStyle = "rgba(20,18,16,.75)"; x.fillText(ch, 64, y); x.fillStyle = "rgba(255,255,255,.12)"; x.fillText(ch, 66, y + 2); }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+    const stele = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.7, 0.3), [MAT.stone, MAT.stone, MAT.stone, MAT.stone, new THREE.MeshStandardMaterial({ map: stoneT, roughness: 0.9 }), MAT.stone]);
+    stele.position.set(0, 1.35, -0.1); stele.castShadow = true; fz.add(stele);
+    const capS = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.3, 16, 1, false, 0, Math.PI), MAT.stone); capS.rotation.z = Math.PI / 2; capS.rotation.y = Math.PI / 2; capS.position.set(0, 2.2, -0.1); fz.add(capS);
+    // 筆納箱：木の箱に、納められた筆と鉛筆
+    const bx = new THREE.Group(); bx.position.set(0.95, 0, 0.55); fz.add(bx);
+    box(bx, 0.62, 0.5, 0.42, MAT.woodL, 0, 0.25, 0); box(bx, 0.66, 0.04, 0.46, MAT.woodD, 0, 0.51, 0);
+    const bm = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.14), new THREE.MeshStandardMaterial({ map: signTex("筆納箱", "#e9dcc0", "#2a1d14", 192, 56, 34) })); bm.position.set(0, 0.36, 0.215); bx.add(bm);
+    const bamboo = new THREE.MeshStandardMaterial({ color: 0xc9a86a, roughness: 0.6 }), tip = new THREE.MeshStandardMaterial({ color: 0x151210 }), pen = new THREE.MeshStandardMaterial({ color: 0x2f7a3a, roughness: 0.5 });
+    for (let i = 0; i < 9; i++) { const g2 = new THREE.Group(); g2.position.set(-0.22 + (i % 5) * 0.11, 0.62, -0.1 + Math.floor(i / 5) * 0.12); g2.rotation.set((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.5); bx.add(g2);
+      const isPen = i % 3 === 2; const st = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, isPen ? 6 : 6), isPen ? pen : bamboo); g2.add(st);
+      const tp = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 6), isPen ? MAT.woodL : tip); tp.position.y = 0.19; g2.add(tp); }
+    const lampG = toro(scene, 36.2, 24.8, 0, env, 0.6); W.lamps.push(lampG);
+    W.fudezuka = fz;
+  }
   for (const s of [-1, 1]) for (const [x, z] of [[40.6, 21], [40.6, 6.5]]) W.lamps.push(toro(scene, s * x, z, 0, env, 0.9));
 
   // ---------------------------------------------------------------- ⑪ 千本鳥居（山道）— InstancedMesh

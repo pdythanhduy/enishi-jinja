@@ -39,14 +39,14 @@ export async function setupSocial(A) {
     if (kind === "say" && !t) { note("ことばを入れてください"); return; }
     if (A.ng(t)) { note("その言葉は使えません"); return; }
     if (kind === "st") { A.setStatus(t); A.net?.st(t, "st"); note(t ? "頭の上に出しました（みんなに見えます）" : "頭の上の言葉を消しました"); }
-    else { say(t); A.net?.st(t, "say"); pop.querySelector("#say-text").value = ""; pop.hidden = true; A.deedHook("say"); }
+    else { say(t); A.net?.st(t, "say"); A.logMine?.(t); pop.querySelector("#say-text").value = ""; pop.hidden = true; A.deedHook("say"); }
   };
   pop.querySelector("#say-text").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendFree("say"); } });
   pop.onclick = (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.free) { sendFree(b.dataset.free); return; }
-    if (b.dataset.e) { say(EMOTES[+b.dataset.e]); A.net?.act("emo", b.dataset.e); }
-    else { say(PHRASES[+b.dataset.p]); A.net?.act("say", b.dataset.p); }
+    if (b.dataset.e) { say(EMOTES[+b.dataset.e]); A.net?.act("emo", b.dataset.e); A.logMine?.(EMOTES[+b.dataset.e]); }
+    else { say(PHRASES[+b.dataset.p]); A.net?.act("say", b.dataset.p); A.logMine?.(PHRASES[+b.dataset.p]); }
     pop.hidden = true; A.deedHook("say");
   };
   document.addEventListener("pointerdown", (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target.id !== "act-say" && !e.target.closest("#act-say")) pop.hidden = true; });
@@ -208,5 +208,5 @@ export async function setupSocial(A) {
   const rememberEma = (hall, id, text) => { const l = store.get("enishi_myema", []); l.unshift({ hall, id, text, n: 0 }); store.set("enishi_myema", l.slice(0, 30)); };
 
   const openSay = () => { pop.hidden = false; pop.querySelector("#say-text").value = A.getStatus(); note(""); };
-  return { pid, toggleSay: () => (pop.hidden ? openSay() : (pop.hidden = true)), otherSay, tapOther, onEn, openBook, streakTick, rememberEma, close: () => { pop.hidden = true; card.hidden = true; } };
+  return { pid, sayMine: say, toggleSay: () => (pop.hidden ? openSay() : (pop.hidden = true)), otherSay, tapOther, onEn, openBook, streakTick, rememberEma, close: () => { pop.hidden = true; card.hidden = true; } };
 }

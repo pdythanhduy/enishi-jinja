@@ -112,11 +112,16 @@ export class Room {
     } else if (m.t === "st") {                                                             // ひとこと：頭の上の言葉・話す
       const kind = m.kind === "say" ? "say" : "st";
       if (now - (me[kind + "At"] || 0) < (kind === "say" ? 2500 : 8000)) return;
-      let text = String(m.text || "").replace(/[<>&"'`\\]/g, "").replace(/\s+/g, " ").trim().slice(0, 20);
+      let text = String(m.text || "").replace(/[<>&"'`\\]/g, "").replace(/\s+/g, " ").trim().slice(0, kind === "say" ? 60 : 20);
+      if (this.sil?.has(me.id)) { try { ws.send(JSON.stringify({ t: "nope" })); } catch {} return; }   // 通報が集まった人の言葉は届けない
       if (text && NG.some((w) => text.toLowerCase().includes(w.toLowerCase()))) { try { ws.send(JSON.stringify({ t: "nope" })); } catch {} return; }
       if (kind === "say" && !text) return;
       me[kind + "At"] = now; if (kind === "st") me.st = text; ws.serializeAttachment(me);
       this.broadcast({ t: "st", id: me.id, kind, text }, ws);
+    } else if (m.t === "rep") {                                                            // 言葉の通報：別々の3人からで、その人の言葉はこの部屋に届かなくなる
+      const to = String(m.to || "").slice(0, 16); if (!to || to === me.id) return;
+      this.reps ||= new Map(); const s = this.reps.get(to) || new Set(); s.add(me.id); this.reps.set(to, s);
+      if (s.size >= 3) (this.sil ||= new Set()).add(to);
     } else if (m.t === "en") {                                                             // 縁：特定の一人へのお辞儀
       if (now - (me.en || 0) < 3000) return; me.en = now; ws.serializeAttachment(me);
       const pid = String(m.pid || "").replace(/[^0-9a-f]/g, "").slice(0, 16);

@@ -1,4 +1,4 @@
-// みんなの境内：WebSocketで他の参拝者を表示（会話はなし）。サーバーに繋がらなくても一人でお参りできる。
+// みんなの境内：WebSocketで他の参拝者を表示し、ことばを交わす。サーバーに繋がらなくても一人でお参りできる。
 export const API = "https://enishi-rooms.thanhduy8vn.workers.dev";
 const WS = API.replace(/^http/, "ws");
 
@@ -46,6 +46,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
     },
     act(a, r = "") { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "act", a, r })); },
     st(text, kind = "st") { if (kind === "st") myStatus = text; if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "st", kind, text })); },
+    rep(to) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "rep", to })); },
     en(to, pid) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "en", to, pid })); },
     // 名前・見た目を変えたとき（再接続のときも新しい値で入る）
     hello(n, l) { name = n; look = l; if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "hi", name, look })); },

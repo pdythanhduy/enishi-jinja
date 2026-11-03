@@ -5,28 +5,29 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031506";
-import { buildWorld } from "./world.js?v=11031506";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031506";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031506";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031506";
-import { deeds } from "../deeds.js?v=11031506";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031506";
-import { fireflies } from "../fx.js?v=11031506";
-import { LIGHT_SPOTS } from "./arch.js?v=11031506";
-import { freeze } from "./freeze.js?v=11031506";
-import { setupSeasonal } from "./seasonal.js?v=11031506";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031506";
-import { makeBGM } from "./bgm.js?v=11031506";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031506";
-import { setupKenno } from "./kenno.js?v=11031506";
-import { setupSocial } from "./social.js?v=11031506";
-import { setupProfile } from "./profile.js?v=11031506";
-import { setupKito } from "./kito.js?v=11031506";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031506";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031506";
-import { connect, board } from "../net.js?v=11031506";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031506";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031518";
+import { buildWorld } from "./world.js?v=11031518";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11031518";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031518";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031518";
+import { deeds } from "../deeds.js?v=11031518";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031518";
+import { fireflies } from "../fx.js?v=11031518";
+import { LIGHT_SPOTS } from "./arch.js?v=11031518";
+import { freeze } from "./freeze.js?v=11031518";
+import { setupSeasonal } from "./seasonal.js?v=11031518";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031518";
+import { makeBGM } from "./bgm.js?v=11031518";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031518";
+import { setupKenno } from "./kenno.js?v=11031518";
+import { setupSocial } from "./social.js?v=11031518";
+import { setupProfile } from "./profile.js?v=11031518";
+import { setupChat } from "./chat.js?v=11031518";
+import { setupKito, ofudaImage } from "./kito.js?v=11031518";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031518";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031518";
+import { connect, board } from "../net.js?v=11031518";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031518";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -294,6 +295,8 @@ const ACTIONS = [
   { id: "fox2", label: "🦊 狐を撫でる", at: [5.5, 19.6], r: 2.4, run: () => petFox(1) },
   { id: "ushi", label: "🐂 撫で牛を撫でる", at: [28.6, 21.9], r: 2.8, run: () => nadeUshi() },
   { id: "enito", label: "💞 赤い糸に願う", at: [-28.6, 21.9], r: 2.8, run: () => akaiIto() },
+  { id: "itotana", label: "🧵 赤い糸を結ぶ", at: [-34.6, 23.1], r: 2.0, run: () => tieIto() },
+  { id: "fudezuka", label: "🖌 筆塚に祈る", at: [34.6, 23.1], r: 2.0, run: () => fudeNosame() },
   { id: "koi", label: "🐟 鯉にえさをあげる", at: [18, 54], r: 5, run: () => feedKoi() },
   { id: "toro", label: "🏮 灯籠を流す", at: [4.2, -72.4], r: 3.2, run: () => toroNagashi() },
   { id: "kito", label: "🎴 御祈祷を受ける", at: hw(0, 0.5), r: 1.5, run: () => kito.open() },
@@ -530,6 +533,22 @@ function petFox(i) {
   }
 }
 function nadeUshi() { deedHook("ushi"); bubbleAt(W.ushi, "もぉ〜", 1500, 1.9); tone([[160, 0.5], [120, 0.3]], 0.6, 0.15); toast("撫で牛の頭を撫でました。知恵と合格を授かりますように 📚"); }
+// 赤い糸の結び棚：一日に一本、自分の糸を結ぶ（結んだ糸は棚に残る）
+const itoBase = 180 + (Math.floor(Date.now() / 86400e3) % 60);
+setTimeout(() => W.itoTana?.setN(itoBase + store.get("enishi_ito_n", 0)), 0);
+function tieIto() {
+  if (!onceToday("itotana")) { toast("今日の糸はもう結ばれています。ご縁はゆっくり育ちます 🧵"); return; }
+  const n = store.get("enishi_ito_n", 0) + 1; store.set("enishi_ito_n", n); W.itoTana?.setN(itoBase + n);
+  deedHook("ito"); net?.act("ito"); bubbleAt(W.itoTana.group, "🧵💞", 2000, 2.6); tone([[880, 0.3], [1175, 0.25], [1397, 0.2]], 1.2, 0.08); D.add(1);
+  toast(`赤い糸を結びました（あなたの糸 ${n} 本目）。結ばれた糸のように、良いご縁がつながりますように`, 5000);
+}
+// 筆塚：使った筆・鉛筆に感謝して、学びの実りを祈る
+function fudeNosame() {
+  if (!onceToday("fudezuka")) { toast("今日はもう筆塚にお参りしました。明日も学びを ✍️"); return; }
+  deedHook("fude"); bubbleAt(W.fudezuka, "✍️", 2000, 2.8); tone([[659, 0.3], [988, 0.25], [1319, 0.2]], 1.2, 0.08); D.add(1);
+  releaseLight(W.fudezuka.position.x, 0, W.fudezuka.position.z, true);
+  toast("筆塚に手を合わせました。これまで支えてくれた筆と鉛筆に感謝を。積み重ねた学びが実を結びますように", 5200);
+}
 function akaiIto() { deedHook("ito"); bubbleAt(W.enTree, "💞", 1800, 3.4); tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.2, 0.1); releaseLight(W.enTree.position.x, 0, W.enTree.position.z, true); toast("赤い糸にご縁を願いました。同じ時に願った人がいると、糸がつながるかも…💞"); net?.act("ito"); }
 function feedKoi() { deedHook("koi"); W.koiFeed?.(me.position.x, me.position.z); noise(0.2, 2500, 0.15, "highpass"); toast("鯉が集まってきました 🐟"); }
 function toroNagashi() { deedHook("toro");
@@ -662,6 +681,21 @@ async function shareCanvas(cv, text, name) {
   window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank", "noopener");
 }
 // わたしの帳（御朱印帳・御守り）
+// 御札・宝物：授かった御札と、境内で見つけたもの・いただいたもの
+const TAKARA = () => [...FINDS.filter((f) => f.id !== "none"), { id: "chitose", icon: "🍬", name: "千歳飴" }, { id: "amazake", icon: "🍶", name: "甘酒" }];
+function renderTakara() {
+  const ofuda = store.get("enishi_ofuda", []), finds = store.get("enishi_finds", {}), el = $("#book-takara");
+  el.innerHTML = `<h3>御札 <small>${ofuda.length}体</small></h3>` + (ofuda.length ? `<div class="ofuda-row"></div>` : `<p class="sub">まだ御札はありません。本殿で御祈祷を受けると、あなたの名前の入った御札を授かります。</p>`)
+    + `<h3>見つけたもの・いただいたもの</h3><div class="finds-grid">${TAKARA().map((f) => { const n = finds[f.id] || 0;
+      return `<div class="find${n ? "" : " no"}"><span>${n ? f.icon : "？"}</span><b>${n ? f.name : "まだ見つけていません"}</b><small>${n ? `× ${n}` : ""}</small></div>`; }).join("")}</div>
+    <p class="sub">落ち葉を掃くと、ときどき何かが見つかります。行事の日には、いただけるものも。</p>`;
+  const row = el.querySelector(".ofuda-row");
+  ofuda.forEach((rec) => { const cv = ofudaImage(rec); cv.className = "ofuda-thumb"; cv.title = `${rec.gan}・${rec.date}`; cv.onclick = () => viewOfuda(rec); row?.appendChild(cv); });
+}
+function viewOfuda(rec) {
+  let v = $("#ofuda-view"); if (!v) { v = document.createElement("div"); v.id = "ofuda-view"; v.onclick = () => (v.hidden = true); document.body.appendChild(v); }
+  v.innerHTML = ""; const cv = ofudaImage(rec); v.appendChild(cv); v.insertAdjacentHTML("beforeend", `<small>${rec.gan}・${rec.date}　（タップで閉じる）</small>`); v.hidden = false;
+}
 function openBook(tab = "shuin") {
   const list = book.goshuin();
   const halls = Object.keys(SHUIN);
@@ -676,7 +710,8 @@ function openBook(tab = "shuin") {
     const expired = m.until < now; card.appendChild(cv); card.insertAdjacentHTML("beforeend", `<b>${o.name}</b><small>${expired ? "期限が過ぎました。感謝してお返ししましょう" : `${m.until.replace(/-/g, "/")}まで`}</small>${expired ? `<button data-ret="${o.id}">お返しする</button>` : ""}`);
     $("#book-mamori").appendChild(card); });
   document.querySelectorAll(".btab").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
-  $("#book-shuin-wrap").hidden = tab !== "shuin"; $("#book-mamori").hidden = tab !== "mamori";
+  $("#book-shuin-wrap").hidden = tab !== "shuin"; $("#book-mamori").hidden = tab !== "mamori"; $("#book-takara").hidden = tab !== "takara";
+  if (tab === "takara") renderTakara();
   open("#m-book");
 }
 $("#m-book").addEventListener("click", (e) => { const t = e.target.closest(".btab"); if (t) openBook(t.dataset.t);
@@ -762,6 +797,7 @@ function addOther(o) {
   const rec = { id: o.id, name: o.name || "参拝者", pid: null, st: o.st || "", muted: mutedNames.includes(o.name), av, tag, to: new THREE.Vector3(o.x ?? 0, 0, o.z ?? 80), ry: o.ry ?? Math.PI, bubble: null };
   others.set(o.id, rec); paintTag(rec);
 }
+function muteOther(o) { o.muted = !o.muted; const l = store.get("enishi_muted", []).filter((n) => n !== o.name); if (o.muted) l.push(o.name); store.set("enishi_muted", l.slice(-200)); paintTag(o); toast(o.muted ? `${o.name}さんの言葉を表示しないようにしました` : `${o.name}さんの言葉を表示します`); }
 function removeOther(id) { const o = others.get(id); if (!o) return; scene.remove(o.av); o.tag.remove(); o.bubble?.remove(); others.delete(id); }
 function bubble(o, text, ms = 2500) { o.bubble?.remove(); const b = document.createElement("div"); b.className = "tag bub"; b.textContent = text; document.body.appendChild(b); o.bubble = b; setTimeout(() => { if (o.bubble === b) { b.remove(); o.bubble = null; } }, ms); }
 async function otherAct(o, a, r) {
@@ -772,8 +808,8 @@ async function otherAct(o, a, r) {
   else if (a === "pray") bubble(o, "🙏"); else if (a === "musubi") { bubble(o, "🎋 結んだ"); addKuji(1); }
   else if (a === "goldfox") { bubble(o, "✨ 金の狐！", 4000); releaseLight(o.av.position.x, o.av.position.y, o.av.position.z, false); }
   else if (a === "ito") bubble(o, "💞"); else if (a === "toro") bubble(o, "🏮");
-  else if (a === "say" || a === "emo") { const t = social?.otherSay(a, r); if (t) bubble(o, t, 4200); }
-  else if (a === "kito") bubble(o, "🎴 御祈祷を受けています", 5000); else if (a === "kenno") bubble(o, "🏮 献灯しました", 4000);
+  else if (a === "say" || a === "emo") { const t = social?.otherSay(a, r); if (t && !o.muted) { bubble(o, t, 4200); chat.add(o, t); } }
+  else if (a === "kito") { bubble(o, "🎴 御祈祷を受けています", 5000); chat.sys(`${o.name}さんが御祈祷を受けています`); } else if (a === "kenno") bubble(o, "🏮 献灯しました", 4000);
 }
 let net = null;
 const setCount = (n) => { $("#ppl").textContent = Math.max(1, n || 1); };
@@ -841,12 +877,12 @@ addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); co
 
 setTimeout(() => { if (myStatus) net?.st(myStatus, "st"); }, 6000);
 net = connect({ hall: "tosen", name: myName, look: myLook,
-  onWelcome: (m) => m.others.forEach(addOther), onJoin: addOther, onLeave: (m) => removeOther(m.id), onCount: setCount,
+  onWelcome: (m) => m.others.forEach(addOther), onJoin: (m) => { const fresh = !others.has(m.id); addOther(m); if (fresh) chat.sys(`${m.name || "参拝者"}さんがお参りに来ました`); }, onLeave: (m) => removeOther(m.id), onCount: setCount,
   onPos: (m) => { const o = others.get(m.id); if (o) { o.to.set(m.x, 0, m.z); o.ry = m.ry; } },
   onAct: (m) => { const o = others.get(m.id); if (o) otherAct(o, m.a, m.r); },
   onLook: (m) => { const o = others.get(m.id); if (!o) return; restyle(o.av, m.look, env); o.av.userData.otherId = o.id; o.name = m.name || "参拝者"; o.tag.textContent = o.name; },
   onEn: (m) => { const o = others.get(m.from); if (o) social?.onEn(o, m); },
-  onSt: (m) => { const o = others.get(m.id); if (!o) return; if (m.kind === "say") { if (!o.muted && m.text) bubble(o, m.text, 6500); } else { o.st = m.text || ""; paintTag(o); } },
+  onSt: (m) => { const o = others.get(m.id); if (!o) return; if (m.kind === "say") { if (!o.muted && m.text) { bubble(o, m.text, 6500); chat.add(o, m.text); } } else { o.st = m.text || ""; paintTag(o); } },
   onNope: () => toast("その言葉は境内では使えません") });
 board.list("tosen").then((r) => { addEma(r.total || 0); addKuji(Math.min(60, Math.floor((r.lights || 0) / 2))); const n = r.lights || 0; setLights(n); for (let i = 0; i < Math.min(n, MOBILE ? 80 : 160); i++) lanterns.spawn(0, 0, 0, { instant: true }); }).catch(() => {});
 loop();
@@ -890,13 +926,17 @@ const profile = setupProfile({ me, camera, env, store, toast, setCine, ng: ngTex
 $("#btn-me").onclick = () => { if (!busy && !intro) profile.open(false); };
 // ------------------------------------------------------------------ 人とのつながり（social.js）
 const chime = () => tone([[1046, 0.3], [1318, 0.25], [1568, 0.2]], 1.4, 0.08);
-setupSocial({ API: API_T, store, me, scene, camera, toast, W, bowTo, bubble, chime, deedHook, today, isBusy: () => busy, ng: ngText, clean: cleanText,
+setupSocial({ API: API_T, store, me, scene, camera, toast, W, bowTo, bubble, chime, deedHook, today, isBusy: () => busy, ng: ngText, clean: cleanText, logMine: (t) => chat.mine(t),
   getStatus: () => myStatus, setStatus: (t) => { myStatus = t; store.set("enishi_status", t); refreshToku(); },
-  isMuted: (o) => o.muted, toggleMute: (o) => { o.muted = !o.muted; const l = store.get("enishi_muted", []).filter((n) => n !== o.name); if (o.muted) l.push(o.name); store.set("enishi_muted", l.slice(-200)); paintTag(o); toast(o.muted ? `${o.name}さんの言葉を表示しないようにしました` : `${o.name}さんの言葉を表示します`); }, getName: () => myName, hall: () => hallOf().id, get net() { return net; } })
+  isMuted: (o) => o.muted, toggleMute: (o) => muteOther(o), getName: () => myName, hall: () => hallOf().id, get net() { return net; } })
   .then((s) => { social = s;
     kenno = setupKenno({ scene, env, store, API: API_T, W, toast, chime, deedHook, today, tapHandlers, ng: ngText, clean: cleanText, getName: () => myName, pid: () => s.pid, get net() { return net; } });
   }).catch((e) => console.warn("social", e));
 $("#btn-en").onclick = () => social?.openBook();
+// ------------------------------------------------------------------ チャット（chat.js）
+const chat = setupChat({ toast, deedHook, ng: ngText, clean: cleanText, getName: () => myName, net: () => net, room: () => net?.room,
+  sayMine: (t) => social?.sayMine(t),
+  mute: (id, force) => { const o = others.get(id); if (!o) return; if (force && o.muted) return; muteOther(o); } });
 hooks.push((kind) => { if (kind === "omairi" || kind === "kito" || kind === "seiza") social?.streakTick(); });
 // ------------------------------------------------------------------ 今日の参拝（guide.js）
 const guide = setupGuide({ scene, me, PLACES, W, D, store, toast, chime, today, releaseLight, footY, isBusy: () => busy, inCine: () => !!cine || !!intro,
@@ -907,6 +947,12 @@ if (!intro) setTimeout(onboard, 1200);
 $("#juyo-kito").onclick = () => { $("#m-juyo").hidden = true; kito.open(); };
 // ------------------------------------------------------------------ 季節の行事（seasonal.js）
 setupSeasonal({ scene, W, toast, addAction: (a) => ACTIONS.unshift(a), addGan: (g) => kito.addGan(g),
+  amazake: () => {
+    if (!onceToday("amazake")) { toast("甘酒は一日に一杯。明日もどうぞ 🍶"); return; }
+    const got = store.get("enishi_finds", {}); got.amazake = (got.amazake || 0) + 1; store.set("enishi_finds", got);
+    tone([[784, 0.3], [1175, 0.2]], 1.0, 0.08); bubbleAt(me, "🍶", 2200, 2.2); D.add(1);
+    toast("🍶 振る舞いの甘酒をいただきました。体の芯から温まります。今年も良い一年になりますように", 5200);
+  },
   chitose: () => {
     if (!onceToday("chitose")) { toast("千歳飴は一日にひとつ。明日またどうぞ 🍬"); return; }
     const got = store.get("enishi_finds", {}); got.chitose = (got.chitose || 0) + 1; store.set("enishi_finds", got);

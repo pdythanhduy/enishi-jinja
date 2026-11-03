@@ -22,9 +22,16 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
   - `profile.js`: 身支度 (name, yukata, pattern, hair, accessories gated by 徳). Looks are strings `v1.k.p.h.c.a` (`parseLook` in avatar.js); old numeric seeds still work. Opens on first visit.
   - `social.js`: preset phrases and emotes (`say`/`emo` acts carry an index, never free text), 縁 (tap a visitor, bow; a returned bow within 2 min binds), 縁帳 with presence and once-a-day blessings, streak (🔥), news when others pray for your ema. Identity: a secret `enishi_key` on the device; the public id is `pid = sha256("enishi:"+key)[:8]`.
   - `kenno.js`: 献灯所 at (-15, 8.6). 64 lanterns, one per person per day; each lantern gains a day of brightness every day its owner returns.
+    - It also hangs 18 奉納提灯 on the honden side walls with today's kenno names (your own first). Empty slots get 講 and 崇敬会 names.
+  - `chat.js`: room chat (💬 button at bottom left). Lines are up to 60 characters, filtered by the NG list on both client and server.
+    - Tap a line to mute or report that person. Reports from 3 different people silence that socket in that room (`t:"rep"`, in-memory in the Room DO).
+    - Nothing is stored server-side.
   - `guide.js`: 今日の参拝, five daily steps (手水 → お参り → おみくじ → 献灯/御祈祷 → 縁). It reuses the deeds.js quest ids, shows a gold marker at the next spot, and fires 満願 when all five are done. `STEP_OF` maps deed kinds to steps.
   - `temizu.js`: the 手水舎 (dragon spout with running water, ladle rack, 作法 sign, water sound) and the over-the-shoulder 手水 ritual.
-  - `seasonal.js`: calendar events by JST month (now 七五三 in November: banners, 千歳飴 stand, extra 願意). Force one with `?event=753`.
+  - `seasonal.js`: calendar events by JST date. Force one with `?event=753|hatsumode|juken`.
+    - 七五三 (November): banners, 千歳飴 stand.
+    - 初詣 (Jan 1–7): 門松, banners, 甘酒 stand.
+    - 受験 (Jan 8 – Mar 15): banners at the 合格 hall.
   - `water.js`: light water shader (two drifting normal maps, Fresnel alpha so koi show from above, edge foam), bowl-shaped pond bed with caustics, lotus and iris. `koi.js`: patterned koi that wander and bend as they swim; `W.koiFeed(x, z)` gathers them. Ponds are dug into the terrain in `height()`.
     - `makeStream` builds a mountain stream: a bed ribbon, flowing water with foam on steep parts, and bank stones.
     - Its path is `STREAM` in map.js: from the summit pond it runs 3 m beside the trail, on the side opposite the lanterns. The trail shoulders are flattened to 6.6 m so the stream lies flat.
@@ -62,6 +69,8 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
 - Rituals: temizu, coin choice, omairi, seiza.
 - Features: omikuji, shared ema (with date reminders and push), goshuin book, omamori, 徳/quests, 夜祭り fireworks + お囃子 music.
 - Scenery: winter snow, decor pass, curved gable bargeboards.
+- Hall identity outside: 赤い糸の結び棚 at the 縁結び hall (`W.itoTana`, one thread a day) and 筆塚 with 筆納箱 at the 合格 hall.
+- The 📖 book has a 御札・宝物 tab: ofuda from kito and finds from sweeping and events.
 - Small-hall interiors (`smallHallInterior` in arch.js, `theme: "en"|"go"`): 縁結び has red threads, 猪目 plaque, 千羽鶴, 夫婦石, pink ema. 合格 has 掛け軸, 撫で牛, desk with brush and plum, daruma, blue ema.
 - Trees between the camera and the player fade with a dithered shader (`W.treeFade`, world.js). Trees are kept out of the small-hall footprints.
 

@@ -1,5 +1,6 @@
 // 献灯所：みんなの名前と願いの灯りが並ぶ棚。毎日お参りすると自分の灯りが少しずつ明るくなる。
 import * as THREE from "three";
+import { HONDEN } from "./map.js?v=11031518";
 
 export const KENNO = { x: -20.6, z: 22, ry: Math.PI / 2, stand: [-18.2, 22] };
 const COLS = 16, ROWS = 4, GANS = ["当選", "縁結び", "合格", "健康", "家内安全", "心願成就"];
@@ -63,6 +64,40 @@ export function setupKenno(A) {
     body.instanceColor.needsUpdate = true;
   }
   A.W.update.push(() => { if (Math.abs(env.lamp - lastLamp) > 0.02) { lastLamp = env.lamp; tint(); } });
+  // 本殿の奉納提灯：左右の壁の上に十八張。今日献灯した人の名前が入る（自分の名前は先頭に）。足りないところは講や崇敬会の名
+  const hlan = (() => {
+    const g = new THREE.Group(); g.position.set(0, 0, HONDEN.Z); g.scale.setScalar(HONDEN.S); scene.add(g);
+    const prof = []; for (let i = 0; i <= 12; i++) { const t = i / 12; prof.push(new THREE.Vector2(0.17 + 0.11 * Math.sin(Math.PI * t), (t - 0.5) * 0.8)); }
+    const geo = new THREE.LatheGeometry(prof, 24), cap = new THREE.CylinderGeometry(0.18, 0.18, 0.07, 16), cord = new THREE.CylinderGeometry(0.008, 0.008, 0.42, 4);
+    const kuro = std(0x1a1612), beamM = std(0x4a3020, { roughness: 0.6 }), list = [];
+    for (const sx of [-1, 1]) {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 7.6), beamM); beam.position.set(sx * 8.35, 5.85, 1.2); g.add(beam);
+      for (let k = 0; k < 9; k++) {
+        const z = -2.2 + k * 0.85, c = document.createElement("canvas"); c.width = 512; c.height = 256;
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+        const m = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffcf90, emissiveMap: t, roughness: 0.8 }); m.userData.base = 0.9; env.registerLamp(m, null);
+        const l = new THREE.Mesh(geo, m); l.position.set(sx * 8.35, 5.0, z); g.add(l);
+        for (const dy of [-0.42, 0.42]) { const cp = new THREE.Mesh(cap, kuro); cp.position.set(sx * 8.35, 5.0 + dy, z); g.add(cp); }
+        const cd = new THREE.Mesh(cord, kuro); cd.position.set(sx * 8.35, 5.64, z); g.add(cd);
+        list.push({ c, t });
+      }
+    }
+    const FALL = ["えにし講", "崇敬会", "氏子一同", "奉納", "商売繁盛", "家内安全", "無病息災", "交通安全", "学業成就", "良縁祈願", "心願成就", "五穀豊穣"];
+    const font = (px) => `bold ${px}px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`;
+    return (names) => list.forEach(({ c, t }, i) => {
+      const x = c.getContext("2d"), n = [...String(names[i] || FALL[(i * 5) % FALL.length])].slice(0, 7);
+      x.fillStyle = "#fbf3e0"; x.fillRect(0, 0, 512, 256);
+      x.fillStyle = "#b8281c"; x.fillRect(0, 0, 512, 20); x.fillRect(0, 236, 512, 20);
+      x.textAlign = "center"; x.textBaseline = "middle";
+      for (const cx of [128, 384]) {                                    // 表と裏（LatheGeometry の u=0.25 / 0.75 が左右の向き）
+        x.fillStyle = "#b8281c"; x.font = font(26); x.fillText("奉 納", cx, 42);
+        const px = Math.min(50, Math.floor(172 / n.length)); x.fillStyle = "#1a1612"; x.font = font(px);
+        n.forEach((ch, k) => x.fillText(ch, cx, 62 + px * 0.55 + k * px * 1.0));
+      }
+      t.needsUpdate = true;
+    });
+  })();
+  hlan([]);
   async function load() {
     try {
       const r = await fetch(`${API}/kenno`).then((r) => r.json());
@@ -72,6 +107,7 @@ export function setupKenno(A) {
       const own = (r.lamps || []).filter((l) => l.pid === myPid);
       for (const l of own) if (!lamps.includes(l)) lamps.splice(N - 1, 1), lamps.unshift(l);
       paint(); drawPlaque(r.total || lamps.length);
+      const names = [...new Set([...own, ...(r.lamps || [])].map((l) => l.name).filter(Boolean))]; hlan(names);
     } catch { /* まだサーバーが対応していないときは空の棚のまま */ }
   }
   load();
