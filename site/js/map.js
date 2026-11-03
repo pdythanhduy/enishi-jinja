@@ -65,6 +65,10 @@ export function height(x, z) {
 
 // 池（楕円の中は水。橋の上だけ通れる）
 export const POND = { cx: 18, cz: 54, rx: 9, rz: 6 };
+// えにし作業室：池に浮かぶ屋形船と、参道わきの書院（東の参道へ開く）。rows＝座の x、cols＝座の z
+export const YAKATA = { x: 18, z: 57.6, len: 8, wid: 3, deck: 0.32 };
+export const SHOIN = { x0: -20.5, x1: -9.6, z0: 63, z1: 71, y: 0.62, rows: [-16.6, -13.2], cols: [64.4, 66.2, 68.0, 69.8] };
+export const noDecor = (x, z) => (x > SHOIN.x0 - 2 && x < SHOIN.x1 + 1.6 && z > SHOIN.z0 - 1.6 && z < SHOIN.z1 + 1.6) || (Math.abs(x - YAKATA.x) < 1.6 && z > YAKATA.z + 1 && z < YAKATA.z + 6);
 export const BRIDGE = { x0: 8.4, x1: 27.6, z: 54, w: 2.2 };
 export const OKPOND = { cx: 7.0, cz: -76, rx: 3.4, rz: 2.7 };
 // 渓流：山頂の池の南西からあふれ、参道の脇（灯籠と反対側、3m）を沿って下る
@@ -132,6 +136,10 @@ export function blocked(x, z) {
 export const floors = [
   { x0: STAGE.x0, x1: STAGE.x1, z0: STAGE.z0 + 1.6, z1: STAGE.z1, y: STAGE.y },              // 奥の院の舞台
   { x0: HX0, x1: HX1, z0: HZ0, z1: HZ1, y: 1.7 * HONDEN.S },                         // 本殿の中
+  { x0: YAKATA.x - 3.8, x1: YAKATA.x + 3.6, z0: YAKATA.z - 1.3, z1: YAKATA.z + 1.3, y: YAKATA.deck + 0.06 },   // 屋形船の座敷
+  { x0: SHOIN.x0, x1: SHOIN.x1, z0: SHOIN.z0, z1: SHOIN.z1, y: SHOIN.y },                // 書院の畳
+  { x0: -8.8, x1: 8.8, z0: 37.8, z1: 44.2, y: 0.56 },                                     // 楼門の基壇（くぐるときに足が沈まない）
+  { x0: -3.0, x1: 3.0, z0: 44.2, z1: 45.15, ramp: [0.56, 0] }, { x0: -3.0, x1: 3.0, z0: 36.85, z1: 37.8, ramp: [0, 0.56] },   // 楼門の前後の石段
   { x0: -3.8 * HONDEN.S, x1: 3.8 * HONDEN.S, z0: HZ1, z1: hw(0, 10.9)[1], ramp: [1.6 * HONDEN.S, 0] },   // 本殿の大階段
   ...[-SMALL.X, SMALL.X].flatMap((cx) => { const { Z, W, D, F } = SMALL, f = Z + D / 2;
     return [{ x0: cx - W / 2, x1: cx + W / 2, z0: Z - D / 2, z1: f + 0.6, y: F + 0.06 }, { x0: cx - 2.2, x1: cx + 2.2, z0: f + 0.6, z1: f + 2.0, ramp: [F, 0] }]; }),

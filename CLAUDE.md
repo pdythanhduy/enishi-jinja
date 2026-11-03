@@ -39,6 +39,15 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
       - Finishing adds a 奉納 seal and +10 徳 (up to 3 a day) and is saved in `enishi_shakyo`.
       - 絵馬を描く is a brush canvas. The drawing is kept only on the device (`enishi_myema`, max 6) and is hung on `W.emaRack`.
     - `tour.js`: 境内めぐり, a 40 s slow arc per PLACES entry with fades and captions, and 奥の院の池, a fixed view with floating lanterns. Tap or Esc exits.
+  - `sagyo.js` (えにし作業室): two shared focus rooms.
+    - 屋形船「えにし丸」 is moored on the main pond (`YAKATA`, with a pier and entry at [18, 62.6]). The 書院 sits beside the 参道 (`SHOIN`, open to the east, entry at [-6.4, 67]).
+    - Players warp into a free seat and sit seiza, with a fixed room camera.
+    - The Pomodoro is shared by JST clock: 25 min focus and 5 min break, starting at :00 and :30. Breaks bring a gong and everyone bows.
+    - Rewards: +5 徳 per 5 focus minutes; counts are kept in `enishi_pomo`.
+    - Status is `🛶 屋形船で作業中` or `📖 書院で作業中`. Others with 🧘, 🛶 or 📖 statuses are shown seated (`poseBySt`). These statuses are cleared on reload.
+    - Music channels (`bgm.setChannel`): lofi uses the bgm.json key `lofi`, keidai is the default, and nature silences the music and applies the mixer preset 雨と川.
+  - 楼門 has a raised base floor (0.56) with front and back steps.
+  - Speech bubbles sit above the name tag and wrap.
   - `chores.js`: お手伝い mini-games, each with no timer, once a day, +3 徳 via `deedHook("chore")`.
     - Chores: 狛狐を磨く (×2), 手水鉢を洗う, 打ち水 (雪かき in winter) and 草むしり (keep the flowers).
     - Leaf sweeping is now a broom game: push leaves into the 塵取り. A find is hidden under the leaves, and the game gives +2 徳.

@@ -72,20 +72,21 @@ export function makeBGM(ac, { night = () => 0 } = {}) {
   async function tryTracks() {
     try {
       const j = await fetch("audio/bgm.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null));
-      lists = Array.isArray(j) ? { day: j, night: j } : j && (j.day || j.night) ? { day: j.day || j.night, night: j.night || j.day } : null;
+      lists = Array.isArray(j) ? { day: j, night: j } : j && (j.day || j.night) ? { ...j, day: j.day || j.night, night: j.night || j.day } : null;
       if (!lists || !lists.day.length) return false;
       track = new Audio(); track.preload = "auto"; track.volume = 0;
       const play = () => {
-        const L = night() > 0.5 ? lists.night : lists.day;
+        if (chan === "nature") { fadeTo(0, 1500); return; }
+        const L = chan && lists[chan]?.length ? lists[chan] : night() > 0.5 ? lists.night : lists.day;
         track.src = "audio/" + L[Math.floor(Math.random() * L.length)]; track.play().catch(() => {});
         fadeTo(vol * 0.75, 4000);
       };
-      track.onended = play; play();
+      track.onended = play; play(); playNow = play;
       timers.push(setTimeout(bells, 20000));                                       // 曲の合間にも、おりんと風鈴をそっと
       return true;
     } catch { return false; }
   }
-  let fadeIv = null;
+  let fadeIv = null, chan = null, playNow = null;
   function fadeTo(v, ms) {
     if (!track) return; clearInterval(fadeIv); const v0 = track.volume, t0 = performance.now();
     fadeIv = setInterval(() => { if (!track) return clearInterval(fadeIv); const k = Math.min(1, (performance.now() - t0) / ms); track.volume = Math.max(0, Math.min(1, v0 + (v - v0) * k)); if (k >= 1) clearInterval(fadeIv); }, 60);
@@ -105,6 +106,9 @@ export function makeBGM(ac, { night = () => 0 } = {}) {
     },
     setVolume(v) { vol = v; if (track) fadeTo(v * 0.75, 200); if (a && on) out.gain.setTargetAtTime(v, a.currentTime, 0.2); },
     duck(d) { if (a && on) out.gain.setTargetAtTime(d ? vol * 0.25 : vol, a.currentTime, 0.8); if (track) fadeTo((d ? 0.2 : 0.75) * vol, 1500); },
+    // チャンネルを変える：いまの曲を静かに消して、新しいリストから流す
+    setChannel(c) { if (c === chan) return; chan = c; if (!track || !playNow) return; fadeTo(0, 1100); setTimeout(() => { if (track) { if (chan === "nature") return; playNow(); } }, 1200); },
+    get channel() { return chan; },
     rin: (f = 392) => { init(); rin(f, a.currentTime + 0.02, 0.06); },
   };
 }

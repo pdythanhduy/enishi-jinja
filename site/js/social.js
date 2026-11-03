@@ -53,7 +53,8 @@ export async function setupSocial(A) {
   const toggleSay = () => { pop.hidden = !pop.hidden; };
   // 自分の吹き出しを頭の上に
   const v = new THREE.Vector3();
-  A.W.update.push(() => { if (!myBubble) return; v.copy(me.position); v.y += 1.75; v.project(camera); myBubble.style.left = (v.x * 0.5 + 0.5) * innerWidth + "px"; myBubble.style.top = `calc(${(-v.y * 0.5 + 0.5) * innerHeight}px - 22px)`; });
+  const meTag = document.getElementById("me-tag");
+  A.W.update.push(() => { if (!myBubble) return; myBubble.style.left = meTag.style.left; myBubble.style.top = `calc(${meTag.style.top} - ${meTag.offsetHeight + 6}px)`; myBubble.style.display = meTag.style.display; });   // 自分の名札の上に
   const otherSay = (a, r) => (a === "say" ? PHRASES[+r] : EMOTES[+r]) || null;
 
   // ---------------------------------------------------------------- 縁を結ぶ：相手をタップ → お辞儀 → 相手もお辞儀を返すと結ばれる

@@ -355,7 +355,7 @@ function tsuriDoro(g, cx, y, z, s = 1) {
   return tg;
 }
 // 縦書きの掛け軸（壁に掛ける。rotY で向き）
-function kakejiku(g, text, x, y, z, rotY, accent = "#b8321e") {
+export function kakejiku(g, text, x, y, z, rotY, accent = "#b8321e") {
   const cv = document.createElement("canvas"); cv.width = 128; cv.height = 320; const c = cv.getContext("2d");
   c.fillStyle = "#3a5a4a"; c.fillRect(0, 0, 128, 320);                       // 表装
   c.fillStyle = "#f4ecd8"; c.fillRect(14, 34, 100, 252);                      // 本紙
@@ -543,6 +543,7 @@ export function romon(parent, env, { x = 0, z = 0, s = 1 } = {}) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); parent.add(g); g.userData.static = true;
   const W = 12, D = 4;
   box(g, W + 0.6, 0.4, D + 0.6, MAT.stoneD, 0, 0.2, 0);
+  for (const s of [-1, 1]) { box(g, 4.4, 0.27, 0.3, MAT.stoneL, 0, 0.135, s * (D / 2 + 0.45)); box(g, 4.4, 0.13, 0.3, MAT.stoneL, 0, 0.065, s * (D / 2 + 0.75)); }   // 前後の石段
   for (const cx of [-5.6, -2, 2, 5.6]) for (const cz of [-D / 2 + 0.3, D / 2 - 0.3]) cyl(g, 0.3, 0.3, 5, MAT.shu, cx, 2.9, cz, 16);
   for (const s of [-1, 1]) box(g, 3.2, 4.2, 0.2, MAT.white, s * 3.8, 2.5, 0);                // 左右の間（随身の間）
   box(g, W + 0.2, 0.4, D + 0.2, MAT.shuD, 0, 5.4, 0);

@@ -19,6 +19,7 @@ export const PRESETS = [
   { name: "参道の朝", icon: "🌅", mix: { tori: 0.6, wind: 0.25, stream: 0.2, suzu: 0.15, music: 0.35 } },
   { name: "集中", icon: "📖", mix: { rain: 0.5, stream: 0.2, music: 0.3 } },
   { name: "静寂", icon: "🌙", mix: { wind: 0.2, mushi: 0.2, hyoshi: 0.25 } },
+  { name: "雨と川", icon: "🌂", mix: { rain: 0.45, stream: 0.5, wind: 0.15, tori: 0.12 } },
 ];
 const rand = (a, b) => a + Math.random() * (b - a);
 

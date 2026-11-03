@@ -22,6 +22,8 @@ export function setupZen(A) {
     <p class="kicker">SHIZUKA</p><h2>🧘 静のひととき</h2>
     <p class="sub">境内に、少し長く居てみませんか。勉強や仕事のあいだ、眠る前、ただ眺めていたいときに。</p>
     <div class="zen-cards">
+      <button type="button" data-go="fune" class="wide-card"><span>🛶</span><b>屋形船で、みんなと作業</b><small>池に浮かぶ船の座敷。:00と:30に、みんなで25分集中・5分休憩</small></button>
+      <button type="button" data-go="shoin" class="wide-card"><span>📖</span><b>書院で、みんなと作業</b><small>参道を眺める文机。同じ時間に、同じ部屋で</small></button>
       <button type="button" data-go="focus"><span>🧘</span><b>集中・作業</b><small>作業・勉強のおともに。15〜60分、座禅しながら</small></button>
       <button type="button" data-go="mix"><span>🎧</span><b>作業用BGM・境内の音</b><small>雨・せせらぎ・風鈴…を重ねる</small></button>
       <button type="button" data-go="shakyo"><span>🖌</span><b>写経・写歌</b><small>祓詞や和歌を一字ずつ書き写す</small></button>
@@ -35,7 +37,7 @@ export function setupZen(A) {
     if (e.target.closest("[data-x]") || e.target === menu) { menu.hidden = true; return; }
     const b = e.target.closest("[data-go]"); if (!b) return; menu.hidden = true;
     const go = b.dataset.go;
-    if (go === "focus") openFocus(); else if (go === "mix") A.mixer.open(); else if (go === "shakyo") A.shakyo.open(); else if (go === "ema") A.shakyo.drawEma();
+    if (go === "fune" || go === "shoin") A.room(go); else if (go === "focus") openFocus(); else if (go === "mix") A.mixer.open(); else if (go === "shakyo") A.shakyo.open(); else if (go === "ema") A.shakyo.drawEma();
     else if (A.isBusy()) A.toast("いまの所作が終わってからどうぞ"); else A.tour.start(go === "tour" ? "tour" : "pond");
   };
   const statLine = () => { const s = stats(); return `今日 ${s.today}分 静かに過ごしました・これまで ${s.total}分（${s.sessions}回）`; };

@@ -1,10 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031829";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM } from "./map.js?v=11031829";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11031829";
-import { koiSchool } from "./koi.js?v=11031829";
-import { FOLIAGE } from "./env.js?v=11031829";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031845";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11031845";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11031845";
+import { koiSchool } from "./koi.js?v=11031845";
+import { FOLIAGE } from "./env.js?v=11031845";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -306,6 +306,7 @@ export function buildWorld(scene, env, { mobile }) {
   const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中と正面の広場に木が生えないように
   const add = (k, x, z, s = 1) => { if (Math.abs(x) > 21 && Math.abs(x) < 28 && z > 24.5 && z < 44) return;
     if (Math.hypot(x + 2, z + 74) < 14.5) return;
+    if (noDecor(x, z)) return;                                                              // 作業室（書院・屋形船の桟橋）
     if (x > SB[0] && x < SB[1] && z > SB[2] && z < SB[3] && STREAM_PTS.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 6.3)) return;   // 渓流の上には木を植えない                                          // 山頂（奥の院）は木を植えない   // 回廊の上には木を植えない
     if (!halls.some(([hx, hz]) => Math.abs(x - hx) < SMALL.W / 2 + 2.5 && z > hz - SMALL.D / 2 - 2.5 && z < 26.5)) trees[k].push([x, z, s]); };
   for (let z = 74; z > 45; z -= 3.2) for (const sgn of [-1, 1]) add("momiji", sgn * sr(7.5, 11), z + sr(-1, 1), sr(0.9, 1.3));        // 参道の紅葉

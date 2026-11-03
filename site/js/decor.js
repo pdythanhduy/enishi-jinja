@@ -1,7 +1,7 @@
 // 仕上げ：反射（環境マップ）、瓦・砂利のテクスチャ、幟、提灯の列、岩・植え込み、雲、蛍、水面のきらめき
 import * as THREE from "three";
-import { MAT, sharedLamp } from "./arch.js?v=11031829";
-import { height, POND } from "./map.js?v=11031829";
+import { MAT, sharedLamp } from "./arch.js?v=11031845";
+import { height, POND, noDecor } from "./map.js?v=11031845";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let sd = 11; const sr = (a, b) => a + ((sd = (sd * 16807) % 2147483647) / 2147483647) * (b - a);
@@ -145,10 +145,10 @@ export function rocksAndBushes(scene, season) {
   const bushM = new THREE.MeshStandardMaterial({ color: season === "winter" ? 0x56705a : 0x3f6a36, roughness: 0.95, flatShading: true });
   const azalea = new THREE.MeshStandardMaterial({ color: season === "spring" ? 0xe8579a : season === "autumn" ? 0xb8462a : 0x4a7a3c, roughness: 0.95, flatShading: true });
   const rocks = [], bushes = [], az = [];
-  const ok = (x, z) => Math.abs(x) > 3 || z < 44 || z > 84;
+  const ok = (x, z) => (Math.abs(x) > 3 || z < 44 || z > 84) && !noDecor(x, z);
   for (let i = 0; i < 90; i++) { const x = sr(-42, 42), z = sr(-6, 84); if (!ok(x, z)) continue; if (z > -6 && z < 44 && Math.abs(x) < 24) { if (Math.random() < 0.7) continue; } rocks.push([x, z, sr(0.2, 0.6)]); }
-  for (let z = 72; z > 46; z -= 1.6) for (const s of [-1, 1]) bushes.push([s * sr(6.6, 7.4), z, sr(0.5, 0.8)]);   // 参道沿いの植え込み
-  for (let i = 0; i < 60; i++) { const a = (i / 60) * Math.PI * 2; az.push([POND.cx + Math.cos(a) * (POND.rx + 1.6), POND.cz + Math.sin(a) * (POND.rz + 1.4), sr(0.45, 0.75)]); }
+  for (let z = 72; z > 46; z -= 1.6) for (const s of [-1, 1]) if (!(s < 0 && z > 64.5 && z < 69.5)) bushes.push([s * sr(6.6, 7.4), z, sr(0.5, 0.8)]);   // 参道沿いの植え込み（書院の入口はあける）
+  for (let i = 0; i < 60; i++) { const a = (i / 60) * Math.PI * 2; if (noDecor(POND.cx + Math.cos(a) * (POND.rx + 1.6), POND.cz + Math.sin(a) * (POND.rz + 1.4))) continue; az.push([POND.cx + Math.cos(a) * (POND.rx + 1.6), POND.cz + Math.sin(a) * (POND.rz + 1.4), sr(0.45, 0.75)]); }
   for (const [x, z] of [[-14, 30], [-18, 36], [14, 37], [-20, 12], [20, 4], [-16, 4]]) for (let k = 0; k < 6; k++) az.push([x + sr(-2, 2), z + sr(-2, 2), sr(0.5, 0.8)]);
   const o = new THREE.Object3D();
   const make = (list, geo, mat, sy = 1) => { const im = new THREE.InstancedMesh(geo, mat, list.length);
