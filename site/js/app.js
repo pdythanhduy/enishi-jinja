@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032102";
-import { buildWorld } from "./world.js?v=11032102";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032102";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032102";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032102";
-import { deeds } from "../deeds.js?v=11032102";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032102";
-import { fireflies } from "../fx.js?v=11032102";
-import { LIGHT_SPOTS } from "./arch.js?v=11032102";
-import { freeze } from "./freeze.js?v=11032102";
-import { setupSeasonal } from "./seasonal.js?v=11032102";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032102";
-import { makeBGM } from "./bgm.js?v=11032102";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032102";
-import { setupKenno } from "./kenno.js?v=11032102";
-import { setupSocial } from "./social.js?v=11032102";
-import { setupProfile } from "./profile.js?v=11032102";
-import { setupChores } from "./chores.js?v=11032102";
-import { setupSagyo } from "./sagyo.js?v=11032102";
-import { setupWelcome } from "./welcome.js?v=11032102";
-import { setupZen } from "./zen.js?v=11032102";
-import { setupMixer } from "./mixer.js?v=11032102";
-import { setupShakyo } from "./shakyo.js?v=11032102";
-import { setupTour } from "./tour.js?v=11032102";
-import { setupChat } from "./chat.js?v=11032102";
-import { setupKito, ofudaImage } from "./kito.js?v=11032102";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032102";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032102";
-import { connect, board } from "../net.js?v=11032102";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11032102";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032112";
+import { buildWorld } from "./world.js?v=11032112";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032112";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032112";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032112";
+import { deeds } from "../deeds.js?v=11032112";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032112";
+import { fireflies } from "../fx.js?v=11032112";
+import { LIGHT_SPOTS } from "./arch.js?v=11032112";
+import { freeze } from "./freeze.js?v=11032112";
+import { setupSeasonal } from "./seasonal.js?v=11032112";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032112";
+import { makeBGM } from "./bgm.js?v=11032112";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032112";
+import { setupKenno } from "./kenno.js?v=11032112";
+import { setupSocial } from "./social.js?v=11032112";
+import { setupProfile } from "./profile.js?v=11032112";
+import { setupChores } from "./chores.js?v=11032112";
+import { setupSagyo } from "./sagyo.js?v=11032112";
+import { setupWelcome } from "./welcome.js?v=11032112";
+import { setupZen } from "./zen.js?v=11032112";
+import { setupMixer } from "./mixer.js?v=11032112";
+import { setupShakyo } from "./shakyo.js?v=11032112";
+import { setupTour } from "./tour.js?v=11032112";
+import { setupChat } from "./chat.js?v=11032112";
+import { setupKito, ofudaImage } from "./kito.js?v=11032112";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032112";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032112";
+import { connect, board } from "../net.js?v=11032112";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032112";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -691,8 +691,12 @@ let hall = HALLS[0];
 function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 function drawKuji() {
   const h = kujiHall || hallOf(), list0 = OMIKUJI[h.id] || OMIKUJI.tosen, seed = hash(myName + today() + h.id);
-  const rk = RANKS[seed % 1000 < 170 ? 0 : seed % 1000 < 450 ? 1 : seed % 1000 < 700 ? 2 : seed % 1000 < 860 ? 3 : seed % 1000 < 960 ? 4 : 5];
-  const list = list0.filter((o) => o.rank === rk.key); return { h, rk, o: list[(seed >>> 8) % list.length] };
+  // 段の割合（実際の神社に近く）：大吉16・吉23・中吉18・小吉14・末吉12・凶13・大凶4（％）
+  const r = seed % 1000, cut = [160, 390, 570, 710, 830, 960, 1000], rk = RANKS[cut.findIndex((c) => r < c)];
+  let list = list0.filter((o) => o.rank === rk.key); if (!list.length) list = list0.filter((o) => o.rank === "凶");
+  const ws = KUJI_WAKA[rk.key], w = ws[(seed >>> 4) % ws.length], tier = KUJI_TIER[rk.key] || 4;
+  const items = KUJI_ITEMS.map(([k, ...tiers], i) => [k, tiers[tier - 1][(seed >>> (i + 6)) & 1]]);
+  return { h, rk, o: list[(seed >>> 8) % list.length], waka: w[0], kai: w[1], items, no: 1 + ((seed >>> 12) % 100) };
 }
 function openKuji(hid) {
   kujiHall = HALLS.find((h) => h.id === hid) || hallOf();
@@ -709,10 +713,13 @@ $("#kuji-box").onclick = async () => {
   $("#kuji-stage").hidden = true; $("#kuji-result").hidden = false; showKuji(); net?.act("kuji", drawKuji().rk.key); deedHook("kuji");
 };
 function showKuji() {
-  const { h, rk, o } = drawKuji();
-  $("#r-hall").textContent = h.name; $("#r-rank").textContent = rk.key; $("#r-luck").textContent = `${h.luck}：${rk.stars}`; $("#r-msg").textContent = o.msg;
-  $("#r-items").innerHTML = o.items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
-  $("#btn-again").textContent = rk.key === "凶" ? "結び所に結んで、厄を置いていく" : "結ぶ（ありがとう）";
+  const { h, rk, o, waka, kai, items, no } = drawKuji();
+  $("#r-hall").textContent = h.name; $("#r-no").textContent = `第${kanjiNum(no)}番`; $("#r-rank").textContent = rk.key; $("#r-luck").textContent = `${h.luck}：${rk.stars}`;
+  $("#r-waka").innerHTML = waka.split(" ").map((p) => `<span>${p}</span>`).join("");
+  $("#r-kai").textContent = kai; $("#r-msg").textContent = `「${o.short}」\n${o.msg}`;
+  $("#r-items").innerHTML = items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+  $("#r-items2").innerHTML = o.items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+  $("#btn-again").textContent = rk.key === "凶" || rk.key === "大凶" ? "結び所に結んで、厄を置いていく" : "結ぶ（ありがとう）";
 }
 const musubi = () => { const done = Object.values(store.get("enishi_kuji", {})).includes(today()); if (!done) return toast("先に授与所でおみくじを引いてから、ここに結びましょう 🎋"); addKuji(1); net?.act("musubi"); toast("おみくじを結びました。良い縁がありますように 🎋"); };
 $("#btn-again").onclick = () => { $("#m-omikuji").hidden = true; goPlace("juyosho"); setTimeout(() => walkTo([21, 27.6], () => musubi()), 300); };
@@ -912,7 +919,8 @@ refreshToku();
 function openStory() { const H = hallOf(), s = H.story; $("#story-body").innerHTML = `<h2>${H.name}の由来</h2><p class="lead">${s.lead}</p>${s.body.map((p) => `<p>${p}</p>`).join("")}<p class="moral">${s.moral}</p>`; open("#m-story"); }
 $("#btn-story").onclick = openStory;
 async function report() {
-  if (!confirm("当選しましたか？おめでとうございます！お礼参りとして記録します。")) return;
+  if (!confirm(`${hallOf().name}での願いが叶いましたか？
+おめでとうございます。神さまへのお礼参りとして記録します。`)) return;
   sfx.suzu(); net?.act("report"); try { const r = await board.report(hallOf().id); reportCount = r.report || reportCount; } catch {}
   toast(`🎉 おめでとうございます！今日は${Math.max(1, reportCount)}人がお礼参りに来ました。`, 4200);
 }
@@ -938,7 +946,7 @@ async function otherAct(o, a, r) {
   if (a === "bow") { await bowTo(o.av, 1.2, 600); await wait(300); await bowTo(o.av, 0, 500); }
   else if (a === "clap") { bubble(o, "👏"); releaseLight(o.av.position.x, o.av.position.y, o.av.position.z, false); }
   else if (a === "suzu") bubble(o, "🔔"); else if (a === "kuji") bubble(o, r ? `🎋 ${r}` : "🎋", 4000);
-  else if (a === "ema") { bubble(o, "🪵 絵馬を奉納"); addEma(1); } else if (a === "report") bubble(o, "🎉 当選しました！", 5000);
+  else if (a === "ema") { bubble(o, "🪵 絵馬を奉納"); addEma(1); } else if (a === "report") bubble(o, "🎉 願いが叶いました！お礼参り", 5000);
   else if (a === "pray") bubble(o, "🙏"); else if (a === "musubi") { bubble(o, "🎋 結んだ"); addKuji(1); }
   else if (a === "goldfox") { bubble(o, "✨ 金の狐！", 4000); releaseLight(o.av.position.x, o.av.position.y, o.av.position.z, false); }
   else if (a === "ito") bubble(o, "💞"); else if (a === "toro") bubble(o, "🏮");

@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden, PLACES } from "./map.js?v=11032102";
+import { HONDEN, inHonden, PLACES } from "./map.js?v=11032112";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -477,7 +477,7 @@ export function setupKito(A) {
     lastRec = rec; lastCanvas = ofudaImage(rec);
     mo.querySelector("#ofuda-img").src = lastCanvas.toDataURL("image/png");
     const n = A.store.get("enishi_ofuda", []).length;
-    mo.querySelector("#ofuda-msg").textContent = `${rec.gan}の御札です。御朱印帳にしまいました（これまでに ${n} 枚）。願いが叶ったら、🎉 当選報告でお礼参りを。`;
+    mo.querySelector("#ofuda-msg").textContent = `${rec.gan}の御札です。御朱印帳にしまいました（これまでに ${n} 枚）。願いが叶ったら、🎉 お礼参りを。`;
     mo.hidden = false;
   }
   mo.querySelector("#ofuda-share").onclick = async () => {
