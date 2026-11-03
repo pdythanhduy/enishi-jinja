@@ -2,7 +2,7 @@
 export const API = "https://enishi-rooms.thanhduy8vn.workers.dev";
 const WS = API.replace(/^http/, "ws");
 
-export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onLeave, onCount }) {
+export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onLeave, onCount, onLook }) {
   let ws = null, room = 1, alive = true, retry = 0;
   async function pickRoom() {
     try {
@@ -26,6 +26,7 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
       else if (m.t === "join") { onJoin(m); onCount(m.n); }
       else if (m.t === "pos") onPos(m);
       else if (m.t === "act") onAct(m);
+      else if (m.t === "look") onLook?.(m);
       else if (m.t === "leave") { onLeave(m); onCount(m.n); }
     };
     ws.onclose = () => { if (!alive) return; retry++; setTimeout(open, Math.min(15000, 1000 * 2 ** retry)); };
@@ -40,6 +41,8 @@ export function connect({ hall, name, look, onWelcome, onJoin, onPos, onAct, onL
       lastSent = now; last = k; ws.send(JSON.stringify({ t: "pos", x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(2) }));
     },
     act(a, r = "") { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "act", a, r })); },
+    // 名前・見た目を変えたとき（再接続のときも新しい値で入る）
+    hello(n, l) { name = n; look = l; if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: "hi", name, look })); },
     get room() { return room; },
     close() { alive = false; ws && ws.close(); },
   };

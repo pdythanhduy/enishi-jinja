@@ -85,9 +85,14 @@ export class Room {
     if (m.t === "ping") { ws.serializeAttachment(me); return; }
     if (m.t === "hi") {
       this.prune(now);
-      me.name = String(m.name || "参拝者").slice(0, 16); me.look = Number(m.look) || 0;
+      const again = !!me.name;
+      let name = String(m.name || "参拝者").replace(/[<>&"'`\\]/g, "").trim().slice(0, 12) || "参拝者";
+      if (NG.some((w) => name.toLowerCase().includes(w.toLowerCase()))) name = "参拝者";
+      me.name = name;
+      me.look = typeof m.look === "string" ? m.look.replace(/[^v0-9.]/g, "").slice(0, 24) : Number(m.look) || 0;
       ws.serializeAttachment(me);
-      this.broadcast({ t: "join", ...me, n: this.socks().length }, ws);
+      if (again) this.broadcast({ t: "look", id: me.id, name: me.name, look: me.look }, ws);    // 身支度を変えた
+      else this.broadcast({ t: "join", ...me, n: this.socks().length }, ws);
     } else if (m.t === "pos") {
       if (now - (me.at || 0) < 150) return;                     // 送信しすぎ防止
       me.x = +m.x || 0; me.z = +m.z || 0; me.ry = +m.ry || 0; me.at = now;

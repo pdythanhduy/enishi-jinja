@@ -5,21 +5,22 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031036";
-import { buildWorld } from "./world.js?v=11031036";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031036";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031036";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031036";
-import { deeds } from "../deeds.js?v=11031036";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031036";
-import { fireflies } from "../fx.js?v=11031036";
-import { LIGHT_SPOTS } from "./arch.js?v=11031036";
-import { freeze } from "./freeze.js?v=11031036";
-import { setupKito } from "./kito.js?v=11031036";
-import { makeAvatar, setPose, bowTo } from "./avatar.js?v=11031036";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031036";
-import { connect, board } from "../net.js?v=11031036";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031036";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031039";
+import { buildWorld } from "./world.js?v=11031039";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL } from "./map.js?v=11031039";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031039";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031039";
+import { deeds } from "../deeds.js?v=11031039";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031039";
+import { fireflies } from "../fx.js?v=11031039";
+import { LIGHT_SPOTS } from "./arch.js?v=11031039";
+import { freeze } from "./freeze.js?v=11031039";
+import { setupProfile } from "./profile.js?v=11031039";
+import { setupKito } from "./kito.js?v=11031039";
+import { makeAvatar, setPose, bowTo, restyle } from "./avatar.js?v=11031039";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031039";
+import { connect, board } from "../net.js?v=11031039";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031039";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -71,8 +72,8 @@ setInterval(() => leaves.spawn(), 40e3);
 setInterval(() => darkL.turnOffRandom(), 150e3);
 
 // ------------------------------------------------------------------ 自分
-const myName = store.get("enishi_name", null) || `${pick(NAMES_A)}${pick(NAMES_B)}`; store.set("enishi_name", myName);
-const myLook = store.get("enishi_look", null) ?? Math.random(); store.set("enishi_look", myLook);
+let myName = store.get("enishi_name", null) || `${pick(NAMES_A)}${pick(NAMES_B)}`; store.set("enishi_name", myName);
+let myLook = store.get("enishi_look", null) ?? Math.random(); store.set("enishi_look", myLook);
 const me = makeAvatar(myLook, env);
 me.position.set(0, 0, 80); me.rotation.y = Math.PI; scene.add(me);
 $("#me-tag").textContent = "わたし · " + myName;
@@ -638,7 +639,7 @@ function runIntro(dt) {
   intro.t += dt / 11; if (intro.t >= 0.86) return endIntro();
   camera.position.copy(introPath.getPointAt(intro.t)); camera.lookAt(introLook.getPointAt(intro.t));
 }
-function endIntro() { intro = null; $("#title-card").classList.add("out"); setTimeout(() => ($("#title-card").hidden = true), 1200);
+function endIntro() { intro = null; setTimeout(onboard, 1400); $("#title-card").classList.add("out"); setTimeout(() => ($("#title-card").hidden = true), 1200);
   camera.position.set(0, 6, 90); controls.target.set(me.position.x, 1.2, me.position.z); controls.enabled = true; controls.update(); }
 $("#title-card").onclick = () => intro && endIntro();
 
@@ -693,7 +694,8 @@ addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); co
 net = connect({ hall: "tosen", name: myName, look: myLook,
   onWelcome: (m) => m.others.forEach(addOther), onJoin: addOther, onLeave: (m) => removeOther(m.id), onCount: setCount,
   onPos: (m) => { const o = others.get(m.id); if (o) { o.to.set(m.x, 0, m.z); o.ry = m.ry; } },
-  onAct: (m) => { const o = others.get(m.id); if (o) otherAct(o, m.a, m.r); } });
+  onAct: (m) => { const o = others.get(m.id); if (o) otherAct(o, m.a, m.r); },
+  onLook: (m) => { const o = others.get(m.id); if (!o) return; restyle(o.av, m.look, env); o.tag.textContent = m.name || "参拝者"; } });
 board.list("tosen").then((r) => { addEma(r.total || 0); addKuji(Math.min(60, Math.floor((r.lights || 0) / 2))); const n = r.lights || 0; setLights(n); for (let i = 0; i < Math.min(n, MOBILE ? 80 : 160); i++) lanterns.spawn(0, 0, 0, { instant: true }); }).catch(() => {});
 loop();
 setTimeout(() => $("#loading").classList.add("done"), 300);
@@ -721,5 +723,13 @@ async function goSeat([sx, sz]) {
 const hideOthers = (on) => { for (const o of others.values()) { o.av.visible = !on; o.tag.style.visibility = on ? "hidden" : ""; if (o.bubble) o.bubble.style.visibility = on ? "hidden" : ""; } };
 const kito = setupKito({ hideOthers, scene, camera, me, W, env, store, sfx, tone, noise, ac, muted: () => muted, wait, toast, setPose, bowTo, doing, setCine, goSeat, walkTo2: walkP,
   deedHook, today, ng: ngText, getName: () => myName, get net() { return net; } });
+// ------------------------------------------------------------------ 身支度（profile.js）
+const cleanText = (t) => String(t || "").replace(/[<>&"'`\\]/g, "").replace(/\s+/g, " ").trim().slice(0, 12);
+const profile = setupProfile({ me, camera, env, store, toast, setCine, ng: ngText, clean: cleanText, toku: () => D.toku,
+  getName: () => myName, getLook: () => myLook, randomName: () => `${pick(NAMES_A)}${pick(NAMES_B)}`,
+  setProfile: (name, look) => { myName = name; myLook = look; store.set("enishi_name", name); store.set("enishi_look", look); refreshToku(); net?.hello(name, look); } });
+$("#btn-me").onclick = () => { if (!busy && !intro) profile.open(false); };
+function onboard() { if (!store.get("enishi_profile", 0) && !busy) profile.open(true); }
+if (!intro) setTimeout(onboard, 1200);
 $("#juyo-kito").onclick = () => { $("#m-juyo").hidden = true; kito.open(); };
 window.__enishi = { kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
