@@ -59,7 +59,7 @@ export function height(x, z) {
   if (z > -14 && z <= -6 && Math.abs(x) < 46) h *= smooth(-6, -14, z);
   if (Math.abs(x) < 25 && z > -30) h *= Math.max(smooth(-20, -30, z), smooth(17, 25, Math.abs(x)));   // 本殿の裏は平らに、なだらかに山へ
   const tr = trailInfo(x, z);
-  if (tr.d < 4.2) { const k = smooth(4.2, 1.8, tr.d); h = h * (1 - k) + trailHeight(tr.t) * k; }
+  if (tr.d < 6.6) { const k = smooth(6.6, 4.4, tr.d); h = h * (1 - k) + trailHeight(tr.t) * k; }   // 参道と両脇の路肩（渓流が流れる）は平らに
   return h;
 }
 
@@ -67,6 +67,15 @@ export function height(x, z) {
 export const POND = { cx: 18, cz: 54, rx: 9, rz: 6 };
 export const BRIDGE = { x0: 8.4, x1: 27.6, z: 54, w: 2.2 };
 export const OKPOND = { cx: 7.0, cz: -76, rx: 3.4, rz: 2.7 };
+// 渓流：山頂の池の南西からあふれ、参道の脇（灯籠と反対側、3m）を沿って下る
+export const STREAM = (() => {
+  const pts = [[6.0, -73.9], [4.6, -72.0], [2.9, -70.2]];
+  for (let t = 0.98; t > 0.45; t -= 0.02) {
+    const p = TRAIL.getPointAt(t), q = TRAIL.getPointAt(Math.min(1, t + 0.005)), dx = q.z - p.z, dz = -(q.x - p.x), l = Math.hypot(dx, dz) || 1;
+    pts.push([p.x - (dx / l) * 3.0, p.z - (dz / l) * 3.0]);
+  }
+  return pts;
+})();
 const inEll = (x, z, e) => ((x - e.cx) / e.rx) ** 2 + ((z - e.cz) / e.rz) ** 2 < 1;
 
 // 当たり判定 [x0, z0, x1, z1]

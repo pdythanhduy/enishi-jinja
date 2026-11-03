@@ -16,6 +16,9 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
   - `app.js`: core, rituals, UI, multiplayer.
   - Lamps: `sharedLamp()` in arch.js shares one material per color (chochin, 釣灯籠). The toro keep their own material. After the build, app.js registers every material with `userData.base` with env and applies the hour once. The sando lantern rows are InstancedMesh, animated in `lanternRows` tick.
   - `kito.js`: 御祈祷 ceremony in the honden (priest and miko NPCs, candles, light beam, synthesized norito voice and fue, cinematic camera, 御札 canvas). The norito reads the player's name and wish; the wish never leaves the device. Waits use timers, not rAF, so timing holds on slow devices. App hooks: `setCine`, `goSeat`, `hideOthers`.
+    - The 御扉 (folding black-lacquer doors behind the mirror) open before the norito and close at 御札授与: `W.hondenDoors(k)`, k from 0 to 1, with a glow plane behind them.
+    - When no rite is running, the priest and miko follow a JST routine: 朝 sweeping and 神饌, 昼 bows and suzu, 夕 lighting the candles, 夜 seiza (`MODES` in kito.js, 30 s cycles).
+    - A third miko stands at the 授与所 and bows when a visitor comes near.
   - `profile.js`: 身支度 (name, yukata, pattern, hair, accessories gated by 徳). Looks are strings `v1.k.p.h.c.a` (`parseLook` in avatar.js); old numeric seeds still work. Opens on first visit.
   - `social.js`: preset phrases and emotes (`say`/`emo` acts carry an index, never free text), 縁 (tap a visitor, bow; a returned bow within 2 min binds), 縁帳 with presence and once-a-day blessings, streak (🔥), news when others pray for your ema. Identity: a secret `enishi_key` on the device; the public id is `pid = sha256("enishi:"+key)[:8]`.
   - `kenno.js`: 献灯所 at (-15, 8.6). 64 lanterns, one per person per day; each lantern gains a day of brightness every day its owner returns.
@@ -23,7 +26,10 @@ Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enish
   - `temizu.js`: the 手水舎 (dragon spout with running water, ladle rack, 作法 sign, water sound) and the over-the-shoulder 手水 ritual.
   - `seasonal.js`: calendar events by JST month (now 七五三 in November: banners, 千歳飴 stand, extra 願意). Force one with `?event=753`.
   - `water.js`: light water shader (two drifting normal maps, Fresnel alpha so koi show from above, edge foam), bowl-shaped pond bed with caustics, lotus and iris. `koi.js`: patterned koi that wander and bend as they swim; `W.koiFeed(x, z)` gathers them. Ponds are dug into the terrain in `height()`.
-  - `freeze.js`: at startup, merges the meshes of groups marked `userData.static = true` (arch.js builders) into one mesh per material. Groups stay for position lookups. Anything that moves, or swaps materials per mesh, must NOT be marked static. `?nofreeze` disables it.
+    - `makeStream` builds a mountain stream: a bed ribbon, flowing water with foam on steep parts, and bank stones.
+    - Its path is `STREAM` in map.js: from the summit pond it runs 3 m beside the trail, on the side opposite the lanterns. The trail shoulders are flattened to 6.6 m so the stream lies flat.
+    - The stream has a babbling sound from the nearest point.
+  - `freeze.js`: at startup, merges the meshes of groups marked `userData.static = true` (arch.js builders) into one mesh per material. Groups stay for position lookups. Anything that moves, or swaps materials per mesh, must NOT be marked static. Moving parts inside a static group can set `userData.live = true` (as the honden doors do), and freeze skips them. `?nofreeze` disables it.
 - `site/fx.js`: wagara patterns, ambience sounds, `matsuri()` お囃子 festival music. `site/content.js`: halls, stories, omikuji.
 - `worker/worker.js`: also /presence, /bless, /inbox, /kenno, /kenno/light (Remind DO tables pres, inbox, lamp) and GET /ema/:hall?ids=. Admin can hide a lamp with POST /admin/:hall {key, lamp}.
 - `worker/worker.js`: Cloudflare Worker `enishi-rooms` with Durable Objects. Room is WebSocket, 100 per room. Board is SQLite ema/pray/report/light. Remind sends Web Push at 08:00 JST and tracks global 徳 (FEST_GOAL 300). Deploy with `python worker/deploy.py`, which reads keys from `.env`.

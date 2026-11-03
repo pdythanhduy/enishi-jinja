@@ -1,10 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031444";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE } from "./map.js?v=11031444";
-import { makePond, pondPlants, tickWater } from "./water.js?v=11031444";
-import { koiSchool } from "./koi.js?v=11031444";
-import { FOLIAGE } from "./env.js?v=11031444";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031506";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM } from "./map.js?v=11031506";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11031506";
+import { koiSchool } from "./koi.js?v=11031506";
+import { FOLIAGE } from "./env.js?v=11031506";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -128,7 +128,7 @@ export function buildWorld(scene, env, { mobile }) {
   const hdC = []; const zab = new THREE.MeshStandardMaterial({ color: 0xc9b27a, roughness: 0.95 });   // 円座（い草の丸い座）
   for (let r = 0; r < 2; r++) for (const cx of [-4.6, -3.0, 3.0, 4.6]) { const [x, z] = hw(cx, 1.5 + r * 2.2); const c = cyl(scene, 0.42, 0.44, 0.09, zab, x, hd.floorY + 0.05, z, 20); c.userData.static = true; hdC.push([x, z]); }
   W.cushions.tosen = hdC; W.altars.tosen = hw(0, -2.6);
-  W.hondenMirror = hd.mirror;
+  W.hondenMirror = hd.mirror; W.hondenDoors = hd.setDoors;
   // ライトアップ：夜、本殿の正面を足もとから照らす
   { const cv = document.createElement("canvas"); cv.width = 64; cv.height = 128; const c = cv.getContext("2d");
     const gv = c.createLinearGradient(0, 128, 0, 0); gv.addColorStop(0, "rgba(255,196,120,1)"); gv.addColorStop(0.45, "rgba(255,170,90,.35)"); gv.addColorStop(1, "rgba(255,150,80,0)"); c.fillStyle = gv; c.fillRect(0, 0, 64, 128);
@@ -216,6 +216,7 @@ export function buildWorld(scene, env, { mobile }) {
   pondPlants(scene, { cx: OKPOND.cx, cz: OKPOND.cz, rx: OKPOND.rx, rz: OKPOND.rz, y: okY - 0.08 }, { pads: 6, lotus: 2, iris: 5 });
   { const s2 = koiSchool(scene, { cx: OKPOND.cx, cz: OKPOND.cz, rx: OKPOND.rx, rz: OKPOND.rz, y: okY - 0.08 }, 4); W.update.push((t, dt) => s2.update(t, Math.min(dt, 0.05))); }
   W.okPond = { x: OKPOND.cx, z: OKPOND.cz, y: okY - 0.08, rx: OKPOND.rx, rz: OKPOND.rz };
+  W.stream = makeStream(scene, STREAM, height).points;                                      // 渓流
   const fallTex = (() => { const cv = document.createElement("canvas"); cv.width = 32; cv.height = 128; const x = cv.getContext("2d");
     for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.5})`; x.fillRect(Math.random() * 32, Math.random() * 128, 1 + Math.random() * 2, 8 + Math.random() * 20); }
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
@@ -252,9 +253,12 @@ export function buildWorld(scene, env, { mobile }) {
 
   // ---------------------------------------------------------------- 木々（InstancedMesh：幹＋葉）
   const trees = { momiji: [], sakura: [], ume: [], sugi: [] };
+  const STREAM_PTS = new THREE.CatmullRomCurve3(STREAM.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, "catmullrom", 0.5).getSpacedPoints(120);
+  const SB = [Math.min(...STREAM_PTS.map((p) => p.x)) - 3, Math.max(...STREAM_PTS.map((p) => p.x)) + 3, Math.min(...STREAM_PTS.map((p) => p.z)) - 3, Math.max(...STREAM_PTS.map((p) => p.z)) + 3];
   const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中と正面の広場に木が生えないように
   const add = (k, x, z, s = 1) => { if (Math.abs(x) > 21 && Math.abs(x) < 28 && z > 24.5 && z < 44) return;
-    if (Math.hypot(x + 2, z + 74) < 14.5) return;                                          // 山頂（奥の院）は木を植えない   // 回廊の上には木を植えない
+    if (Math.hypot(x + 2, z + 74) < 14.5) return;
+    if (x > SB[0] && x < SB[1] && z > SB[2] && z < SB[3] && STREAM_PTS.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 6.3)) return;   // 渓流の上には木を植えない                                          // 山頂（奥の院）は木を植えない   // 回廊の上には木を植えない
     if (!halls.some(([hx, hz]) => Math.abs(x - hx) < SMALL.W / 2 + 2.5 && z > hz - SMALL.D / 2 - 2.5 && z < 26.5)) trees[k].push([x, z, s]); };
   for (let z = 74; z > 45; z -= 3.2) for (const sgn of [-1, 1]) add("momiji", sgn * sr(7.5, 11), z + sr(-1, 1), sr(0.9, 1.3));        // 参道の紅葉
   for (let i = 0; i < 40; i++) { const x = sr(-40, -8), z = sr(46, 84); if (Math.abs(x) > 7.5) add("momiji", x, z, sr(0.9, 1.4)); }

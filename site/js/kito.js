@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden } from "./map.js?v=11031444";
+import { HONDEN, inHonden, PLACES } from "./map.js?v=11031506";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -160,7 +160,93 @@ export function setupKito(A) {
   const dustM = new THREE.PointsMaterial({ color: 0xffe9c0, size: 0.04, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
   H.add(new THREE.Points(dustG, dustM));
   const mirror = W.hondenMirror; if (mirror) { mirror.material = mirror.material.clone(); mirror.material.emissive = new THREE.Color(0xfff0d0); mirror.material.emissiveIntensity = 0; }
-  let glow = 0, glowTo = 0, idleT = 0;
+  let glow = 0, glowTo = 0;
+
+  // ---------------------------------------------------------------- 控えの所作：日本時間で変わる
+  // 朝（5–10時）：神職は拝殿を掃き清め、巫女は神饌を捧げる / 昼：神職は神前に拝礼、巫女は鈴を鳴らす
+  // 夕（17–20時）：二人で燭台に火を灯す / 夜：神前に向かって静座
+  const PI = Math.PI, PH = [PRIEST_HOME.x, PRIEST_HOME.z], MH = [MIKO_HOME.x, MIKO_HOME.z];
+  const at = (t, [x, z], f) => [t, x, z, f];
+  const houki = new THREE.Group();
+  { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6), std(0xc8a66a)); st.position.y = -0.3; houki.add(st);
+    const br = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.42, 12, 1, true), std(0x9a7a3a, { side: THREE.DoubleSide, roughness: 1 })); br.position.y = -0.98; houki.add(br); }
+  priest.userData.arms[0].add(houki); houki.position.set(0, -0.45, 0.12); houki.visible = false;
+  const tsukegi = (n) => { const g = new THREE.Group(); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 5), std(0xd9c49a)); st.rotation.x = PI / 2; st.position.z = 0.15; g.add(st);
+    const f = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 8), flameM[0]); f.position.set(0, 0.04, 0.36); g.add(f); n.userData.arms[0].add(g); g.position.set(0, -0.47, 0.05); g.visible = false; return g; };
+  const fireP = tsukegi(priest), fireM = tsukegi(miko);
+  const sanbo = new THREE.Group();
+  { const wd = std(0xe2cfa0, { roughness: 0.7 }); const t = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.42), wd); t.position.y = 0.2; sanbo.add(t);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.18, 0.26), wd); b.position.y = 0.09; sanbo.add(b);
+    const r = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8, 0, PI * 2, 0, PI / 2), std(0xfbfaf4)); r.position.y = 0.22; sanbo.add(r);
+    for (const d of [-0.12, 0.12]) { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.2, 8), std(0xfbfaf4)); s.position.set(d, 0.32, -0.1); sanbo.add(s); } }
+  miko.userData.body.add(sanbo); sanbo.position.set(0, 0.62, 0.5); sanbo.visible = false;
+  const rest = (n) => { const u = n.userData; u.body.rotation.set(0, 0, 0); u.body.position.y = 0; u.lower.scale.y = 1; u.arms.forEach((a, i) => { a.rotation.set(0, 0, (i ? 1 : -1) * 0.22); }); };
+  const restAll = () => { rest(priest); rest(miko); houki.visible = fireP.visible = fireM.visible = sanbo.visible = false; };
+  // keys: [時刻, x, z, 着いてから向く向き]。間は歩く（向きは進む方へ）
+  function follow(n, keys, k, dt) {
+    let i = 0; while (i < keys.length - 2 && k >= keys[i + 1][0]) i++;
+    const [t0, x0, z0] = keys[i], [t1, x1, z1, f1] = keys[i + 1];
+    const u = Math.min(1, Math.max(0, (k - t0) / (t1 - t0))), e = easeIO(u);
+    const moving = (x1 !== x0 || z1 !== z0) && u > 0 && u < 1;
+    n.position.set(x0 + (x1 - x0) * e, FLOOR, z0 + (z1 - z0) * e);
+    let d = (moving ? Math.atan2(x1 - x0, z1 - z0) : f1) - n.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); n.rotation.y += d * Math.min(1, dt * 5);
+    if (moving) n.userData.body.position.y = Math.abs(Math.sin(k * 7)) * 0.025;
+  }
+  const hump = (k, a, b) => (k < a || k > b ? 0 : Math.sin(((k - a) / (b - a)) * PI));
+  const seiza = (n, k) => { const u = n.userData; u.lower.scale.y = 0.42; u.body.position.y = -0.38 + Math.sin(k * 1.3) * 0.008; u.arms.forEach((a) => (a.rotation.x = -0.55)); };
+  const nearMe = (n, r) => { const p = n.getWorldPosition(new THREE.Vector3()); return Math.hypot(p.x - me.position.x, p.z - me.position.z) < r; };
+  const MODES = {
+    asa(k, dt) {
+      follow(priest, [at(0, PH, 0), at(2.5, [-1.2, -0.6], 0), at(5.5, [-4.2, -0.6], 0), at(15, [4.2, -0.6], 0), at(19.5, [-1.2, -0.6], 0), at(22, PH, PI), at(26.5, PH, PI), at(28, PH, 0)], k, dt);
+      const pu = priest.userData; houki.visible = k > 2.5 && k < 19.5;
+      if (k > 5.5 && k < 15) { pu.arms[0].rotation.x = -0.75 + Math.sin(k * 5) * 0.45; pu.body.rotation.x = 0.28; } else if (houki.visible) pu.arms[0].rotation.x = -0.4;
+      pu.body.rotation.x += hump(k, 23, 25.8) * 0.9;
+      follow(miko, [at(0, MH, 0), at(8, MH, 0), at(10.5, [2.1, -1.55], PI), at(17.5, [2.1, -1.55], PI), at(20, MH, 0)], k, dt);
+      const mu = miko.userData; sanbo.visible = k > 7 && k < 20.5;
+      if (sanbo.visible) { const lift = hump(k, 11.5, 16); mu.arms.forEach((a) => (a.rotation.x = -1.25 - lift * 0.5)); sanbo.position.y = 0.62 + lift * 0.4; }
+      mu.body.rotation.x += hump(k, 16, 17.5) * 0.6;
+    },
+    hiru(k, dt) {
+      follow(priest, [at(0, PH, 0), at(2, PH, 0), at(3.5, PH, PI), at(8, PH, PI), at(9.5, PH, 0)], k, dt);
+      priest.userData.body.rotation.x = hump(k, 4, 6.8) * 1.0;
+      follow(miko, [at(0, MH, 0), at(12, MH, 0), at(13, MH, PI), at(20, MH, PI), at(21, MH, 0)], k, dt);
+      const s = hump(k, 13.5, 19.5);
+      if (s) { const a = miko.userData.arms[1]; a.rotation.x = -1.7 - Math.sin(k * 9) * 0.35 * s; a.rotation.z = 0.3 * s;
+        if (Math.floor(k / 0.9) !== Math.floor((k - dt) / 0.9) && nearMe(miko, 9)) A.sfx.suzu(); }
+    },
+    yu(k, dt) {
+      for (const [n, home, side, fire] of [[priest, PH, -1, fireP], [miko, MH, 1, fireM]]) {
+        follow(n, [at(0, home, 0), at(3, [side * 4.0, -1.35], PI), at(9.5, [side * 4.0, -1.35], PI), at(12.5, home, 0)], k, dt);
+        fire.visible = k > 2 && k < 10.5; const reach = hump(k, 3.5, 9.2);
+        if (fire.visible) { const u = n.userData; u.arms[0].rotation.x = -0.6 - reach * 0.8; u.body.rotation.y = (k < 6.3 ? 0.55 : -0.55) * reach; }
+      }
+    },
+    yoru(k, dt) {
+      follow(priest, [at(0, PH, PI), at(30, PH, PI)], k, dt); follow(miko, [at(0, MH, PI), at(30, MH, PI)], k, dt);
+      seiza(priest, k); seiza(miko, k + 1.7);
+    },
+  };
+  const modeAt = (h) => (h >= 5 && h < 10 ? "asa" : h >= 10 && h < 17 ? "hiru" : h >= 17 && h < 20 ? "yu" : "yoru");
+  let mode = null, modeT = 0;
+  function idle(dt) {
+    modeT += dt;
+    if (!mode || modeT >= 30) { mode = modeAt(A.env.hour); modeT = 0; }
+    restAll(); MODES[mode](modeT, dt);
+  }
+  // 授与所の巫女：参拝者が近づくと、お辞儀して迎える
+  const jFloor = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.56, 6.1), std(0x8a6a48, { roughness: 0.8 })); jFloor.position.set(PLACES.juyosho.pos[0] + 1.77, 0.58, PLACES.juyosho.pos[1]); jFloor.receiveShadow = true; scene.add(jFloor);   // 授与所の板の間（一段高い）
+  const jm = makeNPC("miko"); jm.scale.setScalar(0.82); jm.position.set(PLACES.juyosho.pos[0] + 1.0, 0.86, PLACES.juyosho.pos[1]); jm.rotation.y = -PI / 2; scene.add(jm);
+  let jmGreeted = false, jmBow = -1;
+  function juyoTick(t, dt) {
+    const d = Math.hypot(me.position.x - PLACES.juyosho.stand[0], me.position.z - PLACES.juyosho.stand[1]);
+    if (d < 4.2 && !jmGreeted) { jmGreeted = true; jmBow = 0; } else if (d > 8) jmGreeted = false;
+    const u = jm.userData; rest(jm);
+    u.body.rotation.y = Math.sin(t * 0.23) * 0.18;
+    u.arms[0].rotation.x = -0.35 - Math.max(0, Math.sin(t * 0.5)) * 0.35;                      // お守りを並べ直す
+    if (jmBow >= 0) { jmBow += dt; u.body.rotation.x = hump(jmBow, 0.2, 2.0) * 0.7; u.body.rotation.y *= 1 - hump(jmBow, 0, 2.2); if (jmBow > 2.2) jmBow = -1; }
+  }
+  // 御扉：0 閉 → 1 開
+  let door = 0, doorTo = 0, doorShown = 0;
   // 毎フレーム：火の揺らぎ・塵・光・控えの所作
   W.update.push((t, dt) => {
     flameM.forEach((m, i) => { m.emissiveIntensity = (m.userData.base) * (0.8 + 0.25 * Math.sin(t * 13 + i * 2) + 0.12 * Math.sin(t * 31 + i)); });
@@ -170,7 +256,9 @@ export function setupKito(A) {
     glow += (glowTo - glow) * Math.min(1, dt * 1.5);
     beamU.op.value = 0.05 + glow * 0.5; dustM.opacity = 0.2 + glow * 0.6;
     if (mirror) mirror.material.emissiveIntensity = glow * 0.55;
-    if (!running) { idleT += dt; priest.userData.body.rotation.x = Math.max(0, Math.sin(idleT * 0.35)) * 0.08; miko.rotation.y = Math.sin(idleT * 0.2) * 0.15; }
+    door += (doorTo - door) * Math.min(1, dt * 0.8); if (Math.abs(door - doorShown) > 0.0005) { doorShown = door; W.hondenDoors?.(door); }
+    if (!running) idle(dt);
+    juyoTick(t, dt);
   });
 
   // ---------------------------------------------------------------- 画面（帯・縦書きの祝詞・中断）
@@ -259,7 +347,7 @@ export function setupKito(A) {
   // ---------------------------------------------------------------- 儀式
   function run({ name, gan, wish, group = false, names = [] }) {
     return A.doing(async () => {
-      aborted = false; running = true;
+      aborted = false; running = true; restAll();
       let voice = null, stopFue = () => {};
       const u = me.userData, pu = priest.userData, mu = miko.userData;
       try {
@@ -292,6 +380,9 @@ export function setupKito(A) {
         await glide(priest, new THREE.Vector3(0, FLOOR, -0.75), 900, Math.PI);
         shot([0.9, 3.0, 2.7], [0, 3.3, -2.6], 2.6);
         await A.bowTo(priest, 1.0, 700); await w(300); await A.bowTo(priest, 0, 600); A.sfx.taiko(); await w(500);
+        // 開扉：御扉が開き、奥から光があふれる
+        doorTo = 1; A.noise(2.4, 180, 0.05, "lowpass"); A.tone([[392, 0.2], [587, 0.12]], 3.5, 0.04);
+        shot([0.4, 3.2, 1.6], [0, 3.6, -3.4], 3.2); await w(3400);
         const all = group ? [name, ...names.filter((n) => n && n !== name)].slice(0, 12) : [name];
         const norito = group
           ? `掛けまくも畏き えにしの大神の大前に 恐み恐みも白さく\n今日の生日の足日に 参列の ${all.join(" ")} 等\n各も各も 心に願ひ奉る状を\n平けく安けく聞こし食して 夜の守り日の守りに 守り幸へ給へと 恐み恐みも白す`
@@ -347,7 +438,7 @@ export function setupKito(A) {
         H.remove(tg);
 
         // 撤饌・授与
-        phase("JUYO", "御 札 授 与"); glowTo = 0.25;
+        phase("JUYO", "御 札 授 与"); glowTo = 0.25; doorTo = 0;   // 閉扉
         shot([0, 3.5, 3.6], [0, 3.2, -2.8], 3.0);
         A.sfx.taiko(); await w(700); A.sfx.taiko(); await w(1200);
         await glide(priest, new THREE.Vector3(-0.6, FLOOR, -0.2), 900, Math.PI * 0.6);
@@ -361,7 +452,7 @@ export function setupKito(A) {
         showOfuda(rec);
       } catch (e) { if (e.message !== "abort") console.error(e); A.toast("御祈祷を中断しました", 2200); }
       finally {
-        running = false; glowTo = 0; voice?.stop(); stopFue();
+        running = false; glowTo = 0; doorTo = 0; voice?.stop(); stopFue();
         nusa.visible = false; priest.position.copy(PRIEST_HOME); priest.rotation.y = 0; miko.position.copy(MIKO_HOME); miko.rotation.y = 0;
         [pu, mu].forEach((x) => x.arms.forEach((a, i) => { a.rotation.x = 0; a.rotation.z = (i ? -1 : 1) * 0.22; })); pu.body.rotation.x = 0;
         priest.userData.arms[1].children.slice(2).forEach((c) => priest.userData.arms[1].remove(c));

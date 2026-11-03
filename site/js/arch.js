@@ -139,9 +139,9 @@ export function honden(parent, env, { x = 0, z = 0, s = 1 } = {}) {
   chochin(g, -5.2, F + 3.7, D / 2 + 1.6, env, 1.6); chochin(g, 5.2, F + 3.7, D / 2 + 1.6, env, 1.6);
   for (let i = -3; i <= 3; i++) if (i) chochin(g, i * 2.4, F + 4.7, D / 2 + 0.2, env, 0.75, 0xffe7b0);
   lightSpot(g, F + 3, 12, 18, 0xffb06a);
-  const mirror = hondenInterior(g, env, W, D, F);
+  const { mir: mirror, setDoors } = hondenInterior(g, env, W, D, F);
   hondenGlory(g, env, W, D, F);
-  return { group: g, floorY: (F + 0.3) * s, front: z + (D / 2 + 1) * s, mirror };
+  return { group: g, floorY: (F + 0.3) * s, front: z + (D / 2 + 1) * s, mirror, setDoors };
 }
 
 // 唐破風：中央が盛り上がり両端が反る波形の破風（黒い板・銅の屋根・金の縁・懸魚）
@@ -241,13 +241,37 @@ function hondenInterior(g, env, W, D, F) {
   box(g, W - 5.6, 0.14, 0.14, MAT.kuro, 0, F + 4.75, zb + 2.3, false);
   const fusaM = std(0x6a2a8a, { roughness: 0.8 });
   for (const s of [-1, 0, 1]) { const f = cyl(g, 0.02, 0.12, 0.7, fusaM, s * 3.2, F + 3.0, zb + 2.36, 8, false); }
-  // 御扉：奥の本殿へ通じる黒漆の扉（金の飾り）
-  box(g, 3.4, 3.4, 0.12, MAT.kuro, 0, y0 + 2.6, -D / 2 + 0.78);
-  box(g, 0.05, 3.3, 0.02, MAT.gold, 0, y0 + 2.6, -D / 2 + 0.85, false);
+  // 御扉：奥の本殿へ通じる黒漆の折戸（金の飾り）。祈祷の祝詞の前に開き、奥から光があふれる（開扉・閉扉）
+  const zd = -D / 2 + 0.78, yc = y0 + 2.6;
+  const doors = new THREE.Group(); doors.userData.live = true; g.add(doors);   // 動くので freeze しない
+  const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gx = gc.getContext("2d");
+  const rg0 = gx.createRadialGradient(64, 70, 4, 64, 70, 80); rg0.addColorStop(0, "#fff4d6"); rg0.addColorStop(0.35, "#ffd98a"); rg0.addColorStop(0.75, "#e8a850"); rg0.addColorStop(1, "#8a5420");
+  gx.fillStyle = rg0; gx.fillRect(0, 0, 128, 128);
+  const glowT = new THREE.CanvasTexture(gc); glowT.colorSpace = THREE.SRGBColorSpace;
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 3.3), new THREE.MeshBasicMaterial({ map: glowT, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, fog: false }));
+  glow.material.color.setRGB(2.2, 1.9, 1.45); glow.position.set(0, yc, zd - 0.035); glow.visible = false; glow.renderOrder = 3; doors.add(glow);
+  const sc = document.createElement("canvas"); sc.width = 64; sc.height = 64; const sx2 = sc.getContext("2d");
+  const rg1 = sx2.createRadialGradient(32, 32, 0, 32, 32, 32); rg1.addColorStop(0, "rgba(255,226,160,1)"); rg1.addColorStop(1, "rgba(255,200,120,0)"); sx2.fillStyle = rg1; sx2.fillRect(0, 0, 64, 64);
+  const spill = new THREE.Mesh(new THREE.PlaneGeometry(7, 6), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, fog: false }));
+  spill.position.set(0, yc, zd + 0.25); spill.visible = false; doors.add(spill);
+  const leaves = [], ringG = new THREE.TorusGeometry(0.1, 0.022, 6, 16);
+  const panel = (p, s, edge) => {
+    box(p, 0.85, 3.4, 0.1, MAT.kuro, -s * 0.425, 0, 0);
+    for (const yy of [-1.2, 0, 1.2]) box(p, 0.72, 0.1, 0.02, MAT.gold, -s * 0.425, yy, 0.06, false);
+    if (edge) { box(p, 0.04, 3.3, 0.02, MAT.gold, -s * 0.83, 0, 0.06, false); const rg = new THREE.Mesh(ringG, MAT.gold); rg.position.set(-s * 0.62, -0.2, 0.08); p.add(rg); }
+  };
   for (const s of [-1, 1]) {
-    for (const yy of [y0 + 1.4, y0 + 2.6, y0 + 3.8]) box(g, 0.9, 0.12, 0.02, MAT.gold, s * 1.2, yy, -D / 2 + 0.85, false);
-    const rg = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.022, 6, 16), MAT.gold); rg.position.set(s * 0.22, y0 + 2.4, -D / 2 + 0.87); g.add(rg);
+    const outer = new THREE.Group(); outer.position.set(s * 1.7, yc, zd); doors.add(outer); panel(outer, s, false);
+    const inner = new THREE.Group(); inner.position.set(-s * 0.85, 0, 0); outer.add(inner); panel(inner, s, true);
+    leaves.push({ s, outer, inner });
   }
+  // k: 0 閉じる → 1 開く。外の戸が奥へ、内の戸が折り返す（奥行き 0.8 に収まる）
+  const setDoors = (k) => {
+    const a = k * 1.2;
+    for (const l of leaves) { l.outer.rotation.y = -l.s * a; l.inner.rotation.y = l.s * 2 * a; }
+    glow.material.opacity = Math.min(1, k * 1.6); glow.visible = k > 0.005;
+    spill.material.opacity = k * 0.55; spill.visible = k > 0.005;
+  };
   // 神饌：三方に米・酒・塩・水・魚・野菜・果物
   const sanbo = (x, z, item) => { box(g, 0.5, 0.05, 0.5, MAT.woodL, x, y0 + 0.75, z); box(g, 0.34, 0.25, 0.34, MAT.woodL, x, y0 + 0.6, z); item(x, y0 + 0.78, z); };
   const white = std(0xfbfaf4, { roughness: 0.6 }), fishM = std(0xc8835a, { roughness: 0.5, metalness: 0.2 });
@@ -297,7 +321,7 @@ function hondenInterior(g, env, W, D, F) {
   // 釣灯籠（青銅）：向拝の両脇の軒に
   for (const cx of [-7, -4.2, 4.2, 7]) tsuriDoro(g, cx, F + 4.75, D / 2 - 0.1);
   lightSpot(g, F + 2.5, 6, 10, 0xffc27a);
-  return mir;
+  return { mir, setDoors };
 }
 
 // 襖絵・天井画（AI で描いた絵。img/gen/）：金箔が少し光るように

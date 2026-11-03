@@ -85,6 +85,76 @@ export function makePond(scene, { cx, cz, rx, rz, y, depth = 0.9, minAlpha = 0.3
   return { group: g, surface: surf, y, cx, cz, rx, rz };
 }
 
+// 渓流：山頂の池からあふれた水が、参道の東の斜面を下っていく。
+// 川床（濡れた砂利・光の網）と水面のリボン。水は流れる向きに動き、急なところは白く泡立つ。両岸に苔むした石。
+export function makeStream(scene, pts, hf, { width = 1.0, n = 240 } = {}) {
+  NT ||= normalTex(); CT ||= causticTex();
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, "catmullrom", 0.5);
+  const P = curve.getSpacedPoints(n), L = curve.getLength(), COLS = 7;
+  const frame = (i) => { const q = P[Math.min(n, i + 1)], r = P[Math.max(0, i - 1)], tx = q.x - r.x, tz = q.z - r.z, tl = Math.hypot(tx, tz) || 1;
+    return { nx: -tz / tl, nz: tx / tl, slope: Math.max(0, (hf(r.x, r.z) - hf(q.x, q.z)) / tl) }; };
+  const widthAt = (i) => { const s = i / n; return width * (0.5 + 0.5 * Math.min(1, s * 14, (1 - s) * 7)) * (1 + 0.18 * Math.sin(i * 0.31) + 0.08 * Math.sin(i * 1.13)); };
+  function ribbon(wk, lift, rgba) {
+    const pos = [], uv = [], sl = [], col = [], idx = [];
+    for (let i = 0; i <= n; i++) {
+      const p = P[i], f = frame(i), w = widthAt(i) * wk;
+      for (let j = 0; j < COLS; j++) { const a = j / (COLS - 1) - 0.5, x = p.x + f.nx * a * w, z = p.z + f.nz * a * w;
+        pos.push(x, hf(x, z) + lift, z); uv.push(a + 0.5, (i / n) * L); sl.push(f.slope);
+        if (rgba) col.push(...rgba, Math.min(1, (0.5 - Math.abs(a)) * 5)); }
+    }
+    for (let i = 0; i < n; i++) for (let j = 0; j < COLS - 1; j++) { const a = i * COLS + j, b = a + COLS; idx.push(a, a + 1, b, a + 1, b + 1, b); }   // 上向きの面
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    g.setAttribute("aSlope", new THREE.Float32BufferAttribute(sl, 1)); if (rgba) g.setAttribute("color", new THREE.Float32BufferAttribute(col, 4));
+    g.setIndex(idx); g.computeVertexNormals(); return g;
+  }
+  const grp = new THREE.Group(); scene.add(grp);
+  // 川床：濡れた砂利（縁は地面に溶ける）に、ゆらぐ光の網
+  const ct = CT.clone(); ct.needsUpdate = true;
+  const bedM = new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, depthWrite: false, roughness: 0.55, emissive: 0x8fc8b8, emissiveMap: ct, emissiveIntensity: 0.18, polygonOffset: true, polygonOffsetFactor: -2 });
+  ct.repeat.set(1, 1 / 3);
+  const bed = new THREE.Mesh(ribbon(1.7, 0.1, [0.16, 0.16, 0.13]), bedM); bed.renderOrder = 1; bed.receiveShadow = true; grp.add(bed);
+  // 水面
+  const U = { uT: { value: 0 } };
+  const wm = new THREE.MeshStandardMaterial({ color: 0x2c6466, roughness: 0.05, metalness: 0.1, normalMap: NT, normalScale: new THREE.Vector2(0.7, 0.7), transparent: true, depthWrite: false, envMapIntensity: 1.5 });
+  wm.onBeforeCompile = (sh) => {
+    sh.uniforms.uT = U.uT;
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute float aSlope; varying float vSl; varying vec2 vSU;")
+      .replace("#include <uv_vertex>", "#include <uv_vertex>\nvSl = aSlope; vSU = uv;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nuniform float uT; varying float vSl; varying vec2 vSU;")
+      .replace("#include <normal_fragment_maps>", `
+        float fl = mod(uT * 0.55, 1.0), fl2 = mod(uT * 0.31, 1.0);
+        vec3 n1 = texture2D(normalMap, vec2(vSU.x * 0.35, vSU.y * 0.5 - fl)).xyz * 2.0 - 1.0;
+        vec3 n2 = texture2D(normalMap, vec2(vSU.x * 0.6 + 0.37, vSU.y * 0.83 - fl2)).xyz * 2.0 - 1.0;
+        vec3 mapN = normalize(vec3((n1.xy + n2.xy) * normalScale * (1.0 + vSl * 2.0), 1.0));
+        normal = normalize(tbn * mapN);`)
+      .replace("#include <opaque_fragment>", `
+        vec3 Vw = normalize(vViewPosition);
+        float fres = pow(1.0 - clamp(dot(normal, Vw), 0.0, 1.0), 2.2);
+        float fn = texture2D(normalMap, vec2(vSU.x * 0.9, vSU.y * 0.7 - mod(uT * 0.9, 1.0))).x;
+        float edge = abs(vSU.x - 0.5) * 2.0;
+        float foamA = smoothstep(0.12, 0.5, vSl) * smoothstep(0.42, 0.62, fn) + smoothstep(0.65, 0.95, edge) * smoothstep(0.52, 0.68, fn) * 0.4;
+        outgoingLight = mix(outgoingLight, vec3(0.9, 0.95, 0.96), clamp(foamA, 0.0, 1.0) * 0.6);
+        diffuseColor.a = clamp(mix(0.42, 0.92, fres) + foamA * 0.4, 0.0, 1.0) * smoothstep(1.0, 0.86, edge);
+        #include <opaque_fragment>`);
+  };
+  const water = new THREE.Mesh(ribbon(1.0, 0.2, null), wm); water.renderOrder = 2; grp.add(water);
+  live.push((t) => { U.uT.value = t; ct.offset.set(t * 0.01, -t * 0.05); });
+  // 両岸の石（苔むしたものも）と、流れの中の石
+  const geo = new THREE.DodecahedronGeometry(1, 0), o = new THREE.Object3D(), list = [];
+  let s0 = 11; const rnd = () => ((s0 = (s0 * 16807) % 2147483647) / 2147483647);
+  for (let i = 2; i < n - 1; i += 4) { const p = P[i], f = frame(i), w = widthAt(i);
+    for (const side of [-1, 1]) if (rnd() < 0.7) { const off = side * (w * 0.55 + 0.1 + rnd() * 0.35), x = p.x + f.nx * off, z = p.z + f.nz * off; list.push([x, z, 0.12 + rnd() * 0.22 + f.slope * 0.2, rnd() < 0.4]); }
+    if (f.slope > 0.25 && rnd() < 0.35) { const off = (rnd() - 0.5) * w * 0.6; list.push([p.x + f.nx * off, p.z + f.nz * off, 0.16 + rnd() * 0.12, false]); } }
+  const stoneM = new THREE.MeshStandardMaterial({ color: 0x77726a, roughness: 0.9, flatShading: true }), mossM = new THREE.MeshStandardMaterial({ color: 0x4f6a3a, roughness: 1, flatShading: true });
+  for (const [m, moss] of [[stoneM, false], [mossM, true]]) {
+    const sub = list.filter((r) => r[3] === moss), im = new THREE.InstancedMesh(geo, m, sub.length);
+    sub.forEach(([x, z, s], k) => { o.position.set(x, hf(x, z) + s * 0.25, z); o.scale.set(s * (1 + rnd() * 0.6), s * (0.55 + rnd() * 0.3), s * (1 + rnd() * 0.5)); o.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); o.updateMatrix(); im.setMatrixAt(k, o.matrix); });
+    im.castShadow = im.receiveShadow = true; grp.add(im);
+  }
+  return { group: grp, points: P };
+}
+
 // 蓮の葉と花・岸の菖蒲
 export function pondPlants(scene, { cx, cz, rx, rz, y }, { pads = 18, lotus = 5, iris = 10 } = {}) {
   const padShape = new THREE.Shape(); padShape.moveTo(0, 0); padShape.absarc(0, 0, 1, 0.25, Math.PI * 2 - 0.05, false); padShape.lineTo(0, 0);

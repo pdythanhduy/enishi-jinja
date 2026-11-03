@@ -8,6 +8,7 @@ export function freeze(roots, scene) {
   const buckets = new Map();
   for (const r of roots) r.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || Array.isArray(o.material) || o.material.transparent || !o.visible) return;
+    for (let p = o; p; p = p.parent) if (p.userData.live) return;                  // 動く部分（御扉など）はそのまま
     if (o.matrixWorld.determinant() < 0) return;                                   // 反転したものは面の向きが変わるので除外
     const g = o.geometry, attrs = Object.keys(g.attributes).sort().join(",");
     const key = `${o.material.uuid}|${attrs}|${g.index ? 1 : 0}|${o.castShadow}|${o.receiveShadow}`;
