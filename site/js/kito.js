@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden, PLACES } from "./map.js?v=11032121";
+import { HONDEN, inHonden, PLACES } from "./map.js?v=11032132";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -493,13 +493,13 @@ export function setupKito(A) {
   const bar = document.createElement("div"); bar.id = "gokito"; bar.hidden = true;
   bar.innerHTML = `<span class="gk-t"></span><button class="btn primary gk-go" type="button">参列する</button>`;
   document.body.appendChild(bar);
-  let joined = false, joinedAt = 0, lastLeft = 1e9;
+  let joined = false, joinedAt = 0, lastLeft = 1e9, seating = false;   // seating：席へ向かっている途中
   const inHondenMe = () => inHonden(me.position.x, me.position.z);
   const secsLeft = () => { const d = new Date(Date.now() + 9 * 3600e3), m = d.getUTCMinutes(), s = d.getUTCSeconds(); return ((m < 30 ? 30 : 60) - m) * 60 - s; };
   bar.querySelector(".gk-go").onclick = () => {
     if (A.isBusy() || joined) return;
     joined = true; joinedAt = Date.now(); A.toast("本殿で合同祈祷を待ちます。始まるまで座ってお待ちください", 3200);
-    A.goSeat(A.freeCushion()).then(() => { if (joined && !running) { me.rotation.y = Math.PI; A.setPose(me, "seiza"); } });
+    seating = true; A.goSeat(A.freeCushion()).then(() => { seating = false; joinedAt = Date.now(); if (joined && !running) { me.rotation.y = Math.PI; A.setPose(me, "seiza"); } });
     paintBar();
   };
   function paintBar() {
@@ -511,7 +511,7 @@ export function setupKito(A) {
   }
   setInterval(() => {
     const left = secsLeft();
-    if (joined && !inHondenMe() && Date.now() - joinedAt > 25e3 && !A.isBusy()) joined = false;     // 本殿を離れたら取り消し
+    if (joined && !seating && !inHondenMe() && Date.now() - joinedAt > 25e3 && !A.isBusy()) joined = false;     // 本殿を離れたら取り消し
     // 0分・30分になった瞬間（残りが急に増える）
     if (left > lastLeft + 60) {
       if ((joined || inHondenMe()) && !running && !A.isBusy()) {
@@ -526,5 +526,6 @@ export function setupKito(A) {
     if (GANI.includes(gn)) return; GANI.splice(1, 0, gn);
     m.querySelector("#kito-gan").innerHTML = GANI.map((g2, i) => `<button class="${i ? "" : "on"}" data-g="${g2}">${g2}</button>`).join("");
   }
-  return { open: openForm, run, priest, miko, get running() { return running; }, secsLeft, addGan };
+  const cancelJoin = () => { if (!joined) return; joined = false; paintBar(); A.toast("参列をやめました。本殿の中にいれば、始まったときにそのまま参列できます", 3600); };
+  return { open: openForm, run, priest, miko, get running() { return running; }, secsLeft, addGan, cancelJoin };
 }

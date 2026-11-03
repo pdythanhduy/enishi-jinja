@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032121";
-import { buildWorld } from "./world.js?v=11032121";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032121";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032121";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032121";
-import { deeds } from "../deeds.js?v=11032121";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032121";
-import { fireflies } from "../fx.js?v=11032121";
-import { LIGHT_SPOTS } from "./arch.js?v=11032121";
-import { freeze } from "./freeze.js?v=11032121";
-import { setupSeasonal } from "./seasonal.js?v=11032121";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032121";
-import { makeBGM } from "./bgm.js?v=11032121";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032121";
-import { setupKenno } from "./kenno.js?v=11032121";
-import { setupSocial } from "./social.js?v=11032121";
-import { setupProfile } from "./profile.js?v=11032121";
-import { setupChores } from "./chores.js?v=11032121";
-import { setupSagyo } from "./sagyo.js?v=11032121";
-import { setupWelcome } from "./welcome.js?v=11032121";
-import { setupZen } from "./zen.js?v=11032121";
-import { setupMixer } from "./mixer.js?v=11032121";
-import { setupShakyo } from "./shakyo.js?v=11032121";
-import { setupTour } from "./tour.js?v=11032121";
-import { setupChat } from "./chat.js?v=11032121";
-import { setupKito, ofudaImage } from "./kito.js?v=11032121";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032121";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032121";
-import { connect, board } from "../net.js?v=11032121";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032121";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032132";
+import { buildWorld } from "./world.js?v=11032132";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032132";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032132";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032132";
+import { deeds } from "../deeds.js?v=11032132";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032132";
+import { fireflies } from "../fx.js?v=11032132";
+import { LIGHT_SPOTS } from "./arch.js?v=11032132";
+import { freeze } from "./freeze.js?v=11032132";
+import { setupSeasonal } from "./seasonal.js?v=11032132";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032132";
+import { makeBGM } from "./bgm.js?v=11032132";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032132";
+import { setupKenno } from "./kenno.js?v=11032132";
+import { setupSocial } from "./social.js?v=11032132";
+import { setupProfile } from "./profile.js?v=11032132";
+import { setupChores } from "./chores.js?v=11032132";
+import { setupSagyo } from "./sagyo.js?v=11032132";
+import { setupWelcome } from "./welcome.js?v=11032132";
+import { setupZen } from "./zen.js?v=11032132";
+import { setupMixer } from "./mixer.js?v=11032132";
+import { setupShakyo } from "./shakyo.js?v=11032132";
+import { setupTour } from "./tour.js?v=11032132";
+import { setupChat } from "./chat.js?v=11032132";
+import { setupKito, ofudaImage } from "./kito.js?v=11032132";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032132";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032132";
+import { connect, board } from "../net.js?v=11032132";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032132";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -126,6 +126,10 @@ let freeCam = false, camUser = false; const camT0 = new THREE.Vector3();
 const homeBtn = document.createElement("button"); homeBtn.id = "cam-home"; homeBtn.type = "button"; homeBtn.hidden = true; homeBtn.textContent = "📍 自分の場所へ"; document.body.appendChild(homeBtn);
 function camHome() { if (!freeCam) return; freeCam = false; homeBtn.hidden = true; }   // 追いかけを再開（なめらかに戻る）
 homeBtn.onclick = camHome;
+// 座って待っているとき（合同祈祷の参列など）に立ち上がるボタン
+const standBtn = document.createElement("button"); standBtn.id = "stand-up"; standBtn.type = "button"; standBtn.hidden = true; standBtn.textContent = "🧍 立ち上がる"; document.body.appendChild(standBtn);
+standBtn.onclick = () => { if (busy || cine) return; path = []; onArrive = null; setPose(me, null); kito?.cancelJoin?.(); standBtn.hidden = true; };
+setInterval(() => { standBtn.hidden = !(me.userData.pose === "seiza" && !busy && !cine && !intro && !document.body.classList.contains("in-room")); }, 300);
 controls.addEventListener("start", () => { camUser = true; camT0.copy(controls.target); });
 let camEndAt = 0;
 controls.addEventListener("end", () => { camUser = false; camEndAt = performance.now(); });
@@ -982,7 +986,7 @@ function loop() {
   else if (cine) cine(dt);
   else {
     const want = new THREE.Vector3(me.position.x, me.position.y + 1.0, me.position.z), delta = want.sub(controls.target).multiplyScalar(freeCam ? 0 : Math.min(1, dt * 4));
-    controls.target.add(delta); camera.position.add(delta); controls.update();
+    controls.target.add(delta); camera.position.add(delta); camT0.add(delta); controls.update();   // 追いかけで動いたぶんは「地図を引っぱった」に数えない
     // 千本鳥居の中ではカメラを笠木より下に
     if (region(me.position.x, me.position.z) === "trail" && Math.hypot(me.position.x + 2, me.position.z + 74) > 15 && !(me.position.x > STAGE.x0 - 2 && me.position.z > STAGE.z0 - 2 && me.position.z < STAGE.z1 + 2) && me.position.y + 2.6 < camera.position.y) camera.position.y += (me.position.y + 2.6 - camera.position.y) * Math.min(1, dt * 10);
     const gy = footY(camera.position.x, camera.position.z) + 0.8; if (camera.position.y < gy) camera.position.y = gy;   // 地面にめり込まない

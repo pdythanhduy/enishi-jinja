@@ -586,3 +586,6 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 .p-waka{max-height:none;height:auto;flex-shrink:0;gap:.25rem}
 .p-waka span{white-space:nowrap}
 .p-waka{flex-direction:column}.p-waka span:nth-child(2n){padding-top:1.4em}.p-top .p-rank{font-size:2.8rem;padding:.6rem .5rem}
+
+/* 座っているときの「立ち上がる」 */
+#stand-up{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:30;border:1px solid rgba(232,198,122,.6);background:rgba(20,16,12,.78);color:#f4ead8;border-radius:999px;padding:.55rem 1.1rem;font-size:.9rem;backdrop-filter:blur(6px)}
