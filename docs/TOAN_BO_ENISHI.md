@@ -4,7 +4,7 @@
 > Dành cho chủ dự án đọc lại, và cho mọi session Claude mới đọc **trước khi làm tiếp**.
 > Bản ngắn cho máy đọc: `CLAUDE.md` ở thư mục gốc repo.
 
-- **Web đang chạy:** https://pdythanhduy.github.io/enishi-jinja/
+- **Web đang chạy:** https://enishijinja.com/ (link cũ pdythanhduy.github.io/enishi-jinja tự chuyển sang)
 - **Repo:** github.com/pdythanhduy/enishi-jinja (public). Thư mục máy: `C:\Users\thanh\net-jinja`
 - **Máy chủ thời gian thực:** https://enishi-rooms.thanhduy8vn.workers.dev (Cloudflare Worker)
 

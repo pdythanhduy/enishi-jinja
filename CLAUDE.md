@@ -1,6 +1,6 @@
 # えにし神社 (Enishi Jinja) — 3D online shrine
 
-Live: https://pdythanhduy.github.io/enishi-jinja/ (public repo pdythanhduy/enishi-jinja). The user writes in Vietnamese; site text is Japanese.
+Live: https://enishijinja.com/ (GitHub Pages custom domain; the old pdythanhduy.github.io/enishi-jinja URL 301-redirects. DNS is on Cloudflare in DNS-only mode. Public repo pdythanhduy/enishi-jinja). The user writes in Vietnamese; site text is Japanese.
 
 **Brand**
 - Name: えにし神社 ～作業と祈りのオンライン神社～ (concept: 祈り × 作業・集中).
