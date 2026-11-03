@@ -3,7 +3,7 @@
 // 願いの文は端末の中だけで使い、サーバーには送らない。
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { HONDEN, inHonden } from "./map.js?v=11031358";
+import { HONDEN, inHonden } from "./map.js?v=11031404";
 
 export const GANI = ["当選祈願", "縁結び", "合格祈願", "心願成就", "家内安全", "健康長寿"];
 const FLOOR = 1.7;                      // 本殿の床の高さ
@@ -428,5 +428,10 @@ export function setupKito(A) {
     }
     lastLeft = left; paintBar();
   }, 1000);
-  return { open: openForm, run, priest, miko, get running() { return running; }, secsLeft };
+  // 季節の願意を足す（七五三など）
+  function addGan(gn) {
+    if (GANI.includes(gn)) return; GANI.splice(1, 0, gn);
+    m.querySelector("#kito-gan").innerHTML = GANI.map((g2, i) => `<button class="${i ? "" : "on"}" data-g="${g2}">${g2}</button>`).join("");
+  }
+  return { open: openForm, run, priest, miko, get running() { return running; }, secsLeft, addGan };
 }

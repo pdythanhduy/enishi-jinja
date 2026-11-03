@@ -14,7 +14,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2316201c'/><path d='M8 18h48l-4 6H12z' fill='%23d9412b'/><rect x='14' y='26' width='36' height='4' fill='%23d9412b'/><rect x='18' y='24' width='5' height='32' fill='%23d9412b'/><rect x='41' y='24' width='5' height='32' fill='%23d9412b'/></svg>">
-<link rel="stylesheet" href="style.css?v=11031358">
+<link rel="stylesheet" href="style.css?v=11031404">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
@@ -23,7 +23,14 @@
 </script>
 </head>
 <body>
-<div id="loading"><div class="lg-in"><div class="lg-torii">⛩</div><h1>えにし神社</h1><p>境内を開いています…</p></div></div>
+<div id="loading"><div class="lg-art" aria-hidden="true"></div><div class="lg-in">
+  <p class="lg-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="lg-hall">― みんなで祈るネット神社 ―</p>
+  <div class="lg-bar"><i></i></div><p class="lg-tip" id="lg-tip">境内を開いています…</p></div></div>
+<script>
+// 読みこみ中の豆知識（作法と境内の楽しみ方）
+(function () { var tips = ["手水は「左手 → 右手 → 口 → 柄杓」の順に清めます", "お賽銭は「ご縁」にかけて五円玉が人気です", "二礼二拍手一礼。最後の一礼まで、心をこめて", "毎時0分と30分は、本殿で合同祈祷。みんなの名前が読み上げられます", "座布団をタップすると、好きな場所に座って祈れます", "落ち葉を掃くと、下から何かが見つかるかもしれません", "献灯した灯りは、毎日お参りするほど明るくなります"], i = Math.floor(Math.random() * tips.length), el = document.getElementById("lg-tip");
+  el.textContent = tips[i]; var iv = setInterval(function () { if (!document.getElementById("loading") || document.getElementById("loading").classList.contains("done")) return clearInterval(iv); i = (i + 1) % tips.length; el.style.opacity = 0; setTimeout(function () { el.textContent = tips[i]; el.style.opacity = 1; }, 300); }, 2600); })();
+</script>
 <canvas id="c"></canvas>
 <div id="grain" aria-hidden="true"></div>
 <div id="title-card" hidden><div class="tc-in"><p class="tc-sub">知らない誰かと、同じ境内で。</p><h1>えにし神社</h1><p class="tc-hall">― みんなで祈るネット神社 ―</p><p class="tc-skip">タップでスキップ</p></div></div>
@@ -118,6 +125,7 @@
     <h3>おみくじ（各社 一日一回）</h3><div id="juyo-kuji" class="juyo-list"></div>
     <h3>御朱印</h3><div id="juyo-shuin" class="juyo-list"></div><p class="sub" id="juyo-limited"></p>
     <h3>御守り</h3><div id="juyo-mamori" class="mamori-list"></div>
+    <a class="about-link" href="about.html">運営者情報・プライバシーポリシー</a>
   </div>
 </section>
 <section class="modal" id="m-stamp" hidden>
@@ -176,7 +184,7 @@
   </div>
 </section>
 
-<footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。</footer>
-<script type="module" src="js/app.js?v=11031358"></script>
+<footer id="note">えにし神社は実在の神社ではない、ネット上の小さな憩いの場です（エンタメ）。おみくじの結果や祈願は、実際の当選・ご利益を約束するものではありません。 <a href="about.html">運営者情報・プライバシー</a></footer>
+<script type="module" src="js/app.js?v=11031404"></script>
 </body>
 </html>

@@ -339,3 +339,22 @@ body.cine #gokito{opacity:0;pointer-events:none}
 .map-legend b{grid-row:span 2;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font-size:.68rem}
 .map-legend small{color:var(--muted);font-size:.62rem;font-family:system-ui,sans-serif}
 .map-wrap img{max-height:min(56vh,640px)}
+/* ---------------- 読みこみ画面 ---------------- */
+#loading{background:#0b0f18;overflow:hidden;transition:opacity 1s ease}
+.lg-art{position:absolute;inset:-4%;background:url("img/gen/keyart_s.jpg") center/cover;transform:scale(1.04)}
+.lg-art::after{content:"";position:absolute;inset:0;z-index:0;background:url("img/gen/keyart.jpg") center/cover}
+#loading .lg-art{animation:lg-zoom 14s ease-out forwards}
+.lg-art::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(6,10,20,.35),rgba(6,10,20,.05) 35%,rgba(6,10,20,.2) 60%,rgba(6,10,20,.85))}
+@keyframes lg-zoom{from{transform:scale(1.04)}to{transform:scale(1.12)}}
+#loading .lg-in{position:relative;z-index:2;text-align:center;padding:0 max(16px,env(safe-area-inset-left))}
+#loading .lg-in h1{font-size:clamp(2.4rem,9vw,4.6rem);letter-spacing:.35em;margin:.2em 0 .15em .35em;text-shadow:0 0 30px rgba(255,190,110,.65),0 2px 12px rgba(0,0,0,.6)}
+.lg-sub{letter-spacing:.3em;font-size:.95rem;text-shadow:0 1px 8px rgba(0,0,0,.7)}.lg-hall{color:var(--gold);letter-spacing:.4em;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.lg-bar{width:min(240px,60vw);height:3px;margin:1.6rem auto .8rem;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.lg-bar i{display:block;height:100%;width:40%;background:linear-gradient(90deg,transparent,#f3d999,transparent);animation:lg-bar 1.4s ease-in-out infinite}
+#loading.ready .lg-bar i{width:100%;animation:none;background:#f3d999;transition:width .3s}
+@keyframes lg-bar{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.lg-tip{min-height:2.6em;max-width:30em;margin:0 auto;font-size:.82rem;color:#f4ead8;text-shadow:0 1px 8px rgba(0,0,0,.8);transition:opacity .3s}
+@media (prefers-reduced-motion:reduce){#loading .lg-art,.lg-bar i{animation:none}}
+#loading .lg-in::before{content:"";position:absolute;inset:-30% -20%;z-index:-1;background:radial-gradient(ellipse at center,rgba(6,10,20,.55),transparent 65%)}
+#note a{pointer-events:auto;color:rgba(244,234,216,.6);text-underline-offset:2px}
+.sheet .about-link{display:block;margin-top:.8rem;font-size:.75rem;color:var(--muted)}

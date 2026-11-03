@@ -1,8 +1,8 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031358";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031358";
-import { FOLIAGE } from "./env.js?v=11031358";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, pagoda, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11031404";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw } from "./map.js?v=11031404";
+import { FOLIAGE } from "./env.js?v=11031404";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -64,8 +64,11 @@ export function buildWorld(scene, env, { mobile }) {
   for (const [x, z] of [[9, 47], [27, 47], [9, 61], [27, 61]]) W.lamps.push(toro(scene, x, z, 0, env, 0.85));
 
   // ---------------------------------------------------------------- ④ 楼門 と 玉垣
-  romon(scene, env, { z: 41 });
-  tamagaki(scene, [[[-24.5, 41], [-6.2, 41]], [[6.2, 41], [24.5, 41]], [[-24.5, 41], [-24.5, 26]], [[24.5, 41], [24.5, 26]], [[-24.5, 2], [-24.5, -6]], [[24.5, 2], [24.5, -6]],
+  romon(scene, env, { z: 41, s: 1.4 });
+  // 回廊：楼門の左右から境内を囲む
+  kairo(scene, env, { cx: -17.35, cz: 41, len: 16.9, ry: Math.PI }); kairo(scene, env, { cx: 17.35, cz: 41, len: 16.9, ry: Math.PI });
+  kairo(scene, env, { cx: -24.5, cz: 34.15, len: 16.3, ry: Math.PI / 2 }); kairo(scene, env, { cx: 24.5, cz: 34.15, len: 16.3, ry: -Math.PI / 2 });
+  tamagaki(scene, [[[-24.5, 2], [-24.5, -6]], [[24.5, 2], [24.5, -6]],
     [[-42, 26], [-24.5, 26]], [[24.5, 26], [42, 26]], [[-42, 26], [-42, 2]], [[42, 26], [42, 2]], [[-42, 2], [-24.5, 2]], [[24.5, 2], [34, 2]]]);
   torii(scene, { x: 38.5, z: 2.2, s: 0.75, gaku: null });
   for (const s of [-1, 1]) { torii(scene, { x: s * 24.5, z: 17, s: 0.9, ry: Math.PI / 2, gaku: null }); }
@@ -152,7 +155,7 @@ export function buildWorld(scene, env, { mobile }) {
   const uh = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), new THREE.MeshStandardMaterial({ color: 0x9a7a4a, metalness: 0.75, roughness: 0.3 })); uh.position.set(0.85, 1.05, 0); uh.scale.set(1.1, 0.9, 0.9); ushi.add(uh);  // 撫でられて光る頭
   for (const s of [-1, 1]) { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.28, 8), bronze); horn.rotation.z = -0.5; horn.position.set(0.9, 1.35, s * 0.2); ushi.add(horn); }
   W.ushi = ushi;
-  for (const s of [-1, 1]) for (const [x, z] of [[41.5, 21], [41.5, 7]]) W.lamps.push(toro(scene, s * x, z, 0, env, 0.9));
+  for (const s of [-1, 1]) for (const [x, z] of [[40.6, 21], [40.6, 6.5]]) W.lamps.push(toro(scene, s * x, z, 0, env, 0.9));
 
   // ---------------------------------------------------------------- ⑪ 千本鳥居（山道）— InstancedMesh
   const trailPts = TRAIL.getSpacedPoints(160);
@@ -199,7 +202,8 @@ export function buildWorld(scene, env, { mobile }) {
   // ---------------------------------------------------------------- 木々（InstancedMesh：幹＋葉）
   const trees = { momiji: [], sakura: [], ume: [], sugi: [] };
   const halls = [PLACES.enmusubi.pos, PLACES.gokaku.pos];   // 社の中と正面の広場に木が生えないように
-  const add = (k, x, z, s = 1) => { if (!halls.some(([hx, hz]) => Math.abs(x - hx) < SMALL.W / 2 + 2.5 && z > hz - SMALL.D / 2 - 2.5 && z < 26.5)) trees[k].push([x, z, s]); };
+  const add = (k, x, z, s = 1) => { if (Math.abs(x) > 21 && Math.abs(x) < 28 && z > 24.5 && z < 44) return;   // 回廊の上には木を植えない
+    if (!halls.some(([hx, hz]) => Math.abs(x - hx) < SMALL.W / 2 + 2.5 && z > hz - SMALL.D / 2 - 2.5 && z < 26.5)) trees[k].push([x, z, s]); };
   for (let z = 74; z > 45; z -= 3.2) for (const sgn of [-1, 1]) add("momiji", sgn * sr(7.5, 11), z + sr(-1, 1), sr(0.9, 1.3));        // 参道の紅葉
   for (let i = 0; i < 40; i++) { const x = sr(-40, -8), z = sr(46, 84); if (Math.abs(x) > 7.5) add("momiji", x, z, sr(0.9, 1.4)); }
   for (let i = 0; i < 30; i++) { const x = sr(30, 44), z = sr(44, 84); add("momiji", x, z, sr(0.9, 1.4)); }

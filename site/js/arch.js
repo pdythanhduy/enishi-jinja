@@ -417,8 +417,8 @@ function smallHallInterior(g, theme, W, D, F) {
 }
 
 // ------------------------------------------------------------------ 楼門（二階建ての門）
-export function romon(parent, env, { x = 0, z = 0 } = {}) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g); g.userData.static = true;
+export function romon(parent, env, { x = 0, z = 0, s = 1 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); parent.add(g); g.userData.static = true;
   const W = 12, D = 4;
   box(g, W + 0.6, 0.4, D + 0.6, MAT.stoneD, 0, 0.2, 0);
   for (const cx of [-5.6, -2, 2, 5.6]) for (const cz of [-D / 2 + 0.3, D / 2 - 0.3]) cyl(g, 0.3, 0.3, 5, MAT.shu, cx, 2.9, cz, 16);
@@ -435,6 +435,36 @@ export function romon(parent, env, { x = 0, z = 0 } = {}) {
   box(g, 1.4, 1.0, 0.1, MAT.kuro, 0, 8.8, D / 2 + 0.12);                                     // 扁額
   chochin(g, 0, 4.4, D / 2 + 0.3, env, 1.8);                                                 // 大提灯
   for (const s of [-1, 1]) chochin(g, s * 3.8, 4.6, D / 2 + 0.4, env, 0.9);
+  return g;
+}
+
+// ------------------------------------------------------------------ 回廊：境内を囲む屋根つきの廊下（内側は柱だけ、外側は白壁と連子窓）
+let RENJI = null;
+export function kairo(parent, env, { cx, cz, len, ry, D = 2.6 }) {
+  const g = new THREE.Group(); g.position.set(cx, 0, cz); g.rotation.y = ry; parent.add(g); g.userData.static = true;   // ローカル +z が境内側
+  if (!RENJI) {
+    const c = document.createElement("canvas"); c.width = 128; c.height = 80; const x = c.getContext("2d");
+    x.fillStyle = "#1d2a22"; x.fillRect(0, 0, 128, 80); x.fillStyle = "#4f7a5a"; for (let i = 6; i < 128; i += 12) x.fillRect(i, 4, 6, 72);
+    x.strokeStyle = "#2a1d14"; x.lineWidth = 6; x.strokeRect(3, 3, 122, 74);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; RENJI = new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 });
+  }
+  box(g, len, 0.32, D, MAT.stoneD, 0, 0.16, 0);
+  box(g, len - 0.2, 0.06, D - 0.35, MAT.woodL, 0, 0.35, 0.05);
+  const bays = Math.max(2, Math.round(len / 2.4)), step = len / bays;
+  for (let i = 0; i <= bays; i++) {
+    const xx = -len / 2 + i * step;
+    cyl(g, 0.14, 0.14, 3.0, MAT.shu, xx, 1.8, D / 2 - 0.2, 10);
+    cyl(g, 0.14, 0.14, 3.0, MAT.shu, xx, 1.8, -D / 2 + 0.2, 10);
+  }
+  box(g, len, 2.9, 0.14, MAT.white, 0, 1.8, -D / 2 + 0.12);                       // 外側の白壁
+  box(g, len, 0.32, 0.12, MAT.shu, 0, 0.5, -D / 2 + 0.2);
+  for (let i = 0; i < bays; i++) {                                                     // 連子窓（ひと間ずつ）
+    const xx = -len / 2 + (i + 0.5) * step;
+    const w = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(1.5, step - 0.6), 0.85), RENJI); w.position.set(xx, 1.95, -D / 2 + 0.2); g.add(w);
+    if (i % 2 === 0) chochin(g, xx, 2.75, D / 2 - 0.25, env, 0.5);
+  }
+  for (const zz of [D / 2 - 0.2, -D / 2 + 0.2]) box(g, len + 0.2, 0.24, 0.24, MAT.shuD, 0, 3.3, zz);
+  roof(g, { w: len + 0.8, d: D + 1.8, h: 1.15, lift: 0.28, y: 3.42, mat: MAT.copper, ridgeGold: false });
   return g;
 }
 

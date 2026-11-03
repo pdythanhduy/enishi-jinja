@@ -5,27 +5,28 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031358";
-import { buildWorld } from "./world.js?v=11031358";
-import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031358";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031358";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031358";
-import { deeds } from "../deeds.js?v=11031358";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031358";
-import { fireflies } from "../fx.js?v=11031358";
-import { LIGHT_SPOTS } from "./arch.js?v=11031358";
-import { freeze } from "./freeze.js?v=11031358";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031358";
-import { makeBGM } from "./bgm.js?v=11031358";
-import { setupGuide, STEP_OF } from "./guide.js?v=11031358";
-import { setupKenno } from "./kenno.js?v=11031358";
-import { setupSocial } from "./social.js?v=11031358";
-import { setupProfile } from "./profile.js?v=11031358";
-import { setupKito } from "./kito.js?v=11031358";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031358";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11031358";
-import { connect, board } from "../net.js?v=11031358";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031358";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11031404";
+import { buildWorld } from "./world.js?v=11031404";
+import { PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden } from "./map.js?v=11031404";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11031404";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11031404";
+import { deeds } from "../deeds.js?v=11031404";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11031404";
+import { fireflies } from "../fx.js?v=11031404";
+import { LIGHT_SPOTS } from "./arch.js?v=11031404";
+import { freeze } from "./freeze.js?v=11031404";
+import { setupSeasonal } from "./seasonal.js?v=11031404";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11031404";
+import { makeBGM } from "./bgm.js?v=11031404";
+import { setupGuide, STEP_OF } from "./guide.js?v=11031404";
+import { setupKenno } from "./kenno.js?v=11031404";
+import { setupSocial } from "./social.js?v=11031404";
+import { setupProfile } from "./profile.js?v=11031404";
+import { setupKito } from "./kito.js?v=11031404";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE } from "./avatar.js?v=11031404";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11031404";
+import { connect, board } from "../net.js?v=11031404";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS } from "../content.js?v=11031404";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -762,7 +763,7 @@ const setCount = (n) => { $("#ppl").textContent = Math.max(1, n || 1); };
 
 // ------------------------------------------------------------------ オープニング（大鳥居から参道、楼門をこえて本殿へ）
 let intro = !QS.has("nointro") && store.get("enishi_intro2", "") !== today() ? { t: 0 } : null;
-const introPath = new THREE.CatmullRomCurve3([[0, 40, 140], [0, 9, 92], [0, 3.2, 78], [0, 3, 58], [0, 9, 46], [0, 16, 34], [0, 12, 26], [6, 7, 92]].map((p) => new THREE.Vector3(...p)));
+const introPath = new THREE.CatmullRomCurve3([[0, 40, 140], [0, 9, 92], [0, 3.2, 78], [0, 3, 58], [0, 12, 49], [0, 21, 33], [0, 12, 26], [6, 7, 92]].map((p) => new THREE.Vector3(...p)));
 const introLook = new THREE.CatmullRomCurve3([[0, 6, 76], [0, 5, 70], [0, 3, 50], [0, 6, 38], [0, 8, 10], [0, 7, 1], [0, 6, 1], [0, 1.2, 80]].map((p) => new THREE.Vector3(...p)));
 if (intro) { store.set("enishi_intro2", today()); $("#title-card").hidden = false; controls.enabled = false; }
 function runIntro(dt) {
@@ -832,7 +833,7 @@ net = connect({ hall: "tosen", name: myName, look: myLook,
   onNope: () => toast("その言葉は境内では使えません") });
 board.list("tosen").then((r) => { addEma(r.total || 0); addKuji(Math.min(60, Math.floor((r.lights || 0) / 2))); const n = r.lights || 0; setLights(n); for (let i = 0; i < Math.min(n, MOBILE ? 80 : 160); i++) lanterns.spawn(0, 0, 0, { instant: true }); }).catch(() => {});
 loop();
-setTimeout(() => $("#loading").classList.add("done"), 300);
+$("#loading").classList.add("ready"); setTimeout(() => $("#loading").classList.add("done"), Math.max(300, 1400 - performance.now()));   // 絵を少しだけ見せてから
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
 if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
 // ------------------------------------------------------------------ 御祈祷（kito.js）
@@ -885,4 +886,12 @@ hooks.push((kind) => guide.onDeed(kind));
 function onboard() { if (!store.get("enishi_profile", 0) && !busy) profile.open(true); }
 if (!intro) setTimeout(onboard, 1200);
 $("#juyo-kito").onclick = () => { $("#m-juyo").hidden = true; kito.open(); };
+// ------------------------------------------------------------------ 季節の行事（seasonal.js）
+setupSeasonal({ scene, W, toast, addAction: (a) => ACTIONS.unshift(a), addGan: (g) => kito.addGan(g),
+  chitose: () => {
+    if (!onceToday("chitose")) { toast("千歳飴は一日にひとつ。明日またどうぞ 🍬"); return; }
+    const got = store.get("enishi_finds", {}); got.chitose = (got.chitose || 0) + 1; store.set("enishi_finds", got);
+    tone([[1046, 0.3], [1568, 0.2]], 1.0, 0.08); bubbleAt(me, "🍬", 2200, 2.2); D.add(1);
+    toast("🍬 千歳飴をいただきました。細く長く、粘り強く…子どもの長寿と健やかな成長を願う縁起物です", 5200);
+  } });
 window.__enishi = { social: () => social, kenno: () => kenno, kito, hayashi, leaves, darkL, kit, fireworks, D: () => D, hooks, deedHook, run: (id) => ACTIONS.find((a) => a.id === id)?.run(), isBusy: () => busy, scene, me, walkTo, goPlace, others, env, camera, W, controls, renderer, composer, bloom };
