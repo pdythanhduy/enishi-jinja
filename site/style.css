@@ -564,3 +564,8 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 .lg-err{font-size:.8rem;color:#ffd9c8;max-width:80vw;margin:.4rem auto;word-break:break-all}
 .lg-btns{display:flex;gap:.6rem;justify-content:center;margin-top:.5rem}
 .lg-btns button{border:1px solid rgba(232,198,122,.5);background:rgba(0,0,0,.35);color:#f4ead8;border-radius:999px;padding:.5rem 1rem;font-size:.85rem}
+
+.sk-meter{position:relative;width:18px;height:120px;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid var(--line);overflow:hidden;align-self:flex-start}
+.sk-meter i{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,#c8321e,#f3d999);transition:height .15s}
+.sk-meter.bad i{background:#8a7f70}
+.sk-meter span{position:absolute;left:-2px;right:-2px;top:0;border-top:2px dashed var(--gold)}

@@ -25,6 +25,9 @@ const rand = (a, b) => a + Math.random() * (b - a);
 
 export function setupMixer(A) {
   const vol = Object.assign(Object.fromEntries(LAYERS.map((l) => [l.id, 0])), A.store.get("enishi_mix", {}));
+  let snapV = null;
+  // 以前は作業室の「雨と川の音」がそのまま保存されていた：その組み合わせなら一度だけ静かに戻す
+  if (!A.store.get("enishi_mix_fix1", 0)) { A.store.set("enishi_mix_fix1", 1); if (Math.abs((vol.rain || 0) - 0.45) < 0.01 && Math.abs((vol.stream || 0) - 0.5) < 0.01) { for (const k of Object.keys(vol)) if (k !== "music") vol[k] = 0; A.store.set("enishi_mix", vol); } }
   let every = A.store.get("enishi_mix_every", 10), a = null, master = null;
   const g = {}, started = {};
   const save = () => { A.store.set("enishi_mix", vol); A.store.set("enishi_mix_every", every); };
@@ -142,13 +145,15 @@ export function setupMixer(A) {
     const p = e.target.closest("[data-p]"); if (p) { setPreset(+p.dataset.p); A.toast(`${PRESETS[+p.dataset.p].icon} 「${PRESETS[+p.dataset.p].name}」`, 1800); }
     if (e.target.closest("[data-stop]")) { LAYERS.forEach((l) => { if (l.id !== "music") vol[l.id] = 0; }); applyAll(); save(); paint(); A.onChange?.(); }
   });
-  function setPreset(i) { const mix = PRESETS[i].mix; LAYERS.forEach((l) => { vol[l.id] = l.id === "music" && mix.music === undefined ? vol.music : mix[l.id] || 0; }); applyAll(); save(); paint(); A.onChange?.(); }
+  function setPreset(i, temp = false) { const mix = PRESETS[i].mix; LAYERS.forEach((l) => { vol[l.id] = l.id === "music" && mix.music === undefined ? vol.music : mix[l.id] || 0; }); applyAll(); if (!temp) save(); paint(); A.onChange?.(); }
   // 前回の設定は、最初に画面に触れたときに鳴らす（ブラウザの決まり）
   addEventListener("pointerdown", () => { if (any()) applyAll(); }, { once: true });
   vol.music = A.getMusic();
   return {
     open: () => { vol.music = A.getMusic(); paint(); m.hidden = false; },
-    preset: (name) => { const i = PRESETS.findIndex((p) => p.name === name); if (i >= 0) setPreset(i); },
+    preset: (name, temp = false) => { const i = PRESETS.findIndex((p) => p.name === name); if (i >= 0) setPreset(i, temp); },
+    snap: () => { snapV = { ...vol }; },                                          // 一時的な音のまえに、今の組み合わせを覚える
+    restore: () => { if (!snapV) return; Object.assign(vol, snapV); snapV = null; applyAll(); paint(); },
     playing: any,
   };
 }

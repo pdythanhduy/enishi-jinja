@@ -24,7 +24,7 @@ export function setupShakyo(A) {
       <p class="sub sk-count"></p></div>
     <div class="sk-write" hidden>
       <div class="sk-paper"><div class="sk-text" lang="ja"></div><div class="sk-seal" hidden><b>奉納</b><small></small></div></div>
-      <div class="sk-pad"><canvas width="300" height="300" aria-label="なぞり書きの紙"></canvas><div class="sk-padside"><b class="sk-next"></b><small class="sk-tip">うすい字を、なぞって書きましょう</small><button type="button" class="btn sk-clear">書き直す</button></div></div>
+      <div class="sk-pad"><canvas width="300" height="300" aria-label="なぞり書きの紙"></canvas><div class="sk-padside"><b class="sk-next"></b><div class="sk-meter" title="なぞった量"><i></i><span></span></div><small class="sk-tip">うすい字の線の上を、筆でなぞります。メーターが印まで来たら、次の字へ進みます</small><button type="button" class="btn sk-clear">書き直す</button></div></div>
       <div class="sk-ctl"><input class="sk-in" placeholder="または、同じ字を打つ（日本語入力）" autocomplete="off" autocapitalize="off" lang="ja"></div>
       <div class="row"><span class="sub sk-prog"></span><button type="button" class="btn" data-back>ほかの文へ</button></div></div></div>`;
   document.body.appendChild(m);
@@ -69,12 +69,12 @@ export function setupShakyo(A) {
   const pad = $(".sk-pad canvas"), pc = pad.getContext("2d"), P = 300, R = 60;
   const ink = document.createElement("canvas"); ink.width = ink.height = P; const ic = ink.getContext("2d");
   const small = document.createElement("canvas"); small.width = small.height = R; const sc = small.getContext("2d", { willReadFrequently: true });
-  let glyph = null, glyphN = 1, stroke = null;
+  let glyph = null, glyphN = 1, stroke = null, meterTick = 0; const NEED = 0.45;   // 字の線の45%をなぞれば一字
   const FONT = (px) => `${px}px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif`;
   function padChar() {
     ic.clearRect(0, 0, P, P);
     if (!cur || pos >= chars.length) { glyph = null; drawPad(); $(".sk-next").textContent = ""; return; }
-    const ch = chars[pos].textContent; $(".sk-next").textContent = `${pos + 1} / ${chars.length}`; $(".sk-tip").textContent = "うすい字を、なぞって書きましょう"; $(".sk-tip").classList.remove("warn");
+    const ch = chars[pos].textContent; $(".sk-next").textContent = `${pos + 1} / ${chars.length}`; $(".sk-tip").textContent = "うすい字の線の上を、筆でなぞります。メーターが印まで来たら、次の字へ進みます"; $(".sk-meter i").style.height = "0%"; $(".sk-tip").classList.remove("warn");
     sc.clearRect(0, 0, R, R); sc.fillStyle = "#000"; sc.font = FONT(R * 0.86); sc.textAlign = "center"; sc.textBaseline = "middle"; sc.fillText(ch, R / 2, R / 2 + R * 0.04);
     const d = sc.getImageData(0, 0, R, R).data; glyph = new Uint8Array(R * R); glyphN = 0; for (let i = 0; i < R * R; i++) if (d[i * 4 + 3] > 90) { glyph[i] = 1; glyphN++; }
     drawPad();
@@ -94,10 +94,13 @@ export function setupShakyo(A) {
   for (const ev of ["touchstart", "touchmove"]) pad.addEventListener(ev, (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   pad.addEventListener("pointerdown", (e) => { if (!glyph) return; e.preventDefault(); pad.setPointerCapture(e.pointerId); stroke = padPt(e); });
   pad.addEventListener("pointermove", (e) => { if (!stroke) return; e.preventDefault(); const p = padPt(e);
-    ic.strokeStyle = "#17120d"; ic.lineCap = ic.lineJoin = "round"; ic.lineWidth = 22; ic.beginPath(); ic.moveTo(stroke[0], stroke[1]); ic.lineTo(p[0], p[1]); ic.stroke(); stroke = p; drawPad();
-    if (Math.random() < 0.15) A.brush?.(); });
+    ic.strokeStyle = "#17120d"; ic.lineCap = ic.lineJoin = "round"; ic.lineWidth = 26; ic.beginPath(); ic.moveTo(stroke[0], stroke[1]); ic.lineTo(p[0], p[1]); ic.stroke(); stroke = p; drawPad();
+    if (Math.random() < 0.15) A.brush?.();
+    if (++meterTick % 4 === 0) { const { cover, stray } = score(), k = Math.min(1, cover / NEED); $(".sk-meter i").style.height = `${k * 100}%`; $(".sk-meter").classList.toggle("bad", stray > 0.55);
+      if (cover >= NEED && stray < 0.55) { stroke = null; A.tone?.([[784, 0.25]], 0.4, 0.04); write(chars[pos].textContent); } } });
   const up = () => { if (!stroke) return; stroke = null; const { cover, stray } = score();
-    if (cover >= 0.5 && stray < 0.55) { A.tone?.([[784, 0.25]], 0.4, 0.04); write(chars[pos].textContent); }
+    $(".sk-meter i").style.height = `${Math.min(1, cover / NEED) * 100}%`;
+    if (cover >= NEED && stray < 0.55) { A.tone?.([[784, 0.25]], 0.4, 0.04); write(chars[pos].textContent); }
     else if (stray >= 0.55 && cover < 0.3) tip("字の形にそって、なぞってみましょう"); };
   pad.addEventListener("pointerup", up); pad.addEventListener("pointercancel", up);
   $(".sk-clear").onclick = () => { ic.clearRect(0, 0, P, P); drawPad(); };

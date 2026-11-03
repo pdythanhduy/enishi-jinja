@@ -2,8 +2,8 @@
 // ポモドーロは部屋で共通：日本時間の毎時 :00 と :30 に始まり、25分集中・5分休憩。休憩に入ると鈴が鳴り、みんなで一礼。
 // 部屋にいる人は頭の上に「🛶 屋形船で作業中」「📖 書院で作業中」と出て、正座で並ぶ。集中の5分ごとに徳+5。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11032054";
-import { SHOIN, YAKATA } from "./map.js?v=11032054";
+import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11032101";
+import { SHOIN, YAKATA } from "./map.js?v=11032101";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...o });
 const jst = () => new Date(Date.now() + 9 * 3600e3);
@@ -192,9 +192,11 @@ export function setupSagyo(A) {
   }
   const paintN = () => { const on = "Notification" in window && Notification.permission === "granted", b = hud.querySelector(".rh-n"); b.textContent = on ? "🔔 通知オン" : "🔔 通知"; b.classList.toggle("on", on); };
   function setChannel(ch) {
-    if (!cur) return; cur.ch = ch; A.store.set("enishi_room_ch", ch);
+    if (!cur) return; const prev = cur.ch; cur.ch = ch; A.store.set("enishi_room_ch", ch);
     A.ensureMusic(); A.bgm.setChannel(ch === "keidai" ? null : ch);
-    if (ch === "nature") A.mixer.preset("雨と川"); paint();
+    if (ch === "nature" && !cur.snapped) { A.mixer.snap(); cur.snapped = true; A.mixer.preset("雨と川", true); }   // 部屋の中だけの音
+    else if (ch !== "nature" && cur.snapped) { A.mixer.restore(); cur.snapped = false; }
+    paint();
   }
   hud.addEventListener("click", (e) => {
     if (e.target.closest(".rh-row:first-child,.rh-main")) { hud.classList.toggle("mini"); return; }
@@ -247,7 +249,7 @@ export function setupSagyo(A) {
     if (!cur) return;
     const c = cur; cur = null; clearInterval(c.iv);
     hud.hidden = true; document.body.classList.remove("focus-quiet", "in-room"); document.title = A.title;
-    A.bgm.setChannel(null); A.setStatus(c.prev || ""); A.setCine(null); A.setPose(A.me, null);
+    A.bgm.setChannel(null); if (c.snapped) A.mixer.restore(); A.setStatus(c.prev || ""); A.setCine(null); A.setPose(A.me, null);
     A.warpTo(c.room.entry);
     const s = stats(); A.toast(`おつかれさまでした。今日は ${s.n}ポモドーロ・${s.min}分 集中しました 🍅`, 5000);
     c.done?.();
