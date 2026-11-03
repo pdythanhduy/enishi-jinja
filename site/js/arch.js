@@ -682,12 +682,18 @@ export function meotoSugi(parent, { x, z, y }) {
 }
 
 // ------------------------------------------------------------------ 五重塔
-export function pagoda(parent, env, { x, z, y = 0 }) {
+export function pagoda(parent, env, { x, z, y = 0, ground = () => -0.8 }) {   // ground(lx, lz)：塔の足もとから見た地面の高さ
   const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); g.userData.static = true;
   const tile = std(0x3b3e44, { roughness: 0.75 }), green = std(0x3f7a68, { roughness: 0.6 }), wh = MAT.white;
   // 基壇（二段）と正面の石段、まわりの苔
   box(g, 8.8, 3.45, 8.8, MAT.stoneD, 0, -1.28, 0); box(g, 7.8, 0.4, 7.8, MAT.stone, 0, 0.65, 0);   // 基壇（斜面に負けないよう地中まで）
-  for (let i = 0; i < 6; i++) box(g, 2.6, 0.28, 0.4, MAT.stoneL, 0, 0.14 + (i - 3) * 0.28, 4.6 - (i - 3) * 0.35 + (i < 3 ? 0 : 0));   // 正面の石段
+  // 正面の石段：基壇の上から、斜面の地面まで一段ずつ。段は地中まで埋めて、浮かないように。両脇に袖石
+  { const top = 0.85, rise = 0.3, run = 0.27, z0 = 4.4; let i = 0, zi = z0;
+    for (; i < 30; i++) { const st = top - (i + 1) * rise; zi = z0 + (i + 0.5) * run; const gy = ground(0, zi); if (st < gy + 0.02) break;
+      const bot = Math.min(gy, ground(-1.4, zi), ground(1.4, zi)) - 0.4; box(g, 2.8, st - bot, run + 0.02, MAT.stoneL, 0, (st + bot) / 2, zi); }
+    const zEnd = z0 + i * run, gEnd = Math.min(ground(-1.6, zEnd), ground(1.6, zEnd)) - 0.4;
+    for (const sx of [-1.6, 1.6]) { const n = Math.max(1, i); for (let k = 0; k < n; k++) { const zk = z0 + (k + 0.5) * run, tk = top - k * rise + 0.12, bk = Math.min(ground(sx, zk), ground(0, zk)) - 0.4; box(g, 0.4, tk - bk, run + 0.02, MAT.stoneD, sx, (tk + bk) / 2, zk); } }
+    if (!i) box(g, 2.8, 0.3, 0.6, MAT.stoneL, 0, top - 0.15, z0 + 0.3); }
   // 連子窓（緑の枠に縦の格子）
   const lat = (() => { const c = document.createElement("canvas"); c.width = 64; c.height = 64; const q = c.getContext("2d"); q.fillStyle = "#2a2622"; q.fillRect(0, 0, 64, 64);
     q.fillStyle = "#3f7a68"; q.fillRect(0, 0, 64, 6); q.fillRect(0, 58, 64, 6); for (let i = 3; i < 64; i += 9) q.fillRect(i, 0, 4, 64);

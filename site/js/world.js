@@ -1,10 +1,10 @@
 // 境内全体を組み立てる（地形・植物・水・建物）。
 import * as THREE from "three";
-import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032112";
-import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032112";
-import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032112";
-import { koiSchool } from "./koi.js?v=11032112";
-import { FOLIAGE } from "./env.js?v=11032112";
+import { MAT, box, cyl, torii, toro, chochin, honden, smallHall, romon, kairo, kakezukuri, meotoSugi, pagoda, shoro, taikobashi, tamagaki, temizuya, juyosho, shinboku, okunoin, lampMat, roof } from "./arch.js?v=11032115";
+import { PLACES, TRAIL, trailHeight, height, POND, BRIDGE, OKPOND, SMALL, HONDEN, hw, OKU_Y, STAGE, STREAM, noDecor } from "./map.js?v=11032115";
+import { makePond, pondPlants, tickWater, makeStream } from "./water.js?v=11032115";
+import { koiSchool } from "./koi.js?v=11032115";
+import { FOLIAGE } from "./env.js?v=11032115";
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 let seedN = 7; const srnd = () => ((seedN = (seedN * 16807) % 2147483647) / 2147483647);   // 毎回同じ配置になる乱数
@@ -298,7 +298,7 @@ export function buildWorld(scene, env, opts = {}) {
   for (const x of [-6, 2]) W.lamps.push(toro(scene, x, -69, okY, env, 0.8));
 
   // ---------------------------------------------------------------- ⑬ 五重塔
-  const pg = pagoda(scene, env, { x: 40, z: -22, y: height(40, -22) }); W.update.push((t) => pg.userData.tick(t));
+  const pg = pagoda(scene, env, { x: 40, z: -22, y: height(40, -22), ground: (lx, lz) => height(40 + lx, -22 + lz) - height(40, -22) }); W.update.push((t) => pg.userData.tick(t));
   // 鐘楼：塔の西に。正面の石畳と、由緒の立て札、灯籠
   const sh = shoro(scene, env, { x: 33.5, z: -19.5, y: height(33.5, -19.5), ry: 0 }); sh.log.userData.z0 = sh.log.position.z; W.shoro = sh;
   for (const [lx, lz] of [[37.6, -16.2], [42.4, -16.2]]) W.lamps.push(toro(scene, lx, lz, height(lx, lz), env, 0.85));

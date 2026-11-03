@@ -7,19 +7,19 @@ export const hw = (x, z) => [x * HONDEN.S, HONDEN.Z + (z - 1) * HONDEN.S];
 const [HX0, HZ0] = hw(-9, -4.5), [HX1, HZ1] = hw(9, 8.3);
 export const inHonden = (x, z) => x > HX0 && x < HX1 && z > HZ0 && z < HZ1;
 export const PLACES = {
-  ootorii:  { n: 1,  name: "大鳥居",         yomi: "おおとりい", vi: "Cổng torii lớn",         pos: [0, 76],    stand: [0, 79],     face: Math.PI },
-  sando:    { n: 2,  name: "参道",           yomi: "さんどう", vi: "Đường vào đền",           pos: [0, 58],    stand: [0, 60],     face: Math.PI },
-  pond:     { n: 3,  name: "池と太鼓橋",     yomi: "いけ・たいこばし", vi: "Hồ cá koi & cầu cong",    pos: [18, 54],   stand: [18, 54],    face: Math.PI / 2 },
-  romon:    { n: 4,  name: "楼門",           yomi: "ろうもん", vi: "Cổng lầu",                pos: [0, 41],    stand: [0, 45.5],   face: Math.PI },
-  temizu:   { n: 5,  name: "手水舎",         yomi: "ちょうずや", vi: "Nơi rửa tay",             pos: [11, 33],   stand: [11, 31.0],  face: 0 },
-  juyosho:  { n: 6,  name: "授与所",         yomi: "じゅよしょ", vi: "Quầy bùa & quẻ",          pos: [18.5, 21], stand: [15.6, 21],  face: Math.PI / 2 },
-  shinboku: { n: 7,  name: "御神木",         yomi: "ごしんぼく", vi: "Cây thiêng",              pos: [13.5, 11.5], stand: [13.5, 15.8], face: Math.PI },
-  honden:   { n: 8,  name: "本殿・当選の社", yomi: "ほんでん", vi: "Điện chính (cầu trúng)",  pos: [0, -6],    stand: [0, 12.8],   face: Math.PI },
-  enmusubi: { n: 9,  name: "縁結びの社",     yomi: "えんむすびのやしろ", vi: "Điện cầu duyên",          pos: [-33, 11],  stand: [-33, 19.7], face: Math.PI },
-  gokaku:   { n: 10, name: "合格の社",       yomi: "ごうかくのやしろ", vi: "Điện cầu đỗ",             pos: [33, 11],   stand: [33, 19.7],  face: Math.PI },
-  senbon:   { n: 11, name: "千本鳥居",       yomi: "せんぼんとりい", vi: "Nghìn cổng torii",        pos: [21, -12],  stand: [21.5, -6.9], face: Math.PI },
-  okunoin:  { n: 12, name: "奥の院",         yomi: "おくのいん", vi: "Điện trên đỉnh núi",      pos: [-2, -78],  stand: [-2, -71],   face: Math.PI },
-  pagoda:   { n: 13, name: "五重塔",         yomi: "ごじゅうのとう", vi: "Tháp năm tầng",           pos: [40, -22],  stand: [39, -13.5], face: Math.PI },
+  ootorii:  { n: 1,  name: "大鳥居",         yomi: "おおとりい",         pos: [0, 76],    stand: [0, 79],     face: Math.PI },
+  sando:    { n: 2,  name: "参道",           yomi: "さんどう",           pos: [0, 58],    stand: [0, 60],     face: Math.PI },
+  pond:     { n: 3,  name: "池と太鼓橋",     yomi: "いけ・たいこばし",    pos: [18, 54],   stand: [18, 54],    face: Math.PI / 2 },
+  romon:    { n: 4,  name: "楼門",           yomi: "ろうもん",                pos: [0, 41],    stand: [0, 45.5],   face: Math.PI },
+  temizu:   { n: 5,  name: "手水舎",         yomi: "ちょうずや",             pos: [11, 33],   stand: [11, 31.0],  face: 0 },
+  juyosho:  { n: 6,  name: "授与所",         yomi: "じゅよしょ",          pos: [18.5, 21], stand: [15.6, 21],  face: Math.PI / 2 },
+  shinboku: { n: 7,  name: "御神木",         yomi: "ごしんぼく",              pos: [13.5, 11.5], stand: [13.5, 15.8], face: Math.PI },
+  honden:   { n: 8,  name: "本殿・当選の社", yomi: "ほんでん",  pos: [0, -6],    stand: [0, 12.8],   face: Math.PI },
+  enmusubi: { n: 9,  name: "縁結びの社",     yomi: "えんむすびのやしろ",          pos: [-33, 11],  stand: [-33, 19.7], face: Math.PI },
+  gokaku:   { n: 10, name: "合格の社",       yomi: "ごうかくのやしろ",             pos: [33, 11],   stand: [33, 19.7],  face: Math.PI },
+  senbon:   { n: 11, name: "千本鳥居",       yomi: "せんぼんとりい",        pos: [21, -12],  stand: [21.5, -6.9], face: Math.PI },
+  okunoin:  { n: 12, name: "奥の院",         yomi: "おくのいん",      pos: [-2, -78],  stand: [-2, -71],   face: Math.PI },
+  pagoda:   { n: 13, name: "五重塔",         yomi: "ごじゅうのとう",           pos: [40, -22],  stand: [40, -11.9], face: Math.PI },
 };
 
 // 千本鳥居の山道（本殿の右奥から、つづら折りで奥の院へ）
@@ -110,6 +110,7 @@ export const BLOCKS = [
   [-6.2, 17, -4.8, 19], [4.8, 17, 6.2, 19],                   // 狛狐の台
   [-30.3, 23.0, -28.7, 24.6], [28.4, 23.0, 30.6, 24.6],        // 赤い糸の木・撫で牛
   [35.6, -26.4, 44.4, -17.6],                                 // 五重塔（基壇）
+  [38.2, -17.6, 41.8, -13.7],                                  // 五重塔の正面石段（見るだけ）
   [31.8, -21.2, 35.2, -17.8],                                 // 鐘楼
   [-7.4, -82.4, 3.4, -74.0],                                  // 奥の院（1.5倍・透塀まで）
   [-13.0, -75.4, -8.0, -70.6], [-12.2, -81.0, -6.8, -79.0],    // 磐座・夫婦杉

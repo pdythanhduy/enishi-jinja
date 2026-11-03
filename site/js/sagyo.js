@@ -2,8 +2,8 @@
 // ポモドーロは部屋で共通：日本時間の毎時 :00 と :30 に始まり、25分集中・5分休憩。休憩に入ると鈴が鳴り、みんなで一礼。
 // 部屋にいる人は頭の上に「🛶 屋形船で作業中」「📖 書院で作業中」と出て、正座で並ぶ。集中の5分ごとに徳+5。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11032112";
-import { SHOIN, YAKATA } from "./map.js?v=11032112";
+import { MAT, box, cyl, roof, chochin, kakejiku } from "./arch.js?v=11032115";
+import { SHOIN, YAKATA } from "./map.js?v=11032115";
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...o });
 const jst = () => new Date(Date.now() + 9 * 3600e3);
