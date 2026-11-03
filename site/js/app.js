@@ -5,36 +5,36 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032132";
-import { buildWorld } from "./world.js?v=11032132";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032132";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032132";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032132";
-import { deeds } from "../deeds.js?v=11032132";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032132";
-import { fireflies } from "../fx.js?v=11032132";
-import { LIGHT_SPOTS } from "./arch.js?v=11032132";
-import { freeze } from "./freeze.js?v=11032132";
-import { setupSeasonal } from "./seasonal.js?v=11032132";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032132";
-import { makeBGM } from "./bgm.js?v=11032132";
-import { setupGuide, STEP_OF } from "./guide.js?v=11032132";
-import { setupKenno } from "./kenno.js?v=11032132";
-import { setupSocial } from "./social.js?v=11032132";
-import { setupProfile } from "./profile.js?v=11032132";
-import { setupChores } from "./chores.js?v=11032132";
-import { setupSagyo } from "./sagyo.js?v=11032132";
-import { setupWelcome } from "./welcome.js?v=11032132";
-import { setupZen } from "./zen.js?v=11032132";
-import { setupMixer } from "./mixer.js?v=11032132";
-import { setupShakyo } from "./shakyo.js?v=11032132";
-import { setupTour } from "./tour.js?v=11032132";
-import { setupChat } from "./chat.js?v=11032132";
-import { setupKito, ofudaImage } from "./kito.js?v=11032132";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032132";
-import { Lanterns, ambience, matsuri } from "../fx.js?v=11032132";
-import { connect, board } from "../net.js?v=11032132";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032132";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11032312";
+import { buildWorld } from "./world.js?v=11032312";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11032312";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11032312";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11032312";
+import { deeds } from "../deeds.js?v=11032312";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11032312";
+import { fireflies } from "../fx.js?v=11032312";
+import { LIGHT_SPOTS } from "./arch.js?v=11032312";
+import { freeze } from "./freeze.js?v=11032312";
+import { setupSeasonal } from "./seasonal.js?v=11032312";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11032312";
+import { makeBGM } from "./bgm.js?v=11032312";
+import { setupGuide, STEP_OF } from "./guide.js?v=11032312";
+import { setupKenno } from "./kenno.js?v=11032312";
+import { setupSocial } from "./social.js?v=11032312";
+import { setupProfile } from "./profile.js?v=11032312";
+import { setupChores } from "./chores.js?v=11032312";
+import { setupSagyo } from "./sagyo.js?v=11032312";
+import { setupWelcome } from "./welcome.js?v=11032312";
+import { setupZen } from "./zen.js?v=11032312";
+import { setupMixer } from "./mixer.js?v=11032312";
+import { setupShakyo } from "./shakyo.js?v=11032312";
+import { setupTour } from "./tour.js?v=11032312";
+import { setupChat } from "./chat.js?v=11032312";
+import { setupKito, ofudaImage } from "./kito.js?v=11032312";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11032312";
+import { Lanterns, ambience, matsuri } from "../fx.js?v=11032312";
+import { connect, board } from "../net.js?v=11032312";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11032312";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -266,7 +266,7 @@ function stepMove(dt) {
 }
 
 // ------------------------------------------------------------------ 音
-let AC = null, muted = store.get("enishi_mute", false);
+let AC = null, muted = false; store.set("enishi_mute", false);   // 効果音のオン・オフは廃止（音量ひとつで調整）
 let fxVol = store.get("enishi_vol", 0.55) * 0.7;
 const ac = () => { if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); AC.fxBus = AC.createGain(); AC.fxBus.gain.value = fxVol; AC.fxBus.connect(AC.destination); } return AC; };   // 効果音はすべて fxBus を通す
 function tone(freqs, dur = 2.5, gain = 0.25) {
@@ -291,20 +291,20 @@ const hayashi = matsuri(() => ac(), () => muted); let gestured = false;
 const syncHayashi = () => { if (gestured) hayashi.set(festOn && !muted); typeof bgm !== "undefined" && bgm.duck(festOn && !muted); };
 const bgm = makeBGM(() => ac(), { night: () => env.lamp });
 let bgmOn = store.get("enishi_bgm", true);
-addEventListener("pointerdown", () => { ac(); startAmb(); gestured = true; syncHayashi(); if (bgmOn && !bgm.on) bgm.start(); });
+// ブラウザは、最初のタップ・クリック・キー入力までは音を出させない。どの操作でも音楽を始める
+const unlockAudio = () => { const a = ac(); if (a.state === "suspended") a.resume().catch(() => {}); startAmb(); gestured = true; syncHayashi(); if (bgmOn && !bgm.on) bgm.start(); };
+for (const ev of ["pointerdown", "touchend", "click", "keydown"]) addEventListener(ev, unlockAudio, { capture: true });
 // 音の設定：音楽・効果音・音量
 const sndPop = document.createElement("div"); sndPop.id = "snd-pop"; sndPop.hidden = true;
 sndPop.innerHTML = `<p class="kicker">音</p>
   <label class="snd-row"><span>🎵 境内の音楽<small>昼は「境内の調べ」、夜は「月夜の調べ」</small></span><input type="checkbox" id="snd-bgm"></label>
-  <label class="snd-row"><span>🔔 効果音<small>鈴・太鼓・環境音</small></span><input type="checkbox" id="snd-fx"></label>
   <label class="snd-vol"><span>音量</span><input type="range" id="snd-vol" min="0" max="100"></label>`;
 document.body.appendChild(sndPop);
-const paintSnd = () => { $("#snd-bgm").checked = bgmOn; $("#snd-fx").checked = !muted; $("#snd-vol").value = Math.round(store.get("enishi_vol", 0.55) * 100); $("#btn-sound").textContent = !bgmOn && muted ? "🔇" : bgmOn ? "🎵" : "🔈"; };
+const paintSnd = () => { $("#snd-bgm").checked = bgmOn; $("#snd-vol").value = Math.round(store.get("enishi_vol", 0.55) * 100); $("#btn-sound").textContent = bgmOn ? "🎵" : "🔈"; };
 bgm.setVolume(store.get("enishi_vol", 0.55)); paintSnd();
 $("#btn-sound").onclick = (e) => { e.stopPropagation(); sndPop.hidden = !sndPop.hidden; paintSnd(); };
 document.addEventListener("pointerdown", (e) => { if (!sndPop.hidden && !sndPop.contains(e.target) && e.target.id !== "btn-sound") sndPop.hidden = true; });
 $("#snd-bgm").onchange = (e) => { bgmOn = e.target.checked; store.set("enishi_bgm", bgmOn); bgmOn ? bgm.start() : bgm.stop(); paintSnd(); };
-$("#snd-fx").onchange = (e) => { muted = !e.target.checked; store.set("enishi_mute", muted); syncHayashi(); paintSnd(); };
 $("#snd-vol").oninput = (e) => { const v = e.target.value / 100; store.set("enishi_vol", v); bgm.setVolume(v); fxVol = v * 0.7; if (AC) AC.fxBus.gain.setTargetAtTime(fxVol, AC.currentTime, 0.05); };   // ひとつの音量で、音楽と効果音（少し控えめ）をいっしょに
 
 // ------------------------------------------------------------------ UI
