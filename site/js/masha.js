@@ -2,8 +2,8 @@
 // 置き場所は神さまに合わせて：祓戸は入口、恵比寿は門前の商いのそば、猿田彦は一の鳥居、厳島（弁天）は池、
 // 水神は手水舎のそば、天神は合格の社の梅林、稲荷は千本鳥居の登り口、山の神は山道の途中。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, torii } from "./arch.js?v=11041008";
-import { height } from "./map.js?v=11041008";
+import { MAT, box, cyl, roof, torii } from "./arch.js?v=11041231";
+import { height } from "./map.js?v=11041231";
 
 export const MASHA = [
   { id: "haraedo", name: "祓戸社", kami: "祓戸大神", goriyaku: "罪・けがれを祓う", at: [-6.7, 74.3], stand: [-4.9, 74.3], mark: "祓", gate: "wood",

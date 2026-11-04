@@ -301,7 +301,7 @@ export class Remind {
       if (slow("k" + pid, 10e3)) return Response.json({ error: "少し時間をおいてください" }, { status: 429 });
       const day = jst();
       if (this.sql.exec(`SELECT COUNT(*) AS c FROM lamp WHERE pid=? AND ts>?`, pid, Date.now() - 86400e3).toArray()[0].c >= 1) return Response.json({ error: "献灯は一日にひとつです。明日また灯してください" }, { status: 429 });
-      const text = cleanName(b.text, 16), name = cleanName(b.name, 12) || "参拝者", gan = cleanName(b.gan, 8);
+      const text = cleanName(b.text, 40), name = cleanName(b.name, 12) || "参拝者", gan = cleanName(b.gan, 8);
       if (String(b.text || "").trim() && !text) return Response.json({ error: "その言葉は書けません" }, { status: 400 });
       const id = crypto.randomUUID().slice(0, 10);
       this.sql.exec(`INSERT INTO lamp (id,pid,name,gan,text,days,last,ts) VALUES (?,?,?,?,?,1,?,?)`, id, pid, name, gan, text, day, Date.now());

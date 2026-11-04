@@ -1,6 +1,6 @@
 // 献灯所：みんなの名前と願いの灯りが並ぶ棚。毎日お参りすると自分の灯りが少しずつ明るくなる。
 import * as THREE from "three";
-import { HONDEN } from "./map.js?v=11041008";
+import { HONDEN } from "./map.js?v=11041231";
 
 export const KENNO = { x: -20.6, z: 22, ry: Math.PI / 2, stand: [-18.2, 22] };
 const COLS = 16, ROWS = 4, GANS = ["当選", "縁結び", "合格", "健康", "家内安全", "心願成就"];
@@ -138,7 +138,7 @@ export function setupKenno(A) {
     <p class="kicker">献灯所</p><h2>灯りをひとつ奉納する</h2>
     <p class="sub">あなたの名前と願いを書いた灯りが、この棚に並びます。毎日お参りに来ると、灯りが少しずつ明るくなります。献灯は一日にひとつです。</p>
     <h3>願い</h3><div class="chips" id="kn-gan">${GANS.map((x, i) => `<button class="${i ? "" : "on"}" data-g="${x}">${x}</button>`).join("")}</div>
-    <h3>ひとこと <small>（16文字まで・みんなに見えます）</small></h3><input id="kn-text" maxlength="16" placeholder="例：家族がみんな元気で" autocomplete="off">
+    <h3>ひとこと <small>（40文字まで・みんなに見えます）</small></h3><input id="kn-text" maxlength="40" placeholder="例：家族がみんな元気で" autocomplete="off">
     <p class="sub pf-err" id="kn-err" role="alert"></p>
     <div class="row"><span class="sub">名前：<b id="kn-name"></b></span><button class="btn primary" id="kn-go">🏮 灯す</button></div></div>`;
   document.body.appendChild(m);
@@ -148,7 +148,7 @@ export function setupKenno(A) {
   m.querySelector("#kn-gan").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; gan = b.dataset.g; m.querySelectorAll("#kn-gan button").forEach((x) => x.classList.toggle("on", x === b)); };
   function open() { m.querySelector("#kn-name").textContent = A.getName(); m.querySelector("#kn-err").textContent = ""; m.hidden = false; }
   m.querySelector("#kn-go").onclick = async () => {
-    const text = A.clean(m.querySelector("#kn-text").value).slice(0, 16), err = m.querySelector("#kn-err");
+    const text = A.clean(m.querySelector("#kn-text").value).slice(0, 40), err = m.querySelector("#kn-err");
     if (A.ng(text)) { err.textContent = "その言葉は書けません"; return; }
     const btn = m.querySelector("#kn-go"); btn.disabled = true; err.textContent = "";
     try {

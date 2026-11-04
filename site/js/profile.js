@@ -1,6 +1,6 @@
 // 身支度：名前と見た目を選ぶ。初めての参拝では、境内に入る前にここから。
-import { mountPicker } from "./i18n.js?v=11041008";
-import { LOOK, parseLook, lookString, restyle } from "./avatar.js?v=11041008";
+import { mountPicker } from "./i18n.js?v=11041231";
+import { LOOK, parseLook, lookString, restyle } from "./avatar.js?v=11041231";
 
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
 const RANKS = [[0, "参拝者"], [10, "常連さん"], [30, "氏子"], [70, "世話役"], [150, "総代"], [300, "神様の友"]];
