@@ -599,3 +599,9 @@ body.in-room #chat-tick{bottom:calc(32px + env(safe-area-inset-bottom))}
 .meguri li{display:grid;grid-template-columns:1.4rem 1fr auto auto;align-items:center;gap:.5rem;padding:.35rem .5rem;border-radius:8px;background:rgba(255,255,255,.04);font-size:.86rem}
 .meguri li.ok{background:rgba(232,198,122,.12)}.meguri li.ok .mk{color:var(--gold)}
 .meguri small{color:var(--muted);font-size:.72rem}.meguri button{font-size:.72rem;padding:.2rem .6rem;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit}
+
+/* 題字：日本語以外（ラテン文字・ベトナム語）は字間をつめて、背景に負けないように */
+html:not([lang=ja]) .tc-in h1{letter-spacing:.06em;margin-left:0}
+html:not([lang=ja]) .tc-sub,html:not([lang=ja]) .tc-hall{letter-spacing:.04em;padding:0 1rem}
+html:not([lang=ja]) .tc-in{text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.8);max-width:min(92vw,720px)}
+html:not([lang=ja]) #title-card{background:radial-gradient(ellipse at center,rgba(0,0,0,.35) 20%,rgba(0,0,0,.65))}

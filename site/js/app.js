@@ -5,40 +5,40 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { initI18n, t as tr, mountPicker } from "./i18n.js?v=11040020";
+import { initI18n, t as tr, mountPicker } from "./i18n.js?v=11041008";
 initI18n();   // 日本語以外のブラウザでは、画面の文字を English / Tiếng Việt に
-import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11040020";
-import { buildWorld } from "./world.js?v=11040020";
-import { MASHA } from "./masha.js?v=11040020";
-import { PEAK } from "./vista.js?v=11040020";
-import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11040020";
-import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11040020";
-import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11040020";
-import { deeds } from "../deeds.js?v=11040020";
-import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11040020";
-import { fireflies } from "../fx.js?v=11040020";
-import { LIGHT_SPOTS } from "./arch.js?v=11040020";
-import { freeze } from "./freeze.js?v=11040020";
-import { setupSeasonal } from "./seasonal.js?v=11040020";
-import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11040020";
-import { makeBGM } from "./bgm.js?v=11040020";
-import { setupGuide, STEP_OF } from "./guide.js?v=11040020";
-import { setupKenno } from "./kenno.js?v=11040020";
-import { setupSocial } from "./social.js?v=11040020";
-import { setupProfile } from "./profile.js?v=11040020";
-import { setupChores } from "./chores.js?v=11040020";
-import { setupSagyo } from "./sagyo.js?v=11040020";
-import { setupWelcome } from "./welcome.js?v=11040020";
-import { setupZen } from "./zen.js?v=11040020";
-import { setupMixer } from "./mixer.js?v=11040020";
-import { setupShakyo } from "./shakyo.js?v=11040020";
-import { setupTour } from "./tour.js?v=11040020";
-import { setupChat } from "./chat.js?v=11040020";
-import { setupKito, ofudaImage } from "./kito.js?v=11040020";
-import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11040020";
-import { Lanterns, matsuri } from "../fx.js?v=11040020";
-import { connect, board } from "../net.js?v=11040020";
-import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11040020";
+import { createEnv, jstNow, season as seasonOf } from "./env.js?v=11041008";
+import { buildWorld } from "./world.js?v=11041008";
+import { MASHA } from "./masha.js?v=11041008";
+import { PEAK } from "./vista.js?v=11041008";
+import { floors, PLACES, blocked, footY, routeTo, region, TRAIL, OKPOND, SMALL, HONDEN, hw, inHonden, OKU_Y, STAGE } from "./map.js?v=11041008";
+import { book, drawShuin, drawOmamori, OMAMORI, SHUIN, limitedFor } from "./collect.js?v=11041008";
+import { Leaves, DarkLanterns, LostFox, Fireworks } from "./good.js?v=11041008";
+import { deeds } from "../deeds.js?v=11041008";
+import { environment, textures, nobori, lanternRows, rocksAndBushes, clouds, snowRoofs } from "./decor.js?v=11041008";
+import { fireflies } from "../fx.js?v=11041008";
+import { LIGHT_SPOTS } from "./arch.js?v=11041008";
+import { freeze } from "./freeze.js?v=11041008";
+import { setupSeasonal } from "./seasonal.js?v=11041008";
+import { buildTemizuya, runTemizu, waterSound } from "./temizu.js?v=11041008";
+import { makeBGM } from "./bgm.js?v=11041008";
+import { setupGuide, STEP_OF } from "./guide.js?v=11041008";
+import { setupKenno } from "./kenno.js?v=11041008";
+import { setupSocial } from "./social.js?v=11041008";
+import { setupProfile } from "./profile.js?v=11041008";
+import { setupChores } from "./chores.js?v=11041008";
+import { setupSagyo } from "./sagyo.js?v=11041008";
+import { setupWelcome } from "./welcome.js?v=11041008";
+import { setupZen } from "./zen.js?v=11041008";
+import { setupMixer } from "./mixer.js?v=11041008";
+import { setupShakyo } from "./shakyo.js?v=11041008";
+import { setupTour } from "./tour.js?v=11041008";
+import { setupChat } from "./chat.js?v=11041008";
+import { setupKito, ofudaImage } from "./kito.js?v=11041008";
+import { makeAvatar, setPose, bowTo, restyle, AV_SCALE, gait } from "./avatar.js?v=11041008";
+import { Lanterns, matsuri } from "../fx.js?v=11041008";
+import { connect, board } from "../net.js?v=11041008";
+import { HALLS, OMIKUJI, RANKS, NAMES_A, NAMES_B, EMA_CATS, KUJI_WAKA, KUJI_ITEMS, KUJI_TIER, kanjiNum } from "../content.js?v=11041008";
 
 const $ = (s) => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -1174,7 +1174,7 @@ scene.updateMatrixWorld(true); try { measureStairs(); } catch (e) { console.warn
 loop();
 $("#loading").classList.add("ready"); setTimeout(() => $("#loading").classList.add("done"), Math.max(300, 1400 - performance.now()));   // 絵を少しだけ見せてから
 setTimeout(() => ($("#hint").style.opacity = 0), 10000);
-if (!store.get("enishi_seen_story", false)) { store.set("enishi_seen_story", true); setTimeout(openStory, intro ? 9800 : 1500); }
+// 由来の物語は自動では開かない（はじめての人には題字・身支度・案内が続くので、重なって読めなかった）。📖 由来ボタンから
 // ------------------------------------------------------------------ 御祈祷（kito.js）
 const setCine = (fn) => {
   if (!fn) { freeCam = false; homeBtn.hidden = true; }

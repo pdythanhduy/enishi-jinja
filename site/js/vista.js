@@ -1,7 +1,7 @@
 // 遠景：見晴らし台の南に谷の町と縁の浦（海）、まわりを幾重にも山並み。北には神社の御神体の山「縁の峰」。
 // 朝は谷に雲海、夜は町に灯り。遠いので霧がかかり、季節で田畑と山頂の雪が変わる。
 import * as THREE from "three";
-import { MONZEN } from "./map.js?v=11040020";
+import { MONZEN } from "./map.js?v=11041008";
 
 const VY = MONZEN.valley;                     // 谷の高さ（見晴らし台の崖の下）
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };

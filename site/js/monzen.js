@@ -1,8 +1,8 @@
 // 門前町：大鳥居の南にのびる参道の町。茶屋・土鈴の店・境内案内所・酒蔵のほか、和菓子・旅籠・染物・蕎麦の町家。
 // 南の端に一の鳥居と社号標、その先が谷の町と縁の浦を見下ろす見晴らし台。奥の院には縁の峰の遥拝所。
 import * as THREE from "three";
-import { MAT, box, cyl, roof, torii, toro, chochin } from "./arch.js?v=11040020";
-import { MONZEN, PLACES, OKU_Y, height } from "./map.js?v=11040020";
+import { MAT, box, cyl, roof, torii, toro, chochin } from "./arch.js?v=11041008";
+import { MONZEN, PLACES, OKU_Y, height } from "./map.js?v=11041008";
 
 const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...o });
 const TILE = std(0x41444a, { roughness: 0.7 }), WOOD = std(0x3a281c), PLASTER = std(0xece4d2, { roughness: 0.95 }), EARTH = std(0x8b806d, { roughness: 1 });

@@ -77,7 +77,7 @@ export function mountPicker(parent) { if (parent && !parent.querySelector(".lang
 export async function initI18n() {
   document.documentElement.lang = LANG;
   if (LANG === "ja") return;
-  const mod = await import("./lang.js?v=11040020");
+  const mod = await import("./lang.js?v=11041008");
   build(mod.default);
   walk(document.documentElement);
   new MutationObserver((ms) => {
